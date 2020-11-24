@@ -107,7 +107,7 @@ func Dockerfile(argv []string) error {
 		return Exec(path, []string{
 			"copilot", "task", "run",
 			"--default",
-			" --follow",
+			"--follow",
 			"--dockerfile", "{{.Path}}",
 			fmt.Sprintf(`--command='%s'`, strings.Join(argv[1:], " ")),
 		})
