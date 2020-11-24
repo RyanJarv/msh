@@ -13,3 +13,6 @@ echo: install
 
 cat: install
 	DEBUG=true ./config/cat.msh
+
+ecs: install
+	DEBUG=true msh ecs ./config/echo.msh hello from ecs

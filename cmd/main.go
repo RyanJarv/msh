@@ -3,11 +3,11 @@ package main
 import (
 	"bytes"
 	"flag"
+	"fmt"
 	"github.com/pkg/errors"
 	L "github.com/ryanjarv/msh/logger"
 	"io/ioutil"
 	"log"
-	"mvdan.cc/sh/syntax"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -42,6 +42,8 @@ func run() error {
 	switch cmd := args.Args()[0]; cmd {
 	case "dockerfile":
 		Dockerfile(args.Args()[1:])
+	case "ecs":
+		Ecs(args.Args()[1:])
 	default:
 		return errors.Errorf("unknown command: '%v'", cmd)
 	}
@@ -53,21 +55,6 @@ type ExecParams struct {
 	ContextDir string
 	Name       string
 }
-func Parse(args []string) ([]syntax.Command, error) {
-	r := strings.NewReader(strings.Join(args, " "))
-	f, err := syntax.NewParser().Parse(r, "")
-	if err != nil {
-		return nil, err
-	}
-
-	var cmds []syntax.Command
-	for i, stmt := range f.Stmts {
-		L.Debug.Printf("Cmd %d: %-20T - ", i, stmt.Cmd)
-		cmds = append(cmds, stmt.Cmd)
-	}
-	return cmds, nil
-}
-
 func Exec(path string, args []string) error {
 	L.Debug.Printf("Running Exec with path '%s' and args '%v'\n", path, args)
 
@@ -87,16 +74,9 @@ func Exec(path string, args []string) error {
 		}()
 	}
 
-	cmds, err := Parse(args)
-	if err != nil {
-		return err
-	}
-
-	printer := syntax.NewPrinter()
-	for _, cmd := range cmds {
-		b := new(bytes.Buffer)
-		printer.Print(b, cmd)
-		tmpl, err := template.New("path").Parse(b.String())
+	var fmtArgs []string
+	for _, arg := range args {
+		tmpl, err := template.New("path").Parse(arg)
 		if err != nil { return err }
 
 		w := bytes.NewBuffer([]byte{})
@@ -105,15 +85,16 @@ func Exec(path string, args []string) error {
 			return err
 		}
 
-		cmdArgv := strings.Split(w.String(), " ")
-		L.Debug.Printf("Running: %s %s", cmdArgv[0], strings.Join(cmdArgv[1:], " "))
-		cmd := exec.Command(cmdArgv[0], cmdArgv[1:]...)
+		fmtArgs = append(fmtArgs, w.String())
+	}
 
-		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-		log.Printf("Running command and waiting for it to finish...")
-		if err := cmd.Run(); err != nil {
-			return err
-		}
+	L.Debug.Printf("Running: %v", fmtArgs)
+	cmd := exec.Command(fmtArgs[0], fmtArgs[1:]...)
+
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+	log.Printf("Running command and waiting for it to finish...")
+	if err := cmd.Run(); err != nil {
+		return err
 	}
 
 	return nil
@@ -121,16 +102,31 @@ func Exec(path string, args []string) error {
 
 func Dockerfile(argv []string) error {
 	path := argv[0]
-	err := Exec(path, []string{
-		"docker", "build",
-		"-t", "{{.Name}}",
-		"-f", "{{.Path}}",
-		"{{.ContextDir}}",
-	})
-	if err != nil {
-		return err
-	}
 
-	return Exec(path, append([]string{"docker", "run", "-i", "{{.Name}}"}, argv[1:]...))
+	if os.Getenv("MSH_CONTEXT") == "ecs" {
+		return Exec(path, []string{
+			"copilot", "task", "run",
+			"--default",
+			" --follow",
+			"--dockerfile", "{{.Path}}",
+			fmt.Sprintf(`--command='%s'`, strings.Join(argv[1:], " ")),
+		})
+	} else {
+		err := Exec(path, []string{ "docker", "build", "-t", "{{.Name}}", "-f", "{{.Path}}", "{{.ContextDir}}"})
+		if err != nil {
+			return err
+		}
+		return Exec(path, append([]string{"docker", "run", "-i", "{{.Name}}"}, argv[1:]...))
+	}
 }
 
+// Ecs sets MSH_CONTEXT=ecs and executes the rest of the args. This typically will be a path to a msh docker config so
+// this variable get's checked in Dockerfile.
+func Ecs(argv []string) error {
+	os.Setenv("MSH_CONTEXT", "ecs")
+
+	cmd := exec.Command(argv[0], argv[1:]...)
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+	log.Printf("Running command and waiting for it to finish...")
+	return cmd.Run()
+}
