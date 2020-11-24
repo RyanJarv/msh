@@ -14,7 +14,7 @@ Previous (somewhat) related project: https://github.com/RyanJarv/coderun
 
 In case you read my post or notes in the coderun repo, it might be confusing how this will all fit together.. I'm still working on that part but this is at least what is working so far.
 
-## Echo
+#### Echo
 ```
 % cat echo.msh                              
 #!/usr/local/bin/msh exec docker build -t {{.Name}} -f {{.Path}} {{.ContextDir}}; docker run {{.Name}} hello world
@@ -40,7 +40,7 @@ ENTRYPOINT ["echo"]
 hello world
 ```
 
-## Cat Example
+#### Cat
 The `dockerfile` arg is mostly doing the same thing as the shebang line in the echo example. The idea is the syntax would be closer to this example but could be written out manually as well if you needed to.
 
 ```
