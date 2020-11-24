@@ -17,13 +17,13 @@ In case you read my post or notes in the coderun repo, it might be confusing how
 #### Echo
 ```
 % cat echo.msh                              
-#!/usr/local/bin/msh exec docker build -t {{.Name}} -f {{.Path}} {{.ContextDir}}; docker run {{.Name}} hello world
+#!/usr/local/bin/msh dockerfile
 FROM alpine:3
 ENTRYPOINT ["echo"]
 ```
 
 ```
-% ./echo.msh                               
+% ./echo.msh hello world
 2020/11/23 22:31:12 Running command and waiting for it to finish...
 [+] Building 0.0s (5/5) FINISHED                                                                                                                                                               
  => [internal] load build definition from echo.msh                                                                                                                                            
@@ -40,31 +40,36 @@ ENTRYPOINT ["echo"]
 hello world
 ```
 
-#### Cat
-The `dockerfile` arg is mostly doing the same thing as the shebang line in the echo example. The idea is the syntax would be closer to this example but could be written out manually as well if you needed to.
+#### ECS
+
+This assumes you have a default ECS cluster set up.
 
 ```
-% cat cat.msh                               
-#!/usr/local/bin/msh dockerfile
-FROM alpine:3
-ENTRYPOINT ["cat"]
-```
+% msh ecs ./config/echo.msh hello from ecs
+2020/11/24 02:22:06 Running command and waiting for it to finish...
+2020/11/24 02:22:06 Running command and waiting for it to finish...
+✔ Successfully provisioned task resources.
 
-```
-% echo 'hello world again'| ./cat.msh                               
-2020/11/23 22:31:43 Running command and waiting for it to finish...
 [+] Building 0.0s (5/5) FINISHED                                                                                                                                                               
- => [internal] load build definition from cat.msh                                                                                                                                             
- => => transferring dockerfile: 104B                                                                                                                                                          
- => [internal] load .dockerignore                                                                                                                                                             
- => => transferring context: 2B                                                                                                                                                               
- => [internal] load metadata for docker.io/library/alpine:3                                                                                                                                   
- => CACHED [1/1] FROM docker.io/library/alpine:3                                                                                                                                              
- => exporting to image                                                                                                                                                                        
- => => exporting layers                                                                                                                                                                       
- => => writing image sha256:a71009c164801bcd6572e22ca1c86da33a90dcb78c1b75c1187f74d62e0eb8a6                                                                                                  
- => => naming to docker.io/library/cat.msh                                                                                                                                                    
-2020/11/23 22:31:43 Running command and waiting for it to finish...
-hello world again
+ => [internal] load build definition from echo.msh                                                                                                                                        0.0s
+ => => transferring dockerfile: 34B                                                                                                                                                       0.0s
+ => [internal] load .dockerignore                                                                                                                                                         0.0s
+ => => transferring context: 2B                                                                                                                                                           0.0s
+ => [internal] load metadata for docker.io/library/alpine:3                                                                                                                               0.0s
+ => CACHED [1/1] FROM docker.io/library/alpine:3                                                                                                                                          0.0s
+ => exporting to image                                                                                                                                                                    0.0s
+ => => exporting layers                                                                                                                                                                   0.0s
+ => => writing image sha256:595b26ac4285e518a9794f0f8287d6a3fb2df9dfeb636d11a9ca5fd8070424b4                                                                                              0.0s
+ => => naming to 253528964770.dkr.ecr.us-east-2.amazonaws.com/copilot-msh:latest                                                                                                          0.0s
+Login Succeeded
+The push refers to repository [253528964770.dkr.ecr.us-east-2.amazonaws.com/copilot-msh]
+ace0eda3e3be: Layer already exists 
+latest: digest: sha256:0b5ed5d28d9a085a56a49f6fc1e0740e8e16f02a8cffaf4279d0247e47cca10b size: 527
+✔ Successfully updated image to task.
+
+✔ Task msh is running.
+
+copilot-task/msh/432917be hello from ecs
+Task has stopped.
 ```
 
