@@ -42,7 +42,7 @@ hello world
 
 #### ECS
 
-This assumes you have a default ECS cluster set up.
+This assumes you have a default ECS cluster set up. If you don't you can create run by running `aws ecs create-cluster --cluster-name default`.
 
 ```
 % msh ecs ./config/echo.msh hello from ecs

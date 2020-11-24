@@ -5,14 +5,22 @@ install: build
 	cp out/msh /usr/local/bin/msh
 	chmod +x /usr/local/bin/msh
 
-test: build
-	/Users/ryan/Code/msh/out/msh dockerfile /Users/ryan/Code/msh/config/echo.msh
+cmd/echo: build
+	PATH="${PWD}/out:${PATH}" DEBUG=true ./config/cmds/echo hello world from the args
 
-echo: install
-	DEBUG=true ./config/echo.msh hello world
+cmd/cat: build
+	echo "hello world from a pipe" | PATH="${PWD}/out:${PATH}" DEBUG=true ./config/cmds/cat
 
-cat: install
-	DEBUG=true ./config/cat.msh
+#TODO: Mount lint file
+cmd/cfn-lint: build
+	PATH="${PWD}/out:${PATH}" DEBUG=true ./config/cmds/cfn-lint ./config/swf/hello_world/iam.yaml --info
 
-ecs: install
-	DEBUG=true msh ecs ./config/echo.msh hello from ecs
+ecs: build
+	PATH="${PWD}/out:${PATH}" DEBUG=true msh ecs ./config/cmds/echo hello from ecs
+
+swf/iam: build
+	PATH="${PWD}/out:${PATH}" DEBUG=true ./config/swf/hello_world/iam.yaml
+
+swf/states: build
+	PATH="${PWD}/out:${PATH}" DEBUG=true ./config/swf/hello_world/states.yaml
+
