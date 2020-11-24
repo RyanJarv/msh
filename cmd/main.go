@@ -37,22 +37,11 @@ func run() error {
 		return errors.WithStack(err)
 	}
 
-	path := args.Arg(args.NArg()-1)
-	L.Debug.Println("Config path: ", path)
+	L.Debug.Println("args: %v", args.Args())
 
-	args := args.Args()[:args.NArg()-1]
-	L.Debug.Printf("Passed Args: %v\n", args)
-
-	if len(args) == 0 {
-		flag.Usage()
-		return errors.New("no specified command")
-	}
-
-	switch cmd := args[0]; cmd {
+	switch cmd := args.Args()[0]; cmd {
 	case "dockerfile":
-		Dockerfile(path, args[1:])
-	case "exec":
-		Exec(path, args[1:])
+		Dockerfile(args.Args()[1:])
 	default:
 		return errors.Errorf("unknown command: '%v'", cmd)
 	}
@@ -98,8 +87,6 @@ func Exec(path string, args []string) error {
 		}()
 	}
 
-
-
 	cmds, err := Parse(args)
 	if err != nil {
 		return err
@@ -132,7 +119,8 @@ func Exec(path string, args []string) error {
 	return nil
 }
 
-func Dockerfile(path string, argv []string) error {
+func Dockerfile(argv []string) error {
+	path := argv[0]
 	err := Exec(path, []string{
 		"docker", "build",
 		"-t", "{{.Name}}",
@@ -143,6 +131,6 @@ func Dockerfile(path string, argv []string) error {
 		return err
 	}
 
-	return Exec(path, append([]string{"docker", "run", "-i", "{{.Name}}"}))
+	return Exec(path, append([]string{"docker", "run", "-i", "{{.Name}}"}, argv[1:]...))
 }
 

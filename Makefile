@@ -8,8 +8,8 @@ install: build
 test: build
 	/Users/ryan/Code/msh/out/msh dockerfile /Users/ryan/Code/msh/config/echo.msh
 
-echo: build
-	./config/echo.msh
+echo: install
+	DEBUG=true ./config/echo.msh hello world
 
-cat: build
-	./config/echo.msh
+cat: install
+	DEBUG=true ./config/cat.msh
