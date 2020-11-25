@@ -22,5 +22,5 @@ swf/iam: build
 	PATH="${PWD}/out:${PATH}" DEBUG=true ./config/swf/hello_world/iam.yaml
 
 swf/states: build
-	PATH="${PWD}/out:${PATH}" DEBUG=true ./config/swf/hello_world/states.yaml
+	PATH="${PWD}/out:${PATH}" DEBUG=true ./config/swf/hello_world/states.json
 

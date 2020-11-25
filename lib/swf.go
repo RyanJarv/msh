@@ -27,8 +27,8 @@ func Swf(argv []string) (err error) {
 	ctx := context.Background()
 	machine, err := client.CreateStateMachine(ctx, &sfn.CreateStateMachineInput{
 		Definition: aws.String(json),
-		Name:       aws.String(path),
-		RoleArn:    aws.String("arn:aws:sfn::253528964770:role/service-role/StepFunctions-helloWorld-role-f149ca21"), //TODO: unhardcode this
+		Name:       aws.String(CleanName(path)),
+		RoleArn:    aws.String("arn:aws:iam::253528964770:role/config-swf-hello-world-iam-StatesRole-28JGD3HEQ0Q5"), //TODO: unhardcode this
 		LoggingConfiguration: &types.LoggingConfiguration{
 			Destinations: []*types.LogDestination{
 				{

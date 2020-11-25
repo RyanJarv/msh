@@ -41,10 +41,12 @@ func run() error {
 		err = lib.Dockerfile(args.Args()[1:])
 	case "ecs":
 		err = lib.Ecs(args.Args()[1:])
-	case "sfn":
+	case "swf":
 		err = lib.Swf(args.Args()[1:])
 	case "cfn":
 		err = lib.Cfn(args.Args()[1:])
+	case "init":
+		err = lib.Init(args.Args()[1:])
 	case "":
 		args.Usage()
 		err = errors.New("Must specify subcommand")

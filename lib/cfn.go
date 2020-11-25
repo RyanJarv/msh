@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 )
 
 func Cfn(argv []string) (err error) {
@@ -33,24 +32,41 @@ func Cfn(argv []string) (err error) {
 	}
 
 	ctx := context.Background()
-	if role, err := client.CreateStack(ctx, &cloudformation.CreateStackInput{
-		StackName:        aws.String(strings.Split(strings.ReplaceAll(path, "/", "-"), ".")[0]),
+
+	name := CleanName(path)
+
+	stackInput := &cloudformation.CreateStackInput{
+		StackName:        aws.String(name),
 		Capabilities:     []types.Capability{types.CapabilityCapabilityIam},
 		OnFailure:        types.OnFailureRollback,
 		TemplateBody:     aws.String(yaml),
 		TimeoutInMinutes: aws.Int32(1),
-	}); err != nil {
+	}
+	L.Debug.Printf("StackName: %v", *stackInput.StackName)
+	var StackId *string
+	if out, err := client.CreateStack(ctx, stackInput); err != nil {
 		return err
 	} else {
-		L.Debug.Printf("Created role: %v", role)
+		L.Debug.Printf("Created role: %v", out)
+		StackId = out.StackId
+		L.Debug.Printf("StackId: %v", *StackId)
 	}
+
+	//var vars map[string]string
+	//exports, err := client.ListExports(ctx, &cloudformation.ListExportsInput{})
+	//for _, export := range exports.Exports {
+	//	vars[*export.Name] = *export.Value
+	//}
+	//
+	//todo return vars
+	//
 	return err
 }
 
 func CfnLint(path string) error {
 	var cmd *exec.Cmd
 
-	if abs, err := filepath.Abs("./config/cfn-lint"); err != nil {
+	if abs, err := filepath.Abs("./config/cmds/cfn-lint"); err != nil {
 		return err
 	} else {
 		cmd = exec.Command(abs, path)
