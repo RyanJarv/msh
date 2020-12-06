@@ -1,5 +1,5 @@
 build:
-	go build -o out/msh cmd/main.go
+	go build -o out/msh main.go
 
 install: build
 	cp out/msh /usr/local/bin/msh

@@ -30,14 +30,14 @@ func Swf(argv []string) (err error) {
 		Name:       aws.String(CleanName(path)),
 		RoleArn:    aws.String("arn:aws:iam::253528964770:role/config-swf-hello-world-iam-StatesRole-28JGD3HEQ0Q5"), //TODO: unhardcode this
 		LoggingConfiguration: &types.LoggingConfiguration{
-			Destinations: []*types.LogDestination{
+			Destinations: []types.LogDestination{
 				{
 					CloudWatchLogsLogGroup: &types.CloudWatchLogsLogGroup{
 						LogGroupArn: aws.String("arn:aws:logs:us-east-2:253528964770:log-group:/aws/vendedlogs/states/Helloworld-Logs:*"), //TODO: unhardcode
 					},
 				},
 			},
-			IncludeExecutionData: aws.Bool(true),
+			IncludeExecutionData: true,
 			Level:                "ALL",
 		},
 		Tags:                 nil,

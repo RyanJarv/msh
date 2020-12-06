@@ -9,6 +9,9 @@ import (
 	"os"
 )
 
+//go:generate go run script/templates.go
+
+
 type stackTracer interface {
 	StackTrace() errors.StackTrace
 }
@@ -35,6 +38,8 @@ func run() error {
 
 	var err error
 	switch cmd := args.Args()[0]; cmd {
+	case "lambda":
+		err = lib.Lambda(args.Args()[1:])
 	case "compose":
 		err = lib.Compose(args.Args()[1:])
 	case "dockerfile":
