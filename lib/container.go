@@ -19,17 +19,18 @@ type ExecParams struct {
 	Name       string
 }
 
+//TODO: Look into using a
 func Exec(path string, args []string) error {
 	L.Debug.Printf("Running Exec with path '%s' and args '%v'\n", path, args)
 
-	path, err := filepath.Abs(path)
+	absPath, err := filepath.Abs(path)
 	if err != nil {
 		return err
 	}
 
 	params := ExecParams{
-		Path: path,
-		Name: filepath.Base(path),
+		Path: absPath,
+		Name: filepath.Base(absPath),
 	}
 
 	if tmpDir, err := ioutil.TempDir(os.TempDir(), "msh"); err != nil {
@@ -46,11 +47,12 @@ func Exec(path string, args []string) error {
 	var fmtArgs []string
 	for _, arg := range args {
 		tmpl, err := template.New("path").Parse(arg)
-		if err != nil { return err }
+		if err != nil {
+			return err
+		}
 
 		w := bytes.NewBuffer([]byte{})
-		err = tmpl.Execute(w, params)
-		if err != nil {
+		if err := tmpl.Execute(w, params); err != nil {
 			return err
 		}
 
@@ -59,8 +61,22 @@ func Exec(path string, args []string) error {
 
 	L.Debug.Printf("Running: %v", fmtArgs)
 	cmd := exec.Command(fmtArgs[0], fmtArgs[1:]...)
-
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+	cmd.Env = append(cmd.Env, os.Environ()...)
+
+	// We look for the app arg separator and start adding shell style environment
+	// variables to make available to the compose file.
+	subCmdArgs := *InSliceStr(args, "--")
+	for i, arg := range args[subCmdArgs:] {
+		cmd.Env = append(cmd.Env, fmt.Sprintf("ARG_%d=%s", i, arg))
+	}
+
+	//subCmdArgsStr, err := json.Marshal(subCmdArgs)
+	//if err != nil {
+	//	return err
+	//}
+	//docker.Env = append(docker.Env, fmt.Sprintf("CMD_LIST=%s", subCmdArgsStr))
+
 	log.Printf("Running command and waiting for it to finish...")
 	if err := cmd.Run(); err != nil {
 		return err
@@ -72,7 +88,7 @@ func Exec(path string, args []string) error {
 func Dockerfile(argv []string) error {
 	path := argv[0]
 
-	if os.Getenv("MSH_CONTEXT") == "ecs" {
+	if os.Getenv("MSH_CONTEXT_TRIGGER_DEPLOY") == "true" {
 		return Exec(path, []string{
 			"copilot", "task", "run",
 			"--default",
@@ -81,26 +97,16 @@ func Dockerfile(argv []string) error {
 			fmt.Sprintf(`--command='%s'`, strings.Join(argv[1:], " ")),
 		})
 	} else {
-		err := Exec(path, []string{ "docker", "build", "-t", "{{.Name}}", "-f", "{{.Path}}", "{{.ContextDir}}"})
+		err := Exec(path, []string{ "docker", "build", "-t", "{{.name}}", "-f", "{{.Path}}", "{{.ContextDir}}"})
 		if err != nil {
 			return err
 		}
-		return Exec(path, append([]string{"docker", "run", "-i", "{{.Name}}"}, argv[1:]...))
+		return Exec(path, append([]string{"docker", "run", "-i", "{{.name}}", "--"}, argv[1:]...))
 	}
 }
 
 func Compose(argv []string) error {
-	path := argv[0]
-	return Exec(path, append([]string{"docker-compose", "-f", "{{.Path}}", "run", "app"}, argv[1:]...))
+	cmdStr := append([]string{"docker-compose", "-f", "{{.Path}}", "run", "app", "--"}, argv[1:]...)
+	return Exec(argv[0], cmdStr)
 }
 
-// Ecs sets MSH_CONTEXT=ecs and executes the rest of the args. This typically will be a path to a msh docker config so
-// this variable get's checked in Dockerfile.
-func Ecs(argv []string) error {
-	os.Setenv("MSH_CONTEXT", "ecs")
-
-	cmd := exec.Command(argv[0], argv[1:]...)
-	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-	log.Printf("Running command and waiting for it to finish...")
-	return cmd.Run()
-}

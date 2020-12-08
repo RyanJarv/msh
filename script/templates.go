@@ -41,9 +41,10 @@ func main() {
 				panic(err)
 			}
 
-			WriteTo(out,"`)\n")
+			WriteTo(out,"`\n")
 		}
 	}
+	WriteTo(out,")\n")
 }
 
 func WriteTo(out *os.File, s string) {

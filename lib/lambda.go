@@ -1,60 +1,175 @@
 package lib
 
 import (
-	"bufio"
-	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/ecr"
+	ecrTypes "github.com/aws/aws-sdk-go-v2/service/ecr/types"
+	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
+	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/go-connections/nat"
 	"github.com/pkg/errors"
 	"github.com/ryanjarv/msh/gen"
+	L "github.com/ryanjarv/msh/logger"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
 )
 
-const LambdaRiePort = nat.Port("8080/tcp")
+const (
+	LambdaRiePort   = nat.Port("8080/tcp")
+	LocalMaxRuntime = time.Second * 300
+)
 
-func Lambda(argv []string) (err error) {
-	runtime := argv[0]
 
-	var cmd LambdaExec
-	switch runtime {
+type Lambda struct {
+	Parser
+
+	runtime     string
+	client      *lambda.Client
+	ecrClient   *ecr.Client
+	docker      LambdaExec
+	dockerLogin registry.AuthenticateOKBody
+}
+
+func NewLambda(cfg Parser) Runnable {
+	l := &Lambda{
+		Parser:    cfg,
+		runtime:   cfg.Args[0],
+		client:    lambda.NewFromConfig(cfg.Aws.Config),
+		ecrClient: ecr.NewFromConfig(cfg.Aws.Config),
+	}
+	l.Path = cfg.Args[1]
+	return l
+}
+
+func (l Lambda) Run() (err error) {
+	switch l.runtime {
 	case "ruby":
-		cmd = LambdaRuby(argv[1:])
+		l.docker = LambdaRuby(l.Path, l.Project)
 	default:
-		panic(errors.New("lambda runtime not supported: " + runtime))
+		panic(errors.New("lambda runtime not supported: " + l.runtime))
 	}
 
+	if os.Getenv("MSH_CONTEXT_TRIGGER_DEPLOY") == "true" {
+		l.Deploy(l.docker)
+	} else {
+		l.Local(l.docker)
+	}
+	return
+}
+
+func (l Lambda) Local(cmd LambdaExec) {
 	cmd.ContainerStart()
 
 	cmd.StdinToHttp(url.URL{
 		Scheme: "http",
-		Host: fmt.Sprintf("127.0.0.1:%s", cmd.PortBinding.HostPort),
+		Host: 	fmt.Sprintf("127.0.0.1:%s", cmd.PortBinding.HostPort),
 		Path:   "/2015-03-31/functions/function/invocations",
 	})
 
 	go cmd.ContainerLogs()
 	go func() {
-		time.Sleep(time.Second * 300)
+		time.Sleep(LocalMaxRuntime)
 		cmd.ContainerStop()
 	}()
 	cmd.ContainerWait()
-
-	return err
 }
 
-func LambdaRuby(argv []string) LambdaExec {
-	path := argv[0]
+func (l Lambda) Deploy(cmd LambdaExec) {
+	host := fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", *l.Aws.Identity.Account, l.Aws.Config.Region)
+	repoPath := path.Join("msh", l.Project)
+	l.docker.remoteUri = fmt.Sprintf("%s:%s", path.Join(host, repoPath), l.docker.localTag)
 
+	l.createRepo(repoPath)
+
+	if err := l.docker.cli.ImageTag(l.Context, l.docker.localTag, l.docker.remoteUri); err != nil {
+		panic(err)
+	}
+
+	l.pushImage()
+
+	g := gen.SAM
+
+	cfn := NewCfn(Parser{
+		Content: g,
+		Context: l.Context,
+		Global:  l.Global,
+	})
+	cfn.Parse(map[string]string{
+		"ImageUri": l.docker.remoteUri,
+		"FunctionName": strings.ToTitle(strings.TrimSuffix(filepath.Base(l.Path), ".rb")),
+	})
+
+	err := cfn.Run()
+	if err != nil {
+		panic(err)
+	}
+
+	var endpoint string
+	for _, v := range cfn.(*Cfn).StackOutputs {
+		fmt.Println(v.ExportName)
+		if *v.OutputKey == "APPApi" {
+			endpoint = *v.OutputValue
+		}
+	}
+	parse, err := url.Parse(endpoint)
+	if err != nil {
+		panic(err)
+	}
+
+	cmd.StdinToHttp(*parse)
+	time.Sleep(time.Hour * 100) // FIXME: asdf
+}
+
+func (l Lambda) createRepo(repoPath string) {
+	_, err := l.ecrClient.CreateRepository(l.Context, &ecr.CreateRepositoryInput{RepositoryName: aws.String(repoPath)})
+	var exists *ecrTypes.RepositoryAlreadyExistsException
+	if err != nil && !errors.As(err, &exists) {
+		panic(err)
+	}
+
+}
+
+func (l Lambda) pushImage() {
+	token, err := l.ecrClient.GetAuthorizationToken(l.Context, &ecr.GetAuthorizationTokenInput{})
+	if err != nil {
+		panic(err)
+	}
+
+	// SDK seems to encode it in the wrong format so, decode and reencode
+	auth := types.AuthConfig{
+		Username: "AWS",
+	} // UserName is always AWS
+	if s, err := base64.StdEncoding.DecodeString(*token.AuthorizationData[0].AuthorizationToken); err != nil {
+		panic(err)
+	} else {
+		auth.Password = strings.Split(string(s), ":")[1] // user:pass
+	}
+	encodedJSON, err := json.Marshal(auth)
+	if err != nil {
+		panic(err)
+	}
+
+	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
+	push, err := l.docker.cli.ImagePush(l.Context, l.docker.remoteUri, types.ImagePushOptions{RegistryAuth: authStr})
+	if err != nil {
+		panic(err)
+	}
+	defer push.Close()
+
+	_, err = io.Copy(L.Debug.Writer(), push)
+}
+
+func LambdaRuby(path, name string) LambdaExec {
 	script, err := ioutil.ReadFile(path)
 	if err != nil {
 		panic(err)
@@ -69,154 +184,5 @@ func LambdaRuby(argv []string) LambdaExec {
 	lambda.BuildContainer(tarGz)
 
 	return lambda
-}
-
-func NewLambdaExec(imageName string) LambdaExec {
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		panic(err)
-	}
-	return LambdaExec{
-		ctx: context.Background(),
-		cli: cli,
-		ImageName: imageName,
-	}
-}
-
-type LambdaExec struct {
-	Cmd           *exec.Cmd
-	cli           *client.Client
-	ctx           context.Context
-	ID            string
-	PortBinding   nat.PortBinding
-	ImageName     string
-	ContainerName string
-}
-
-func (l LambdaExec) StdinToHttp(url url.URL) {
-	go func() {
-		input := bufio.NewScanner(os.Stdin)
-		client := http.DefaultClient
-		for input.Scan() {
-			t := input.Text()
-			post, err := client.Post(url.String(), "application/json", strings.NewReader(t))
-			if err != nil {
-				panic(err)
-			}
-			io.Copy(os.Stderr, post.Body)
-		}
-		if err := input.Err(); err != nil {
-			panic(err)
-		}
-	}()
-	return
-}
-
-func (l LambdaExec) BuildContainer(buildContext io.Reader) {
-	build, err := l.cli.ImageBuild(l.ctx, buildContext, types.ImageBuildOptions{
-		Tags: []string{l.ImageName},
-		Dockerfile: "Dockerfile",
-		PullParent: true,
-		SuppressOutput: true,
-	})
-	if err != nil {
-		panic(err)
-	}
-	defer build.Body.Close()
-	io.Copy(os.Stderr, build.Body)
-}
-
-func (l LambdaExec) ImageLoad(err error, build types.ImageBuildResponse) []byte {
-	load, err := l.cli.ImageLoad(l.ctx, build.Body, false)
-	defer load.Body.Close()
-
-	all, err := ioutil.ReadAll(load.Body)
-	if err != nil {
-		panic(err)
-	}
-	return all
-}
-
-// ContainerLogs attaches to the container, if logs is set it will display logs since the beginning of execution.
-func (l *LambdaExec) ContainerLogs() {
-	attach, err := l.cli.ContainerLogs(l.ctx, l.ID, types.ContainerLogsOptions{
-		ShowStdout: true,
-		ShowStderr: true,
-		Follow:     true,
-	})
-	if err != nil {
-		panic(err)
-	}
-	io.Copy(os.Stderr, attach)
-}
-
-func (l LambdaExec) ContainerStop() {
-	l.cli.ContainerStop(l.ctx, l.ID, nil)
-	if err := l.cli.ContainerRemove(l.ctx, l.ID, types.ContainerRemoveOptions{}); err != nil {
-		fmt.Printf("[ERROR] unable to remove container %s\n", l.ID)
-	}
-}
-
-func (l LambdaExec) ContainerWait() {
-	statusCh, errCh := l.cli.ContainerWait(l.ctx, l.ID, container.WaitConditionNotRunning)
-	select {
-	case err := <-errCh:
-		if err != nil {
-			panic(err)
-		}
-	case <-statusCh:
-	}
-}
-
-func (l *LambdaExec) ContainerStart() {
-	if resp, err := l.containerCreate(); err != nil {
-		panic(err)
-	} else {
-		l.ID = resp.ID
-
-		for _, warn := range resp.Warnings {
-			fmt.Fprint(os.Stderr, warn)
-		}
-	}
-
-	if err := l.cli.ContainerStart(l.ctx, l.ID, types.ContainerStartOptions{}); err != nil {
-		panic(err)
-	}
-
-	if inspect, err := l.cli.ContainerInspect(l.ctx, l.ID); err != nil {
-		panic(err)
-	} else {
-		l.PortBinding = inspect.NetworkSettings.NetworkSettingsBase.Ports[LambdaRiePort][0]
-		l.ContainerName = inspect.Name
-	}
-}
-
-func (l *LambdaExec) containerCreate() (container.ContainerCreateCreatedBody, error) {
-	resp, err := l.cli.ContainerCreate(l.ctx, &container.Config{
-		Image: l.ImageName,
-		Tty:   false,
-		ExposedPorts: nat.PortSet{
-			"8080/tcp": {},
-		},
-	}, &container.HostConfig{
-		PortBindings: map[nat.Port][]nat.PortBinding{
-			"8080/tcp": {
-				{
-					HostIP:   "127.0.0.1",
-					HostPort: "0", // Picks a random port
-				},
-			},
-		},
-	}, nil, nil, "")
-	if err != nil {
-		panic(errors.Wrap(err, "starting container"))
-	}
-
-	return resp, err
-}
-
-
-type TarFiles []struct {
-	Name, Body string
 }
 
