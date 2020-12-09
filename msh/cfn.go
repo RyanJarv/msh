@@ -1,4 +1,4 @@
-package lib
+package msh
 
 import (
 	"bytes"
@@ -8,12 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/cloudformation/types"
 	"github.com/pkg/errors"
 	L "github.com/ryanjarv/msh/logger"
-	"io"
 	"io/ioutil"
-	"log"
-	"os"
-	"os/exec"
-	"path/filepath"
 	"text/template"
 	"time"
 )
@@ -33,7 +28,7 @@ type Cfn struct {
 	stack          types.Stack
 }
 
-//
+//TODO: Add cfn-linting
 func NewCfn(cfg Parser) RunTemplate {
 	cfg.Aws.Identity = AwsIdentityTmpl(cfg)
 	if cfg.Path != "" {
@@ -45,20 +40,6 @@ func NewCfn(cfg Parser) RunTemplate {
 		client: cloudformation.NewFromConfig(cfg.Aws.Config),
 	}
 }
-
-//func (c *Cfn) Parse() Runnable {
-//	if str, err := ReadConfig(c.Path); err == nil {
-//		c.template, err = template.New("cfn").Parse(str)
-//	} else if err != nil {
-//		panic(err)
-//	}
-//	return c.Parser
-//}
-//
-// TODO: After template creation
-//if err := CfnLint(path); err != nil {
-//	return err
-//}
 
 func (c *Cfn) Parse(data map[string]string) {
 	var err error
@@ -88,7 +69,7 @@ func (c *Cfn) Run() error {
 	}
 	L.Debug.Println("\n" + *c.parsedTemplate)
 
-	// Doesn't support docker lambda currently
+	// Doesn't support lib lambda currently
 	//err := CfnLint(strings.NewReader(*c.parsedTemplate))
 	//if err != nil {
 	//	return err
@@ -188,17 +169,3 @@ func printStackStatus(stack types.Stack) {
 		L.Debug.Printf("%s: %s", *stack.StackName, stack.StackStatus)
 	}
 }
-
-func CfnLint(in io.Reader) error {
-	var cmd *exec.Cmd
-	if abs, err := filepath.Abs("/Users/jarv/Code/msh-repo/conf/cfn-lint/cfn-lint"); err != nil {
-		return err
-	} else {
-		cmd = exec.Command(abs, "-")
-	}
-	cmd.Stdin = in
-	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
-	log.Printf("Running command and waiting for it to finish...")
-	return cmd.Run()
-}
-

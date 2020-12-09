@@ -1,4 +1,4 @@
-package lib
+package msh
 
 import (
 	"log"
@@ -6,7 +6,7 @@ import (
 	"os/exec"
 )
 
-// Deploy sets MSH_CONTEXT_TRIGGER_DEPLOY=true and executes the rest of the args. This typically will be a path to a msh docker config so
+// Deploy sets MSH_CONTEXT_TRIGGER_DEPLOY=true and executes the rest of the args. This typically will be a path to a msh lib config so
 // this variable get's checked in Dockerfile.
 func Deploy(argv []string) error {
 	cmd := exec.Command(argv[0], argv[1:]...)

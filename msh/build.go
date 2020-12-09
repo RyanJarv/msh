@@ -1,4 +1,4 @@
-package lib
+package msh
 
 import (
 	"encoding/json"

@@ -1,4 +1,4 @@
-package lib
+package msh
 
 import (
 	"bytes"
@@ -19,7 +19,6 @@ type ExecParams struct {
 	Name       string
 }
 
-//TODO: Look into using a
 func Exec(path string, args []string) error {
 	L.Debug.Printf("Running Exec with path '%s' and args '%v'\n", path, args)
 
@@ -71,12 +70,6 @@ func Exec(path string, args []string) error {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("ARG_%d=%s", i, arg))
 	}
 
-	//subCmdArgsStr, err := json.Marshal(subCmdArgs)
-	//if err != nil {
-	//	return err
-	//}
-	//docker.Env = append(docker.Env, fmt.Sprintf("CMD_LIST=%s", subCmdArgsStr))
-
 	log.Printf("Running command and waiting for it to finish...")
 	if err := cmd.Run(); err != nil {
 		return err
@@ -97,16 +90,15 @@ func Dockerfile(argv []string) error {
 			fmt.Sprintf(`--command='%s'`, strings.Join(argv[1:], " ")),
 		})
 	} else {
-		err := Exec(path, []string{ "docker", "build", "-t", "{{.name}}", "-f", "{{.Path}}", "{{.ContextDir}}"})
+		err := Exec(path, []string{ "lib", "build", "-t", "{{.name}}", "-f", "{{.Path}}", "{{.ContextDir}}"})
 		if err != nil {
 			return err
 		}
-		return Exec(path, append([]string{"docker", "run", "-i", "{{.name}}", "--"}, argv[1:]...))
+		return Exec(path, append([]string{"lib", "run", "-i", "{{.name}}", "--"}, argv[1:]...))
 	}
 }
 
 func Compose(argv []string) error {
-	cmdStr := append([]string{"docker-compose", "-f", "{{.Path}}", "run", "app", "--"}, argv[1:]...)
+	cmdStr := append([]string{"lib-compose", "-f", "{{.Path}}", "run", "app", "--"}, argv[1:]...)
 	return Exec(argv[0], cmdStr)
 }
-

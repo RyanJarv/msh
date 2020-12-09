@@ -1,4 +1,4 @@
-package lib
+package msh
 
 import (
 	"archive/tar"
@@ -9,25 +9,14 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/awslabs/smithy-go/middleware"
 	"github.com/pkg/errors"
-	"github.com/spf13/afero"
+	//"github.com/spf13/afero"
 	"io"
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
-	"time"
 )
-
-// NewCow returns a copy on write filesystem so we can transform files without having to manage temporary directories
-func NewCow() afero.Fs {
-	base := afero.NewOsFs()
-	roBase := afero.NewReadOnlyFs(base)
-	return afero.NewCopyOnWriteFs(roBase, afero.NewMemMapFs())
-}
-
 
 // InSliceStr will return the index of str in slice if it exists, otherwise it will return nil
 func InSliceStr(slice []string, str string) *int {
@@ -73,12 +62,6 @@ func CleanName(path string) (s string) {
 	return s
 }
 
-func GetRandStr() string {
-	rand.Seed(time.Now().UnixNano())
-	tag := strconv.Itoa(rand.Int())
-	return tag
-}
-
 type TarFiles []struct {
 	Name, Body string
 }
@@ -117,7 +100,7 @@ func MakeTarGz(files *TarFiles) io.Reader {
 	return gzipOut
 }
 
-func AwsIdentity(cfg Parser) (*sts.GetCallerIdentityOutput) {
+func AwsIdentity(cfg Parser) *sts.GetCallerIdentityOutput {
 	stsClient := sts.NewFromConfig(cfg.Aws.Config)
 	identity, err := stsClient.GetCallerIdentity(cfg.Context, &sts.GetCallerIdentityInput{})
 	if err != nil {
@@ -134,7 +117,7 @@ func AwsIdentityTmpl(cfg Parser) sts.GetCallerIdentityOutput {
 
 
 type Aws struct {
-	Config   aws.Config
+	Config   aws.Config `json:"-"`
 	Identity sts.GetCallerIdentityOutput
 }
 
@@ -153,7 +136,7 @@ type Parser struct {
 
 	context.Context `json:"-"`
 	Global
-	Runnable
+	Runnable 		`json:"-"`
 }
 
 type RunTemplate interface {

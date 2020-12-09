@@ -6,8 +6,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/pkg/errors"
-	"github.com/ryanjarv/msh/lib"
 	L "github.com/ryanjarv/msh/logger"
+	"github.com/ryanjarv/msh/msh"
 	"log"
 	"os"
 )
@@ -16,7 +16,7 @@ import (
 
 func main() {
 	if err := run(); err != nil {
-		if err, ok := err.(lib.StackTracer); ok {
+		if err, ok := err.(msh.StackTracer); ok {
 			for _, f := range err.StackTrace() {
 				L.Error.Printf("%+s:%d\n", f, f)
 			}
@@ -43,22 +43,20 @@ func run() (err error) {
 	// 		}
 	// }
 	//case "build":
-	//	err = lib.Build(args.Args())
+	//	err = msh.Build(args.Args())
 	case "lambda":
-		err = lib.NewLambda(cfg).Run()
-		//err = lib.NewCfn(cfg).Parse().Run()
+		err = msh.NewLambda(cfg).Run()
+		//err = msh.NewCfn(cfg).Parse().Run()
 	case "compose":
-		err = lib.Compose(args.Args()[1:])
+		err = msh.Compose(args.Args()[1:])
 	case "dockerfile":
-		err = lib.Dockerfile(args.Args()[1:])
+		err = msh.Dockerfile(args.Args()[1:])
 	case "deploy":
-		err = lib.Deploy(args.Args()[1:])
-	case "swf":
-		err = lib.Swf(args.Args()[1:])
+		err = msh.Deploy(args.Args()[1:])
 	case "cfn":
-		err = lib.NewCfn(cfg).Run()
+		err = msh.NewCfn(cfg).Run()
 	//case "init":
-	//	err = lib.Init(args.Args()[1:])
+	//	err = msh.Init(args.Args()[1:])
 	case "":
 		args.Usage()
 		err = errors.New("Must specify subcommand")
@@ -68,11 +66,11 @@ func run() (err error) {
 	return err
 }
 
-func NewConfig() lib.Parser {
-	cfg := lib.Parser{
+func NewConfig() msh.Parser {
+	cfg := msh.Parser{
 		Context: context.Background(),
 		Args:    args.Args()[1:],
-		Global: lib.Global{
+		Global: msh.Global{
 			Project: "msh-default",
 		},
 	}
