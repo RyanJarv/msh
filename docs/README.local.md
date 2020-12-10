@@ -57,11 +57,13 @@ ProjectName % { while :; do sleep 1; echo "hello"; } |              ./app       
                                                      | init then lines to json  | deploy if needed then json to http then destroy on EOF
 ```
 
-Unfinished but demonstrate remote to remote and remote to local.
+Unfinished, but demonstrate remote to remote and remote.
 ```bash
                     msh remote ./app                             |                                msh remote ./app  
 deploy if needed then stdin lines to http then destroy stdin EOF |   reads config from stdin, ARN's of app and SQS output queue to configure this app
 ```
+
+A msh subcommand could then be appended to stream stdout back to local applications.
 
 ## Local Invocation Example
 ```bash
