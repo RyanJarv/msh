@@ -113,7 +113,7 @@ services:
 
 #### Local Lambda Compose
 
-I'm re-thinking how lambda support for this works at the moment but you can find an example of running lambda locally in ./test/compose/lambda.
+I'm re-thinking how lambda support for this works at the moment but you can find an example of running lambda locally in [./test/compose/lambda](./test/compose/lambda).
 
 Start the lambda container
 ```
