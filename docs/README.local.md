@@ -32,13 +32,9 @@ echo hello | msh aws -- ./app.rb
 msh aws -- ./app1.rb | msh aws -- ./app.rb
     * msh for app1 detects stdout is not the terminal
         * local pipe contains structured info with stdout info
-
-
-
-        * lines to lambda calls
-    
+        * lines to lambda calls 
         * client invocation with APIGateway context (doesn't actually use api gateway, just context structure passed)
-        * StdoutURI set to APIGateway 
+          * Allows easy integration with APIGateway later if needed.
         * Current ARN passed to next command for IAM permissions if needed
 lambda stdout to lambda: client invocation with http context
     same
