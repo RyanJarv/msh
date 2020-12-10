@@ -5,6 +5,13 @@ it's really just for experimentation at the moment.
 
 See the [v1 branch](https://github.com/RyanJarv/msh/tree/v1) for a list of (likely incoherent) notes related to this.
 
+### Setup
+```
+git clone https://github.com/RyanJarv/msh.git
+cd msh
+make install
+```
+
 ### Dockerfile Examples
 
 We will always assume the context directory is where the Dockerfile is stored. Use the docker-compose support if you 
@@ -88,3 +95,36 @@ What's cool here is the shebang line is just a comment to docker, so you can tre
  => => writing image sha256:595b26ac4285e518a9794f0f8287d6a3fb2df9dfeb636d11a9ca5fd8070424b4                                                                                                             0.0s
  => => naming to docker.io/library/test
 ```
+
+### docker-compose
+
+#### Local
+
+docker-compose works similarly but when executed behaves as if "docker-compose run --service-ports app" was run against it.
+
+```yaml
+#!/usr/bin/env msh compose
+version: "3.8"
+services:
+  app:
+    image: alpine:3
+    entrypoint: echo
+```
+
+#### Local Lambda Compose
+
+I'm re-thinking how lambda support for this works at the moment but you can find an example of running lambda locally in ./test/compose/lambda.
+
+Start the lambda container
+```
+./test/compose/lambda/compose.yaml app.lambda_handler 
+```
+
+In another shell trigger an invocation
+```
+curl  -XPOST 'http://localhost:9000/2015-03-31/functions/function/invocations' -d '{}'
+```
+
+Note: The test app is set up to exit after one run so that it can be tested with `make compose/lambda`
+
+
