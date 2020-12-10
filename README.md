@@ -6,6 +6,7 @@ Please don't actually use this repo for anything important right now, this is re
 
 Here's a list of unorganized (possibly incoherent) thoughts related to this project:
  * [State machine shell blog post](https://blog.ryanjarv.sh/2020/11/22/msh.html) (higher level, random thoughts)
+  * Make sure to also read my [newer notes](./docs/README.local.md#event-machine) on this. 
  * [Remote Pipelining](./docs/README.local.md) (incomplete)
  * [Previous project](https://github.com/RyanJarv/coderun) (old and too complex, but somewhat similar subset of goals)
 
