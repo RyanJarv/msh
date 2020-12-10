@@ -18,7 +18,7 @@ This may be necessary for naming of resources that aren't destroyed on every run
 
 ## No Project Setup
 
-If we can get resource creation/deletion optimized enough, though single scripts with no libraries, lambda, etc. We might be able to get away with anonymous resources created and destroyed on run/shutdown.
+If we can get resource creation/deletion optimized enough, though single scripts with no libraries, lambda, etc. We might be able to get away with anonymous resources created and destroyed on run/shutdown. As a protection against SIGKILL we might be able to create some sort of self destruction mechanisim through a global one time setup.
 
 ## Config Pipeline for remote pipelining
 
