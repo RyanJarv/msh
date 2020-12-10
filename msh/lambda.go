@@ -5,6 +5,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ecr"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/docker/docker/api/types/registry"
+	"github.com/docker/go-connections/nat"
 	"github.com/pkg/errors"
 	"github.com/ryanjarv/msh/gen"
 	"io/ioutil"
@@ -17,7 +18,7 @@ import (
 )
 
 const (
-	//LambdaRiePort   = nat.Port("8080/tcp")
+	LambdaRiePort   = nat.Port("8080/tcp")
 	LocalMaxRuntime = time.Second * 300
 )
 
@@ -59,10 +60,9 @@ func (l Lambda) Run() (err error) {
 
 func (l Lambda) Local() {
 	l.Start()
-
 	l.StdinToHttp(url.URL{
 		Scheme: "http",
-		Host: 	fmt.Sprintf("127.0.0.1:%s", l.PortBinding),
+		Host: 	fmt.Sprintf("127.0.0.1:%s", l.Inspect.NetworkSettings.Ports[LambdaRiePort][0].HostPort),
 		Path:   "/2015-03-31/functions/function/invocations",
 	})
 
@@ -75,7 +75,7 @@ func (l Lambda) Local() {
 	l.Wait()
 }
 
-func (l Lambda) Deploy() {
+func (l *Lambda) Deploy() {
 	host := fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", *l.Aws.Identity.Account, l.Aws.Config.Region)
 	repoPath := path.Join("msh", l.Project)
 	l.remoteUri = fmt.Sprintf("%s:%s", path.Join(host, repoPath), l.Tag)

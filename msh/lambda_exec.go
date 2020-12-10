@@ -51,8 +51,8 @@ func (l LambdaExec) StdinToHttp(url url.URL) {
 
 func (l *LambdaExec) Start() {
 	l.Container.Start(
-		nat.PortSet{ "8080/tcp": {} },
-		map[nat.Port][]nat.PortBinding{ "8080/tcp": {
+		nat.PortSet{ LambdaRiePort: {} },
+		map[nat.Port][]nat.PortBinding{ LambdaRiePort: {
 			{
 				HostIP:   "127.0.0.1",
 				HostPort: "0", // Picks a random port
