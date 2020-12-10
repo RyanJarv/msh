@@ -80,7 +80,8 @@ Task has stopped.
 
 What's kinda cool here is the shebang line is just a comment to docker, so you can treat it like a normal Dockerfile.
 
-docker build -t test -f test/echo.msh test
+```
+% docker build -t test -f test/echo.msh test
 [+] Building 0.1s (5/5) FINISHED                                                                                                                                                                              
  => [internal] load build definition from Dockerfile                                                                                                                                                     0.0s
  => => transferring dockerfile: 108B                                                                                                                                                                     0.0s
@@ -92,3 +93,4 @@ docker build -t test -f test/echo.msh test
  => => exporting layers                                                                                                                                                                                  0.0s
  => => writing image sha256:595b26ac4285e518a9794f0f8287d6a3fb2df9dfeb636d11a9ca5fd8070424b4                                                                                                             0.0s
  => => naming to docker.io/library/test
+```
