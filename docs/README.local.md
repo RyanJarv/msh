@@ -1,4 +1,6 @@
-# Some Ideas
+# Random Ideas
+
+Really I think this is all a distraction for now, and unsure if it even makes sense. Just consider it a collection of random thoughts.
 
 ## Invocation Example
 ```bash
@@ -77,8 +79,4 @@ deploy if needed then stdin lines to http then destroy stdin EOF |
 
 ## Event Machine
 
-The above idea's could be used for quick iteration of ideas while something like what I describe [here](https://github.com/RyanJarv/coderun#update-1142020) could be used for long running data processing. I typed up a simple and incomplete spec for how this would work but unsure where this went.
-
-Later I made some notes on how this can be done without writing a shell but again, not sure where those notes went.. will add them if I find them.
-
-Really I think this is all a distraction for now, but keeping it here so I don't keep loosing stuff in case it end's up making sense.
+The above idea's could be used for quick iteration of ideas while something like what I describe [here](https://github.com/RyanJarv/coderun#update-1142020) could be used for long running data processing. I typed up a simple and incomplete spec for how shell to state machine compiling could work but unsure where this went, will add it if I find it.
