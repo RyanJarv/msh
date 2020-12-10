@@ -2,7 +2,10 @@
 
 Really I think this is all a distraction for now, and unsure if it even makes sense. Just consider it a collection of random thoughts.
 
-## Invocation Example
+## Project Setup
+
+This may be necessary for naming of resources that aren't destroyed on every run, so if we involve resources that take a while to create.
+
 ```bash
 % msh new ProjectName
 [ProjectName] % ./app.rb
@@ -12,6 +15,10 @@ Really I think this is all a distraction for now, and unsure if it even makes se
 [ProjectName] % exit
 % exit
 ```
+
+## No Project Setup
+
+If we can get resource creation/deletion optimized enough, though single scripts with no libraries, lambda, etc. We might be able to get away with anonymous resources created and destroyed on run/shutdown.
 
 ## Config Pipeline for remote pipelining
 
