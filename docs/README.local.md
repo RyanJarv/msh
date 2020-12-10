@@ -41,7 +41,7 @@ lambda stdout to lambda: client invocation with http context
 ```
     
 
-Taking lines of input from external tools we convert it to the internal format. A nil value indicates EOF.
+Taking lines of input from external tools we can convert it to the internal format. A nil value indicates EOF.
 ```go
 stdout := Line{
     Config: &Config{
@@ -51,13 +51,13 @@ stdout := Line{
 }
 ```
 
-
+Local to remote:
 ```
 ProjectName % { while :; do sleep 1; echo "hello"; } |              ./app       |                msh remote ./app
                                                      | init then lines to json  | deploy if needed then json to http then destroy on EOF
 ```
 
-Unfinished, but demonstrate remote to remote and remote.
+Remote to remote:
 ```bash
                     msh remote ./app                             |                                msh remote ./app  
 deploy if needed then stdin lines to http then destroy stdin EOF |   reads config from stdin, ARN's of app and SQS output queue to configure this app
@@ -65,16 +65,11 @@ deploy if needed then stdin lines to http then destroy stdin EOF |   reads confi
 
 A msh subcommand could then be appended to stream stdout back to local applications.
 
-## Local Invocation Example
-```bash
-% cat ../msh-repo/conf/ruby/app.rb|head -n 1
-#!/usr/local/msh/msh lambda ruby
-%
-% ./app.rb
-  <runs in lib>
-```
-        
-
 ## State Machine
 
 The above idea's could be used for quick iteration of ideas while something like what I describe [here](https://github.com/RyanJarv/coderun#update-1142020) could be used for long running data processing. I typed up a simple and incomplete spec for how shell to state machine compiling could work but unsure where this went, will add it if I find it.
+
+I suspect event machine wouldn't use SQS queues by default, really I'd remove them from the remote pipelining example above if it's possible and prefer calling lambda directly.
+
+The APIGateway lambda context idea above may not make if compiling to event machine is ever added, would need to look into what makes sense there.
+
