@@ -8,7 +8,7 @@ List of unorganized (possibly incoherent) thoughts related to this project:
  * [Remote Pipelining](./docs/README.local.md) (incomplete)
  * [Previous project](https://github.com/RyanJarv/coderun) (old and too complex, but somewhat similar subset of goals)
 
-Went a bit crazy with the shebanging of stuff so there's an attempt to do the same thing as the docker/ecs examples below with tools under ./msh but I need to simplify I think, and mainly focus on lambda and docker-compose support.
+Went a bit crazy with the shebanging of stuff so there's an attempt to do the same thing as the docker/ecs examples below with various other tools under (can be found under ./msh) but I need to simplify I think, and mainly focus on lambda and docker-compose support.
 
 I may try to integrate with this in the above ideas together with this in a clean way but unsure how to do that at the moment.
 
