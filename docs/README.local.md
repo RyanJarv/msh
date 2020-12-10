@@ -13,7 +13,7 @@ Really I think this is all a distraction for now, and unsure if it even makes se
 % exit
 ```
 
-## Config Pipeline
+## Config Pipeline for remote pipelining
 
 Contains configuration about the executing pipeline, values like ProjectName and StdoutUri are handled by msh to make
 streaming between environments seamless.
@@ -26,8 +26,8 @@ echo hello | msh aws -- ./app.rb
         * setting up aws environment configuration
         * executing ./app.rb
     app.rb also has '#!/usr/bin/env msh lambda ruby' which:
-        * deploying shell script as a lambda ruby function
-        * stdin lines to lambda calls with APIGateway context
+        * deploying shell script as a lambda ruby function or whatever
+        * stdin lines are converted to lambda calls of the remote app with APIGateway context
         * streams output from lambda to stdout
 msh aws -- ./app1.rb | msh aws -- ./app.rb
     * msh for app1 detects stdout is not the terminal
@@ -59,8 +59,8 @@ ProjectName % { while :; do sleep 1; echo "hello"; } |              ./app       
 
 Unfinished but demonstrate remote to remote and remote to local.
 ```bash
-                    msh remote ./app                             |                 
-deploy if needed then stdin lines to http then destroy stdin EOF |
+                    msh remote ./app                             |                                msh remote ./app  
+deploy if needed then stdin lines to http then destroy stdin EOF |   reads config from stdin, ARN's of app and SQS output queue to configure this app
 ```
 
 ## Local Invocation Example
