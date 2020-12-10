@@ -2,7 +2,7 @@
 
 This is really a mix of several ideas I have that may or may not be related. Please don't actually use this project, it's really just for experimentation at the moment.
 
-See the [v1 branch](https://github.com/RyanJarv/msh/tree/v1) for a list of random (likely incoherent) notes related to this.
+See the [v1 branch](https://github.com/RyanJarv/msh/tree/v1) for a list of (likely incoherent) notes related to this.
 
 ### Dockerfile Examples
 
