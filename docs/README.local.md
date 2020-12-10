@@ -59,6 +59,7 @@ ProjectName % { while :; do sleep 1; echo "hello"; } |              ./app       
                                                      | init then lines to json  | deploy if needed then json to http then destroy on EOF
 ```
 
+Unfinished but demonstrate remote to remote and remote to local.
 ```bash
                     msh remote ./app                             |                 
 deploy if needed then stdin lines to http then destroy stdin EOF |
@@ -74,3 +75,10 @@ deploy if needed then stdin lines to http then destroy stdin EOF |
 ```
         
 
+## Event Machine
+
+The above idea's could be used for quick iteration of ideas while something like what I describe [here](https://github.com/RyanJarv/coderun#update-1142020) could be used for long running data processing. I typed up a simple and incomplete spec for how this would work but unsure where this went.
+
+Later I made some notes on how this can be done without writing a shell but again, not sure where those notes went.. will add them if I find them.
+
+Really I think this is all a distraction for now, but keeping it here so I don't keep loosing stuff in case it end's up making sense.
