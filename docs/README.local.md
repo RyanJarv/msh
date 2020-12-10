@@ -16,6 +16,9 @@
 Contains configuration about the executing pipeline, values like ProjectName and StdoutUri are handled by msh to make
 streaming between environments seamless.
 
+Block comment for formatting and these are just notes.
+
+```
 echo hello | msh aws -- ./app.rb
     msh handles:
         * setting up aws environment configuration
@@ -37,6 +40,7 @@ msh aws -- ./app1.rb | msh aws -- ./app.rb
         * Current ARN passed to next command for IAM permissions if needed
 lambda stdout to lambda: client invocation with http context
     same
+```
     
 
 Taking lines of input from external tools we convert it to the internal format. A nil value indicates EOF.
