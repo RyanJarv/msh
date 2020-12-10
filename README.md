@@ -5,12 +5,12 @@ This is really a mix of several ideas I have that may or may not be related. Ple
 List of unorganized (possibly incoherent) thoughts related to this project:
  * Seamless local/remote script execution
    * [Previous project](https://github.com/RyanJarv/coderun) (old and too complex, but somewhat similar subset of goals)
- * Remote pipelining
+ * Remote pipelining (likely a distraction for now)
    * [Blog post](https://blog.ryanjarv.sh/2020/11/22/msh.html) (probably poorly written, likely incomplete)
    * [Remote Pipelining](./docs/README.local.md) (also incomplete, but slightly newer then the blog post)
- * State Machine
+ * State Machine (also likely a distraction for now)
    * [Original thoughts](https://github.com/RyanJarv/coderun#update-1142020)
-   * [More recent notes](./docs/README.local.md#state-machine) (likely a distraction for now)
+   * [More recent notes](./docs/README.local.md#state-machine)
 
 
 Went a bit crazy with the shebanging of stuff so there's an attempt to do the same thing as the docker/ecs examples below with various other tools under (can be found under ./msh) but I need to simplify I think, and mainly focus on lambda and docker-compose support.
