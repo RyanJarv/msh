@@ -1,4 +1,4 @@
-# WIP Concepts
+# Some Ideas
 
 ## Invocation Example
 ```bash
