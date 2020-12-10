@@ -2,7 +2,7 @@
 
 This is really a mix of several ideas I have that may or may not be related.
 
-Please don't actually use this repo for anything important right now, this is repop is really just for experimentation until I can seperate how some of these ideas fit together.
+Please don't actually use this project, it's really just for experimentation at the moment.
 
 Here's a list of unorganized (possibly incoherent) thoughts related to this project:
  * [State machine shell blog post](https://blog.ryanjarv.sh/2020/11/22/msh.html) (higher level, random thoughts)
@@ -10,9 +10,9 @@ Here's a list of unorganized (possibly incoherent) thoughts related to this proj
  * [Remote Pipelining](./docs/README.local.md) (incomplete)
  * [Previous project](https://github.com/RyanJarv/coderun) (old and too complex, but somewhat similar subset of goals)
 
-I went a bit crazy with the shebanging of stuff so there's an attempt to do the same with other stuff under ./msh 
-but I need to simplify, focus on lambda and docker-compose support. I want the above ideas to integrate with this in
-a clean way but unsure how to do that at the moment.
+I also went a bit crazy with the shebanging of stuff so there's an attempt to do the same thing as the docker/ecs examples below with tools under ./msh but I need to simplify I think, and mainly focus on lambda and docker-compose support.
+
+I may try to integrate with this in the above ideas together with this in a clean way but unsure how to do that at the moment.
 
 ### Dockerfile Examples
 
