@@ -6,22 +6,13 @@ install: build
 	cp out/msh /usr/local/bin/msh
 	chmod +x /usr/local/bin/msh
 
-cmd/echo: build
-	PATH="${PWD}/out:${PATH}" DEBUG=true ./config/cmds/echo hello world from the args
+test: build dockerfile/echo dockerfile/cat ecs/echo
 
-cmd/cat: build
-	echo "hello world from a pipe" | PATH="${PWD}/out:${PATH}" DEBUG=true ./config/cmds/cat
+dockerfile/echo: build
+	./scripts/test.sh './test/dockerfile/echo hello from args' 'hello .* args'
 
-#TODO: Mount lint file
-cmd/cfn-lint: build
-	PATH="${PWD}/out:${PATH}" DEBUG=true ./config/cmds/cfn-lint ./config/swf/hello_world/iam.yaml --info
+dockerfile/cat: build
+	echo 'echo "hello from a pipe"' | ./scripts/test.sh ./test/dockerfile/cat 'hello .* pipe'
 
-ecs: build
-	PATH="${PWD}/out:${PATH}" DEBUG=true msh ecs ./config/cmds/echo hello from ecs
-
-swf/iam: build
-	PATH="${PWD}/out:${PATH}" DEBUG=true ./config/swf/hello_world/iam.yaml
-
-swf/states: build
-	PATH="${PWD}/out:${PATH}" DEBUG=true ./config/swf/hello_world/states.json
-
+ecs/echo: build
+	./scripts/test.sh 'msh ecs ./test/dockerfile/echo hello from ecs' 'hello .* ecs'

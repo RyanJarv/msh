@@ -1,10 +1,14 @@
 ## [WIP] Multivac Shell
 
-This is really a mix of several ideas I have that may or may not be related. Please don't actually use this project, it's really just for experimentation at the moment.
+This is really a mix of several ideas I have that may or may not be related. Please don't actually use this project, 
+it's really just for experimentation at the moment.
 
 See the [v1 branch](https://github.com/RyanJarv/msh/tree/v1) for a list of (likely incoherent) notes related to this.
 
 ### Dockerfile Examples
+
+We will always assume the context directory is where the Dockerfile is stored. Use the docker-compose support if you 
+want to change this.
 
 #### Local Execution
 ```
@@ -34,7 +38,8 @@ hello world
 
 #### ECS Remote Execution
 
-This assumes you have a default ECS cluster set up. If you don't you can create run by running `aws ecs create-cluster --cluster-name default`.
+This assumes you have a default ECS cluster set up. If you don't you can create run by running `aws ecs 
+create-cluster --cluster-name default`.
 
 ```
 % msh ecs ./test/echo.msh hello from ecs
@@ -67,7 +72,7 @@ Task has stopped.
 
 #### Using it Like a Normal Dockerfile
 
-What's kinda cool here is the shebang line is just a comment to docker, so you can treat it like a normal Dockerfile.
+What's cool here is the shebang line is just a comment to docker, so you can treat it like a normal Dockerfile.
 
 ```
 % docker build -t test -f test/echo.msh test

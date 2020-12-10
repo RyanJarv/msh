@@ -1,3 +1,0 @@
-#!/usr/local/bin/msh dockerfile
-FROM alpine:3
-ENTRYPOINT ["echo"]
