@@ -1,29 +1,32 @@
-## Multivac Shell
+## [WIP] Multivac Shell
 
-Note: This is really a mix of several ideas I have that may or may not be related.
+This is really a mix of several ideas I have that may or may not be related.
 
-Blog post: https://blog.ryanjarv.sh/2020/11/22/msh.html
+Please don't actually use this repo for anything important right now, this is repop is really just for experimentation until I can seperate how some of these ideas fit together.
 
+Here's a list of unorganized (possibly incoherent) thoughts related to this project:
+ * [State machine shell blog post](https://blog.ryanjarv.sh/2020/11/22/msh.html) (higher level, random thoughts)
+ * [Remote Pipelining](./docs/README.local.md) (incomplete)
+ * [Previous project](https://github.com/RyanJarv/coderun) (old and too complex, but somewhat similar subset of goals)
 
-### Other
+I went a bit crazy with the shebanging of stuff so there's an attempt to do the same with other stuff under ./msh 
+but I need to simplify, focus on lambda and docker-compose support. I want the above ideas to integrate with this in
+a clean way but unsure how to do that at the moment.
 
-Previous (somewhat) related project: https://github.com/RyanJarv/coderun
-
-
-### Examples
+### Dockerfile Examples
 
 In case you read my post or notes in the coderun repo, it might be confusing how this will all fit together.. I'm still working on that part but this is at least what is working so far.
 
-#### Echo
+#### Local Execution
 ```
-% cat echo.msh                              
+% cat ./test/echo.msh
 #!/usr/local/bin/msh dockerfile
 FROM alpine:3
 ENTRYPOINT ["echo"]
 ```
 
 ```
-% ./echo.msh hello world
+% ./test/echo.msh hello world
 2020/11/23 22:31:12 Running command and waiting for it to finish...
 [+] Building 0.0s (5/5) FINISHED                                                                                                                                                               
  => [internal] load build definition from echo.msh                                                                                                                                            
@@ -40,12 +43,12 @@ ENTRYPOINT ["echo"]
 hello world
 ```
 
-#### ECS
+#### ECS Remote Execution
 
 This assumes you have a default ECS cluster set up. If you don't you can create run by running `aws ecs create-cluster --cluster-name default`.
 
 ```
-% msh ecs ./config/echo.msh hello from ecs
+% msh ecs ./test/echo.msh hello from ecs
 2020/11/24 02:22:06 Running command and waiting for it to finish...
 2020/11/24 02:22:06 Running command and waiting for it to finish...
 ✔ Successfully provisioned task resources.
@@ -73,3 +76,19 @@ copilot-task/msh/432917be hello from ecs
 Task has stopped.
 ```
 
+#### Using it Like a Normal Dockerfile
+
+What's kinda cool here is the shebang line is just a comment to docker, so you can treat it like a normal Dockerfile.
+
+docker build -t test -f test/echo.msh test
+[+] Building 0.1s (5/5) FINISHED                                                                                                                                                                              
+ => [internal] load build definition from Dockerfile                                                                                                                                                     0.0s
+ => => transferring dockerfile: 108B                                                                                                                                                                     0.0s
+ => [internal] load .dockerignore                                                                                                                                                                        0.0s
+ => => transferring context: 2B                                                                                                                                                                          0.0s
+ => [internal] load metadata for docker.io/library/alpine:3                                                                                                                                              0.0s
+ => CACHED [1/1] FROM docker.io/library/alpine:3                                                                                                                                                         0.0s
+ => exporting to image                                                                                                                                                                                   0.0s
+ => => exporting layers                                                                                                                                                                                  0.0s
+ => => writing image sha256:595b26ac4285e518a9794f0f8287d6a3fb2df9dfeb636d11a9ca5fd8070424b4                                                                                                             0.0s
+ => => naming to docker.io/library/test
