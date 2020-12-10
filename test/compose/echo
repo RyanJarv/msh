@@ -1,0 +1,6 @@
+#!/usr/bin/env msh compose
+version: "3.8"
+services:
+  app:
+    image: alpine:3
+    entrypoint: echo

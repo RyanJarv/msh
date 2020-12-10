@@ -1,0 +1,10 @@
+#!/usr/bin/env msh compose
+version: "3.8"
+services:
+  app:
+    image: public.ecr.aws/lambda/ruby:2.7
+    command: ["app.lambda_handler"]
+    ports:
+      - "127.0.0.1:9000:8080"
+    volumes:
+      - "./app.rb:/var/task/app.rb:ro"

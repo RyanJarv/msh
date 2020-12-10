@@ -1,6 +1,9 @@
 package msh
 
+import "log"
+
 func Compose(argv []string) {
-	cmdStr := append([]string{"docker-compose", "-f", "{{.Path}}", "run", "app", "--"}, argv[1:]...)
+	log.Println("args: ", argv)
+	cmdStr := append([]string{"docker-compose", "-f", "{{.Path}}", "run", "--service-ports", "app"}, argv[1:]...)
 	Exec(argv[0], cmdStr)
 }
