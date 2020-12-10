@@ -77,6 +77,6 @@ deploy if needed then stdin lines to http then destroy stdin EOF |
 ```
         
 
-## Event Machine
+## State Machine
 
 The above idea's could be used for quick iteration of ideas while something like what I describe [here](https://github.com/RyanJarv/coderun#update-1142020) could be used for long running data processing. I typed up a simple and incomplete spec for how shell to state machine compiling could work but unsure where this went, will add it if I find it.
