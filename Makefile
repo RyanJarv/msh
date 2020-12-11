@@ -6,7 +6,11 @@ install: build
 	cp out/msh /usr/local/bin/msh
 	chmod +x /usr/local/bin/msh
 
-test: build dockerfile/echo dockerfile/cat compose/echo
+test: build dockerfile/echo dockerfile/cat compose/echo compose/lambda ruby
+
+ruby: build
+	./scripts/env.sh './test/ruby.rb' & sleep 2
+	./scripts/test.sh 'curl -s -XPOST http://localhost:9000/2015-03-31/functions/function/invocations -d {}' 'hello .* lambda compose' && sleep 2
 
 test/remote: ecs/echo
 
@@ -27,4 +31,4 @@ compose/cat: build
 
 compose/lambda: build
 	./scripts/env.sh ./test/compose/lambda/compose.yaml app.lambda_handler & sleep 2
-	./scripts/test.sh 'curl -s -XPOST http://localhost:9000/2015-03-31/functions/function/invocations -d {}' 'hello .* lambda compose'
+	./scripts/test.sh 'curl -s -XPOST http://localhost:9000/2015-03-31/functions/function/invocations -d {}' 'hello .* lambda compose' && sleep 2

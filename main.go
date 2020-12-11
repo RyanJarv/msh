@@ -10,6 +10,8 @@ import (
 
 var args = flag.CommandLine
 
+//go:generate go run ./scripts/templates.go
+
 func main() {
 	if err := args.Parse(os.Args[1:]); err != nil {
 		panic(errors.Wrap(err, "missing argument"))
@@ -24,10 +26,7 @@ func main() {
 		msh.Dockerfile(args.Args()[1:])
 	case "ecs":
 		msh.Remote(args.Args()[0:])
-	case "":
-		args.Usage()
-		errors.New("Must specify subcommand")
 	default:
-		panic(errors.Errorf("unknown command: '%v'", cmd))
+		msh.Code(args.Args()[0:])
 	}
 }
