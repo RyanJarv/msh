@@ -128,3 +128,6 @@ curl  -XPOST 'http://localhost:9000/2015-03-31/functions/function/invocations' -
 Note: The test app is set up to exit after one run so that it can be tested with `make compose/lambda`
 
 
+### Scripts
+
+You can simply run the ./test/ruby.rb and it will behave the same way as the local lambda compose example. I'll likely be changing this behavior to convert cmd args to a single request and then exiting. This behavior will likely be used for local testing where args map in some way to API Gateway path/parameters.
