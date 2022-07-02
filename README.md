@@ -25,6 +25,7 @@ hello from a container!
 * This project is a work in progress.
 * The use of the word "sandboxed" is relative here. You can probably think of this as something along the lines of user seperation, when possible, per executable execution.
 * At the moment the current working directory is always shared with the container.
+  * This may break the goal of sandboxing here.. I need to look into this (i.e. what can you do over a docker mount).
 
 #### Features
 
@@ -35,7 +36,9 @@ hello from a container!
 
 * Support more complex dockerfiles.
   * Currently, builds are run an empty temp directory.
-* Support additional runtime options for sharing.
+* Additional runtime options for sharing.
+* Running on a remote system.
+  * Previously this supported ECS and lambda but I have since removed that to simplify things for the moment.
 
 ### Install
 ```
