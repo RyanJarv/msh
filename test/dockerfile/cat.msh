@@ -1,4 +1,0 @@
-#!/usr/bin/env msh dockerfile
-FROM alpine:3
-WORKDIR /app
-ENTRYPOINT ["cat"]

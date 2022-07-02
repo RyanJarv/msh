@@ -2,10 +2,11 @@ package utils
 
 import (
 	"fmt"
-	L "github.com/ryanjarv/msh/logger"
+	L "github.com/ryanjarv/msh/pkg/logger"
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 type ExecuteInput struct {
@@ -18,7 +19,18 @@ type ExecuteInput struct {
 
 func Execute(in *ExecuteInput) error {
 	cmd := exec.Command(in.Cmd, in.Args...)
+
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+	if in.Stdin != nil {
+		cmd.Stdin = in.Stdin
+	}
+	if in.Stdout != nil {
+		cmd.Stdout = in.Stdout
+	}
+	if in.Stderr != nil {
+		cmd.Stderr = in.Stderr
+	}
+
 	cmd.Env = append(cmd.Env, os.Environ()...)
 
 	// We look for the app arg separator and start adding shell style environment
@@ -29,7 +41,17 @@ func Execute(in *ExecuteInput) error {
 		}
 	}
 
-	L.Debug.Printf("Running command and waiting for it to finish...")
+	L.Debug.Printf("running: %s %s", in.Cmd, strings.Join(in.Args, " "))
 	err := cmd.Run()
-	return Wrap(err, "running cmd")
+	return Wrap(err, "done")
+}
+
+// InSliceStr will return the index of str in slice if it exists, otherwise it will return nil
+func InSliceStr(slice []string, str string) *int {
+	for i, val := range slice {
+		if val == str {
+			return &i
+		}
+	}
+	return nil
 }
