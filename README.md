@@ -1,5 +1,9 @@
 ## Multivac Shell
 
+Currently this is just a PoC, it can not act as a sandbox currently (and may even allow escalation to root or other users on your host from the container as is).
+
+### Goal
+
 A lightweight, easy to use, sandboxed (WIP), userland.
 
 ### Example
