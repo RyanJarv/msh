@@ -38,7 +38,7 @@ hello from a container!
 #### TODO
 
 * Figure out if local docker can act as minimal sandbox when using volume shares.
- * I think this likely involves correctly mapping user ids on the host to the container at runtime.
+  * I think this likely involves correctly mapping user ids on the host to the container at runtime.
 * Support more complex dockerfiles.
   * Currently, builds are run an empty temp directory.
 * Additional runtime options for sharing.
