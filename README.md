@@ -23,6 +23,7 @@ hello from a container!
 ## Things To Know
 
 * This project is a work in progress.
+* The use of the word "sandboxed" is relative here. Something along the lines of user seperation, when possible, per executable.
 
 #### Features
 
