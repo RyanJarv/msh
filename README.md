@@ -28,6 +28,7 @@ hello from a container!
 
 * This project is a work in progress.
 * Currently it is not safe to run untrusted code with msh.
+* It shouldn't be used currently for anything other then a PoC.
 * At the moment the current working directory is always shared with the container.
 
 #### Features
