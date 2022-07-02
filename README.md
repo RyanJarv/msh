@@ -23,17 +23,19 @@ hello from a container!
 ## Things To Know
 
 * This project is a work in progress.
-* The use of the word "sandboxed" is relative here. You can probably think of this as something along the lines of user seperation, when possible, per executable.
+* The use of the word "sandboxed" is relative here. You can probably think of this as something along the lines of user seperation, when possible, per executable execution.
+* At the moment the current working directory is always shared with the container.
 
 #### Features
 
 * Container builds are done on the fly when a msh file is first executed.
 * When the source msh file is modified, builds will run on next execution.
 
-#### Potential Future Features
+#### Future Features
 
 * Support more complex dockerfiles.
   * Currently, builds are run an empty temp directory.
+* Support additional runtime options for sharing.
 
 ### Install
 ```
