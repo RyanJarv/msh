@@ -7,7 +7,7 @@ A lightweight, easy to use, sandboxed, userland.
 ```
 % type python.msh
 python.msh is /Users/me/.msh/bin/python.msh
-% cat /Users/me/.msh/bin//python.msh
+% cat /Users/me/.msh/bin/python.msh
 #!/usr/bin/env msh
 FROM python:3
 WORKDIR /app
