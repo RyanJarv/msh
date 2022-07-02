@@ -3,8 +3,11 @@ build:
 	go build -o out/msh main.go
 
 install: build
-	cp out/msh /usr/local/bin/msh
-	chmod +x /usr/local/bin/msh
+	mkdir -p ~/.msh/bin
+	echo 'export PATH=$$HOME/.msh/bin/:$$PATH' > ~/.msh/env
+	cp out/msh ~/.msh/bin/msh
+	cp test/dockerfile/* ~/.msh/bin/
+	chmod +x ~/.msh/bin/msh
 
 test: build dockerfile/echo dockerfile/cat compose/echo compose/lambda ruby
 

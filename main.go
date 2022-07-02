@@ -2,9 +2,9 @@ package main
 
 import (
 	"flag"
-	"github.com/pkg/errors"
+	"fmt"
 	L "github.com/ryanjarv/msh/logger"
-	"github.com/ryanjarv/msh/msh"
+	"github.com/ryanjarv/msh/pkg"
 	"os"
 )
 
@@ -13,20 +13,22 @@ var args = flag.CommandLine
 //go:generate go run ./scripts/templates.go
 
 func main() {
-	if err := args.Parse(os.Args[1:]); err != nil {
-		panic(errors.Wrap(err, "missing argument"))
+	flag.Parse()
+
+	cmd := flag.Arg(0)
+	path := flag.Arg(1)
+	if cmd == "" || path == "" {
+		fmt.Printf("Usage: %s <cmd> <path>\n", os.Args[0])
+		os.Exit(1)
 	}
 
-	L.Debug.Println("args: %v", args.Args())
+	progArgs := flag.Args()[2:]
 
-	switch cmd := args.Args()[0]; cmd {
-	case "compose":
-		msh.Compose(args.Args()[1:])
-	case "dockerfile":
-		msh.Dockerfile(args.Args()[1:])
-	case "ecs":
-		msh.Remote(args.Args()[0:])
-	default:
-		msh.Code(args.Args()[0:])
+	L.Debug.Printf("Arguments: cmd: %s, path: %s, progArgs: %+v", cmd, path, progArgs)
+
+	err := pkg.Dockerfile(path, progArgs...)
+
+	if err != nil {
+		L.Error.Fatalf("[ERROR] %s\n", err)
 	}
 }

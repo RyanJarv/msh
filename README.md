@@ -18,29 +18,28 @@ We will always assume the context directory is where the Dockerfile is stored. U
 want to change this.
 
 #### Local Execution
-```
-% cat ./test/echo.msh
-#!/usr/local/bin/msh dockerfile
-FROM alpine:3
-ENTRYPOINT ["echo"]
+
+Create a normal Dockerfile, make sure the working directory is /app and add a msh hash bang (`#!...`) to the first line.
+
+```shell
+$ cat ./python.msh
+#!/usr/bin/env msh dockerfile
+FROM python:3
+WORKDIR /app
+ENTRYPOINT ["python"]
 ```
 
+Ensure the file is executable.
+
+```shell
+chmod +x ./python.msh
 ```
-% ./test/echo.msh hello world
-2020/11/23 22:31:12 Running command and waiting for it to finish...
-[+] Building 0.0s (5/5) FINISHED                                                                                                                                                               
- => [internal] load build definition from echo.msh                                                                                                                                            
- => => transferring dockerfile: 191B                                                                                                                                                          
- => [internal] load .dockerignore                                                                                                                                                             
- => => transferring context: 2B                                                                                                                                                               
- => [internal] load metadata for docker.io/library/alpine:3                                                                                                                                   
- => CACHED [1/1] FROM docker.io/library/alpine:3                                                                                                                                              
- => exporting to image                                                                                                                                                                        
- => => exporting layers                                                                                                                                                                       
- => => writing image sha256:595b26ac4285e518a9794f0f8287d6a3fb2df9dfeb636d11a9ca5fd8070424b4                                                                                                  
- => => naming to docker.io/library/echo.msh                                                                                                                                                   
-2020/11/23 22:31:12 Running command and waiting for it to finish...
-hello world
+
+You now run the file as if it was a normal binary.
+
+```shell
+$ python.msh ./main.py 
+hello from docker!
 ```
 
 #### ECS Remote Execution
@@ -103,7 +102,7 @@ What's cool here is the shebang line is just a comment to docker, so you can tre
 docker-compose works similarly but when executed behaves as if "docker-compose run --service-ports app" was run against it.
 
 ```yaml
-#!/usr/bin/env msh compose
+#!/usr/bin/env pkg compose
 version: "3.8"
 services:
   app:
