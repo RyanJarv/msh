@@ -1,6 +1,6 @@
 ## Multivac Shell
 
-A lightweight, easy to use, sandboxed, userland.
+A lightweight, easy to use, sandboxed (WIP), userland.
 
 ### Example
 
@@ -23,9 +23,8 @@ hello from a container!
 ## Things To Know
 
 * This project is a work in progress.
-* The use of the word "sandboxed" is relative here. You can probably think of this as something along the lines of user seperation, when possible, per executable execution.
+* Currently it is not safe to run untrusted code with msh.
 * At the moment the current working directory is always shared with the container.
-  * This may break the goal of sandboxing here.. I need to look into this (i.e. what can you do over a docker mount).
 
 #### Features
 
