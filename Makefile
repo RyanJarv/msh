@@ -1,6 +1,10 @@
 build:
 	go generate ./...
-	go build -o out/msh main.go
+	go build -o out/msh.local cmd/msh.local.go
+	go build -o out/msh.lambda cmd/msh.lambda.go
+
+docker-build:
+	docker build -f test/python.msh -t python.msh .
 
 install: build
 	mkdir -p ~/.msh/bin
@@ -10,4 +14,8 @@ install: build
 	chmod +x ~/.msh/bin/msh
 
 test: build
-	./scripts/test.sh './test/python.msh --version' 'Python 3.*'
+	@echo "\nRunning Tests\n"
+	@./scripts/test.sh './test/python.msh --version' 'Python 3.*'
+	@./scripts/test.sh './out/msh.local cat ./test/data/test' 'test'
+	@./scripts/test.sh './out/msh.local cat ./test/data/test | cat' 'StdinArn'
+	@./scripts/test.sh './out/msh.local cat ./test/data/test | ./out/msh.local cat' 'StdinArn'

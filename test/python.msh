@@ -1,4 +1,4 @@
-#!/usr/bin/env msh
+#!/usr/bin/env msh.docker
 FROM python:3
 WORKDIR /app
 ENTRYPOINT ["python"]

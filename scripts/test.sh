@@ -9,19 +9,28 @@ GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
 function error() {
-  result="$( $CMD )"
-  printf "
-${RED}[FAILED]${NC} ${CMD}
-  Got:    '$result'
-  Regex:  '$REGEX'
-
-"
+  echo "[ERROR] Line: $1, error code: $2"
 }
-trap 'error $1' ERR
+trap 'error $LINENO $?' ERR
 
 if [[ "$#" != "2" ]]; then
   echo "USAGE: $0 <cmd to execute> <regex of exected output>"
 fi
 
-$CMD | grep -qE "$REGEX"
-printf "\n${GREEN}[PASSED]${NC} $CMD\n\n"
+echo "  * $CMD"
+
+output="$(mktemp -d)/out"
+
+DEBUG= script -q $output bash -c "$CMD" 1>/dev/null ||:
+
+if cat $output | grep -qE "$REGEX"; then
+  printf "      ${GREEN}[PASSED]${NC} $CMD\n"
+else
+  printf "
+      ${RED}[FAILED]${NC} ${CMD}
+        Got:    '$(cat $output)'
+        Regex:  '$REGEX'
+"
+fi
+
+rm $output

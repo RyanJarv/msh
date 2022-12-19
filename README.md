@@ -1,6 +1,6 @@
 ## Multivac Shell
 
-Currently this is just a PoC, it can not act as a sandbox currently (and may even allow escalation to root or other users on your host from the container as is).
+Currently, this is just a PoC, it can not act as a sandbox currently (and may even allow escalation to root or other users on your host from the container as is).
 
 ### Goal
 
@@ -27,7 +27,7 @@ hello from a container!
 ## Things To Know
 
 * Currently it is not safe to run any code, especially untrusted code with msh.
-* It shouldn't be used currently for anything other then a PoC.
+* It shouldn't be used currently for anything other than a PoC.
 * At the moment the current working directory is always shared with the container.
 
 #### Features
@@ -43,7 +43,7 @@ hello from a container!
   * Currently, builds are run an empty temp directory.
 * Additional runtime options for sharing.
 * Running on a remote system.
-  * Previously this supported ECS and lambda but I have since removed that to simplify things for the moment.
+  * Previously this supported ECS and lambda, but I have since removed that to simplify things for the moment.
 
 ### Install
 ```
