@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"errors"
+	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
@@ -17,67 +18,38 @@ import (
 	_ "gocloud.dev/pubsub/awssnssqs"
 	"io"
 	"os"
-	"syscall"
 )
 
 // Run takes the invocation args and transparently runs the intended command while intercepting sensitive info.
 func Run(args []string) error {
-	cfg := lo.Must(config.LoadDefaultConfig(context.TODO()))
 
-	name := utils.NameFromCmd(args) + "-2"
+	name := utils.GetName(args) + "-2"
 	L.Info.Println("name:", name)
 
-	stdin, stdout, read := setupFds(cfg, name)
+	awsCfg := lo.Must(config.LoadDefaultConfig(context.TODO()))
+	cfg := fd.NewConfig(awsCfg, name)
+	stdout := fd.NewRemoteOutputPipe(cfg)
+	fd.WriteConf(*cfg, stdout)
 
-	//_ = deploy(cfg, name, args)
-	//setupPipes(cfg, arn)
-	setupPipes(cfg, name, "arn:aws:lambda:us-east-1:336983520827:function:msh-test", stdin, stdout)
+	stdin := fd.NewInputPipe(cfg, true)
 
-	read()
-	return nil
-}
-
-func setupFds(cfg aws.Config, name string) (stdinArn, stdoutArn string, read func()) {
-	var pid int
-
-	if utils.IsTTY(os.Stdin) {
-		var stdinUrl string
-		stdinArn, stdinUrl = fd.SetupSqsFd(cfg, name, "stdin")
-		L.Debug.Printf("stdin: terminal -> %s\n", stdinArn)
-		stdin := lo.Must(utils.NewPipe(context.TODO(), stdinUrl))
-		go func() {
-			io.Copy(stdin, os.Stdin)
-		}()
-	} else {
-		conf := fd.ReadConf(os.Stdin)
-		stdinArn = conf.StdinArn
-		pid = *conf.Pid
-
-		L.Debug.Println("stdin:", stdinArn)
+	if cfg.WrapperConfig.StdoutLocal {
+		stdin.Arn, stdin.Url = fd.SetupSqsFd(cfg.AwsCfg, cfg.Name, "stdin")
+		L.Debug.Println("forwarding: stdin ->", stdin.Arn)
 	}
 
-	stdoutArn, stdoutUrl := fd.SetupSqsFd(cfg, name, "stdout")
+	remoteStdin := lo.Must(fd.NewPipe(context.TODO(), stdin.Url))
+	//setupPipes(awsCfg, name, "arn:aws:lambda:us-east-1:336983520827:function:msh-test", stdin, stdout)
 
-	stdout := lo.Must(utils.NewPipe(context.TODO(), stdoutUrl))
-
-	if utils.IsTTY(os.Stdout) {
-		L.Debug.Printf("stdout: %s -> terminal\n", stdoutArn)
-
-		read = func() {
-			lo.Must(io.Copy(os.Stdout, stdout))
-			err := syscall.Kill(pid, 9)
-			if err != nil {
-				L.Error.Println("sending sigkill to:", pid)
-			}
-			L.Debug.Println("sent sigkill to:", pid)
-		}
-
+	fmt.Println("13")
+	if cfg.WrapperConfig.StdoutLocal {
+		lo.Must(io.Copy(remoteStdin, stdin))
+		return nil
 	} else {
-		L.Debug.Println("stdout:", stdoutArn)
-		fd.WriteConf(os.Stdout, fd.StateJson{StdinArn: stdoutArn, StdinUrl: stdoutUrl})
+		stdout.Close()
+		io.Copy(os.Stdout, os.Stdin)
+		return nil
 	}
-
-	return stdinArn, stdoutArn, read
 }
 
 func deploy(cfg aws.Config, name string, args []string) string {
@@ -98,17 +70,20 @@ func deploy(cfg aws.Config, name string, args []string) string {
 	return *resp.FunctionArn
 }
 
-func setupPipes(cfg aws.Config, name, lambdaArn, stdin, stdout string) {
+func setupPipes(cfg aws.Config, name, lambdaArn string, stdin *fd.InputPipe, stdout *fd.OutputPipe) {
 
 	client := pipes.NewFromConfig(cfg)
+
+	fmt.Println("stdin:", stdin.Arn)
+	fmt.Println("stdout:", stdout.Arn)
 
 	_, err := client.CreatePipe(
 		context.TODO(),
 		&pipes.CreatePipeInput{
 			Name:         aws.String(name),
 			RoleArn:      aws.String("arn:aws:iam::336983520827:role/service-role/Amazon_EventBridge_Pipe_test_ed80013d"),
-			Source:       aws.String(stdin),
-			Target:       aws.String(stdout),
+			Source:       aws.String(stdin.Arn),
+			Target:       aws.String(stdout.Arn),
 			DesiredState: pipesTypes.RequestedPipeStateRunning,
 			SourceParameters: &pipesTypes.PipeSourceParameters{
 				SqsQueueParameters: &pipesTypes.PipeSourceSqsQueueParameters{

@@ -1,7 +1,9 @@
 package utils
 
 import (
+	"bufio"
 	L "github.com/ryanjarv/msh/pkg/logger"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -49,4 +51,10 @@ func IsTTY(file *os.File) bool {
 		L.Debug.Printf("fd %d: tty\n", file.Fd())
 		return true
 	}
+}
+
+func ReadLine(r io.Reader) string {
+	scan := bufio.NewScanner(r)
+	scan.Scan()
+	return scan.Text()
 }

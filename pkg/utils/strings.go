@@ -23,7 +23,7 @@ func RandString(n int) string {
 	return string(b)
 }
 
-func NameFromCmd(args []string) string {
+func GetName(args []string) string {
 	h := sha1.New()
 	h.Write([]byte(strings.Join(args, "")))
 

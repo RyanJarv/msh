@@ -1,0 +1,12 @@
+#!/usr/bin/env msh.local
+echo '{"StdinRef": "sqs", "StdoutRef": "sqs"}'; read config
+
+stdin="$(echo $config|jq '.StdinRef')"
+stdout="$(echo $config|jq '.StdoutRef')"
+
+input="$(aws sqs receive-message --queue-url "$stdin" --wait-time-seconds 5)"
+output="$(echo "$input"| sed 's/input/output/')"
+
+aws sqs send-message \
+  --queue-url "$stdout" \
+  --message-body "$output"
