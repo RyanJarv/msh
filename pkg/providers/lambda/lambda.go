@@ -11,9 +11,10 @@ import (
 	lambdaTypes "github.com/aws/aws-sdk-go-v2/service/lambda/types"
 	"github.com/aws/aws-sdk-go-v2/service/pipes"
 	pipesTypes "github.com/aws/aws-sdk-go-v2/service/pipes/types"
+	"github.com/ryanjarv/msh/pkg/conf"
+	"github.com/ryanjarv/msh/pkg/fd"
 	L "github.com/ryanjarv/msh/pkg/logger"
 	"github.com/ryanjarv/msh/pkg/utils"
-	"github.com/ryanjarv/msh/pkg/utils/fd"
 	"github.com/samber/lo"
 	_ "gocloud.dev/pubsub/awssnssqs"
 	"io"
@@ -27,9 +28,9 @@ func Run(args []string) error {
 	L.Info.Println("name:", name)
 
 	awsCfg := lo.Must(config.LoadDefaultConfig(context.TODO()))
-	cfg := fd.NewConfig(awsCfg, name)
+	cfg := conf.NewConfig(awsCfg, name)
 	stdout := fd.NewRemoteOutputPipe(cfg)
-	fd.WriteConf(*cfg, stdout)
+	conf.WriteConf(*cfg, stdout)
 
 	stdin := fd.NewInputPipe(cfg, true)
 
@@ -38,7 +39,7 @@ func Run(args []string) error {
 		L.Debug.Println("forwarding: stdin ->", stdin.Arn)
 	}
 
-	remoteStdin := lo.Must(fd.NewPipe(context.TODO(), stdin.Url))
+	remoteStdin := lo.Must(fd.OpenSqs(context.TODO(), stdin.Url))
 	//setupPipes(awsCfg, name, "arn:aws:lambda:us-east-1:336983520827:function:msh-test", stdin, stdout)
 
 	fmt.Println("13")

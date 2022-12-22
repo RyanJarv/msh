@@ -7,9 +7,10 @@ import (
 )
 
 var (
-	Debug = log.New(os.Stderr, "[DEBUG] ", log.Flags())
-	Info  = log.New(os.Stderr, "[INFO] ", log.Flags())
-	Error = log.New(os.Stderr, "[ERROR] ", log.Flags())
+	ProgName = "[" + os.Args[0] + "]"
+	Debug    = log.New(os.Stderr, ProgName+" [DEBUG] ", log.Flags())
+	Info     = log.New(os.Stderr, ProgName+" [INFO] ", log.Flags())
+	Error    = log.New(os.Stderr, ProgName+" [ERROR] ", log.Flags())
 )
 
 func init() {

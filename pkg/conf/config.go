@@ -1,10 +1,11 @@
-package fd
+package conf
 
 import (
 	"bufio"
 	"encoding/json"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/ryanjarv/msh/pkg/fd"
 	L "github.com/ryanjarv/msh/pkg/logger"
 	"github.com/ryanjarv/msh/pkg/utils"
 	"github.com/samber/lo"
@@ -23,9 +24,6 @@ type Config struct {
 	RemoteProcess  bool
 	Name           string
 	StdoutArn      string
-}
-
-func (c *Config) WriteConf(f *os.File, local bool) {
 }
 
 type WrapperConfig struct {
@@ -53,7 +51,7 @@ func NewConfig(awsCfg aws.Config, name string) *Config {
 	//if cfg.WrapperConfig.StdoutLocal {
 	//	cfg.Stdin = os.Stdin
 	//} else {
-	//	cfg.Stdin = lo.Must(utils.NewPipe(context.TODO(), cfg.WrapperConfig.Url))
+	//	cfg.Stdin = lo.Must(utils.OpenSqs(context.TODO(), cfg.WrapperConfig.Url))
 	//}
 	//	cfg.WrapperConfig = ReadConf(os.Stdin)
 	//	L.Debug.Println("stdin:", cfg.WrapperConfig.Url)
@@ -62,7 +60,7 @@ func NewConfig(awsCfg aws.Config, name string) *Config {
 	//	if !cfg.WrapperConfig.StdoutLocal {
 	//		cfg.Stdin = os.Stdin
 	//	} else {
-	//		cfg.Stdin = lo.Must(utils.NewPipe(context.TODO(), cfg.WrapperConfig.Url))
+	//		cfg.Stdin = lo.Must(utils.OpenSqs(context.TODO(), cfg.WrapperConfig.Url))
 	//	}
 	//
 	//	// WrapperConfig command is sending data directly to stdin, forward it to the remote process.
@@ -73,7 +71,7 @@ func NewConfig(awsCfg aws.Config, name string) *Config {
 
 	//if else {
 	//	cfg.Arn, cfg.WrapperConfig.Url = SetupSqsFd(cfg.AwsCfg, cfg.Name, "stdout")
-	//	cfg.Stdout = lo.Must(utils.NewPipe(context.TODO(), cfg.WrapperConfig.Url))
+	//	cfg.Stdout = lo.Must(utils.OpenSqs(context.TODO(), cfg.WrapperConfig.Url))
 	//
 	//	// Write the updated state to stdout.
 	//	WriteConf(os.Stdout, *cfg.WrapperConfig)
@@ -97,7 +95,7 @@ func ReadConf(f *os.File) WrapperConfig {
 	return state
 }
 
-func WriteConf(cfg Config, pipe *OutputPipe) {
+func WriteConf(cfg Config, pipe *fd.OutputPipe) {
 	if utils.IsTTY(os.Stdout) {
 		return
 	}

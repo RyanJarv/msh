@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bufio"
+	"fmt"
 	L "github.com/ryanjarv/msh/pkg/logger"
 	"io"
 	"io/ioutil"
@@ -38,6 +39,17 @@ func (t TmpDir) Remove() error {
 }
 
 func IsTTY(file *os.File) bool {
+	if os.Getenv("MSH_TTY") == "false" {
+		return false
+	}
+
+	envName := fmt.Sprintf("MSH_TTY_%d", int(file.Fd()))
+	if env := os.Getenv(envName); env == "false" {
+		return false
+	} else if env == "true" {
+		return true
+	}
+
 	stat, err := file.Stat()
 	if err != nil {
 		L.Debug.Printf("fd %d: stat failed, assuming we're not using a tty", file.Fd())

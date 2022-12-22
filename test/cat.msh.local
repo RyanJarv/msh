@@ -1,3 +1,4 @@
 #!/usr/bin/env msh.local
+echo '{"StdinRef": "stdin", "StdoutRef": "stdout"}'; read
 
-cat "$@"
+sed 's/input/output/'

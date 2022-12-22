@@ -150,3 +150,71 @@ command_not_found_handler.
       * Need to track state across lambda executions to know how many have been delivered.
         * Timestamps of last delivered message don't make a difference here.
             * Still n
+
+# Config Protocol
+
+Subprocess outputs a config line on startup indicating:
+
+* How it receives/sends input/output.
+
+Once received, a config line is passed to the subprocess indicating where it should send/read input/output.
+
+* Where input will be sent.
+* Where output should be sent.
+
+
+
+## Stdin/Stdout
+
+* SQS Queue
+* Local
+
+And
+
+* Wrapper Stdin -> SQS Queue
+* SQS Queue -> Wrapper Stdout
+* Sqs -> eventbridge pipe
+
+* local cmd -> sqs
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

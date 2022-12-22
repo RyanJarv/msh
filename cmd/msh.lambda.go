@@ -1,17 +1,16 @@
 package main
 
 import (
-	"flag"
-	L "github.com/ryanjarv/msh/pkg/logger"
-	"github.com/ryanjarv/msh/pkg/providers/lambda"
-	"strings"
+	"github.com/ryanjarv/msh/pkg/providers/pipes"
+	"github.com/ryanjarv/msh/pkg/providers/process"
 )
 
 func main() {
-	flag.Parse()
-	L.Debug.Println("received args:", strings.Join(flag.Args(), " "))
-	err := lambda.Run(flag.Args())
+	awsPipe := pipes.NewPipe()
+	proc := process.NewProcess(awsPipe)
+
+	err := proc.Run()
 	if err != nil {
-		L.Error.Fatalln(err)
+		panic(err)
 	}
 }

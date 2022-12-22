@@ -1,60 +1,54 @@
 package pipes
 
 import (
-	pipesTypes "github.com/aws/aws-sdk-go-v2/service/pipes/types"
+	"context"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/pipes"
 	"github.com/ryanjarv/msh/pkg/fd"
 	"github.com/samber/lo"
 	"io"
-	"os"
 	"sync"
+	"time"
 )
 
-func Connect(previous, current *Process, aggregate bool) {
-	go lo.Must(current.stdin.ReadFrom(previous.Stdout()))
+func NewPipe() AwsPipe {
+	return AwsPipe{
+		CreatePipeInput: &pipes.CreatePipeInput{},
+		cfg:             lo.Must(config.LoadDefaultConfig(context.TODO())),
+	}
 }
 
 type AwsPipe struct {
-	pipesTypes.PipeSourceParameters
-	pipesTypes.PipeTargetParameters
+	*pipes.CreatePipeInput
+	cfg aws.Config
 }
 
-func (s AwsPipe) NewFd() fd.Sqs {
-	panic("not implemented")
+type Step interface {
+	Arn() *string
 }
 
-func (s AwsPipe) ReadFrom(r interface{}) (n int64, err error) {
-	switch source := r.(type) {
-	case pipesTypes.PipeSourceParameters:
-		// Just read directly from the sqs output queue of the last command.
-		s.PipeSourceParameters = source
-
-		// os.Stdin will close to signal when processing has completed.
-		return io.Copy(os.Stdout, os.Stdin)
-	case io.ReadCloser:
-		sqs := s.NewFd()
-		s.PipeSourceParameters = sqs.PipeSourceParameters
-		return io.Copy(sqs, source)
-	default:
-		panic("not implemented")
-	}
+func (s AwsPipe) Run() error {
+	//s.CreatePipeInput.Enrichment = step.Arn()
+	time.Sleep(time.Second * 1000)
+	return nil
 }
 
-func (s AwsPipe) WriteTo(r interface{}) (n int64, err error) {
-	switch target := r.(type) {
-	case pipesTypes.PipeTargetParameters:
-		// Just read directly from the sqs output queue of the last command.
-		s.PipeTargetParameters = target
+func (s AwsPipe) SetStdin(p interface{}) {
+	sqs := lo.Must(fd.NewSqsFrom(context.TODO(), p))
+	s.CreatePipeInput.Source = sqs.Arn()
+}
 
-		// TODO: return when stdin returns.
-		Block()
-		return 0, nil
-	case io.Writer:
-		sqs := s.NewFd()
-		s.PipeTargetParameters = sqs.PipeTargetParameters
-		return io.Copy(target, sqs)
-	default:
-		panic("not implemented")
-	}
+func (s AwsPipe) GetStdout() io.Reader {
+	cfg := lo.Must(config.LoadDefaultConfig(context.TODO()))
+	sqs := lo.Must(fd.CreateSqs(cfg, "temp", "stdout"))
+	s.CreatePipeInput.Target = sqs.Arn()
+	return sqs
+}
+
+func (s AwsPipe) NewFd(name string) *fd.Sqs {
+	_, uri := fd.SetupSqsFd(s.cfg, "test", name)
+	return lo.Must(fd.OpenSqs(context.TODO(), uri))
 }
 
 type LocalPipe struct {

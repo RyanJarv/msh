@@ -2,6 +2,7 @@ build:
 	go generate ./...
 	go build -o out/msh.local cmd/msh.local.go
 	go build -o out/msh.lambda cmd/msh.lambda.go
+	go build -o out/sqs cmd/sqs.go
 
 docker-build:
 	docker build -f test/python.msh -t python.msh .
@@ -15,7 +16,12 @@ install: build
 
 test: build
 	@echo "\nRunning Tests\n"
-	@./scripts/test.sh './test/python.msh --version' 'Python 3.*'
-	@./scripts/test.sh './out/msh.local cat ./test/data/test' 'test'
-	@./scripts/test.sh './out/msh.local cat ./test/data/test | cat' 'StdinArn'
-	@./scripts/test.sh './out/msh.local cat ./test/data/test | ./out/msh.local cat' 'StdinArn'
+	#@./scripts/test.sh './test/python.msh --version' 'Python 3.*'
+	#@./scripts/test.sh './out/msh.local cat ./test/data/test | cat' 'StdinArn'
+	#@./scripts/test.sh './out/msh.local cat ./test/data/test | ./out/msh.local cat' 'StdinArn'
+
+	@./scripts/test.sh './out/msh.local echo "input"| ./out/sqs ' 'input'
+#	@./scripts/test.sh 'echo "input"| ./out/sqs | ./out/msh.local sed "s/input/output/"' 'output'
+	@#./scripts/test.sh 'echo "input"| ./out/sqs | ./out/msh.local bash ./test/cat.msh.sqs | ./out/sqs' 'output'
+	@#./scripts/test.sh 'echo "input"| ./out/sqs | ./out/msh.local bash ./test/cat.msh.sqs | ./out/sqs' 'output'
+	@#./scripts/test.sh 'echo "input"|./out/msh.lambda' 'output'
