@@ -14,3 +14,7 @@ type Step interface {
 	Process
 	Process(Process)
 }
+
+type Deployable interface {
+	Deploy() error
+}

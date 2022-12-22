@@ -10,7 +10,7 @@ import (
 func main() {
 	flag.Parse()
 	cmd := command.NewCommand(flag.Args())
-	proc := process.NewProcess(cmd)
+	proc := process.NewMsh(cmd)
 
 	err := proc.Run()
 	if err != nil {

@@ -2,9 +2,10 @@ package local
 
 import (
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/ryanjarv/msh/pkg/conf"
+	"github.com/ryanjarv/msh/pkg/fd"
 	L "github.com/ryanjarv/msh/pkg/logger"
 	"github.com/ryanjarv/msh/pkg/utils"
-	"github.com/ryanjarv/msh/pkg/utils/fd"
 	"github.com/samber/lo"
 	"io/fs"
 	"os"
@@ -31,8 +32,8 @@ func Run(args []string) error {
 	name := utils.GetName(args)
 	awsCfg := lo.Must(config.LoadDefaultConfig(context.TODO()))
 
-	cfg := fd.NewConfig(awsCfg, name)
-	fd.WriteConf(*cfg, nil)
+	cfg := conf.NewConfig(awsCfg, name)
+	conf.WriteConf(*cfg, nil)
 
 	cmd.Stdin = fd.NewInputPipe(cfg, false)
 	cmd.Stdout = os.Stdout

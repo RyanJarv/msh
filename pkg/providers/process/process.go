@@ -20,26 +20,18 @@ type Provider interface {
 	Run() error
 }
 
-//type Command struct {
-//	stdin Fd
-//	stdout Fd
-//	cmd    *exec.Cmd `json:"-"`
-//}
-
-func NewProcess(provider Provider) *Process {
-	proc := &Process{
+func NewMsh(provider Provider) *Msh {
+	proc := &Msh{
 		Provider: provider,
-		//OsStdin:  os.Stdin,
 	}
 
-	if utils.IsTTY(os.Stdin) && os.Getenv("MSH_STDIN_TTY") != "false" {
+	if utils.IsTTY(os.Stdin) {
 		// Save the pid of the initial process
 		proc.Pid = aws.Int(os.Getpid())
 	} else {
 		proc.ReadConf(os.Stdin)
 	}
 
-	//proc.Stdin = proc.SetStdin(proc.Stdin)
 	proc.SetStdin(proc.Stdin)
 	proc.Stdout = proc.GetStdout()
 
@@ -50,15 +42,14 @@ func NewProcess(provider Provider) *Process {
 	return proc
 }
 
-type Process struct {
-	Provider Provider `json:"-"`
-	OsStdin  io.Reader
+type Msh struct {
+	Provider Provider    `json:"-"`
 	Stdin    interface{} `json:",omitempty"`
 	Stdout   interface{} `json:"-"`
 	Pid      *int        `json:"-"`
 }
 
-func (p *Process) Run() error {
+func (p *Msh) Run() error {
 	wg := sync.WaitGroup{}
 
 	if utils.IsTTY(os.Stdout) || !fd.IsReferable(p.Stdout) {
@@ -77,7 +68,7 @@ func (p *Process) Run() error {
 	return err
 }
 
-func (p *Process) SetStdin(s interface{}) {
+func (p *Msh) SetStdin(s interface{}) {
 	if utils.IsEmptyOrEmpty(s) {
 		L.Debug.Println("stdin set to: os.Stdin")
 		s = os.Stdin
@@ -86,19 +77,19 @@ func (p *Process) SetStdin(s interface{}) {
 	p.Provider.SetStdin(s)
 }
 
-func (p *Process) GetStdout() io.Reader {
+func (p *Msh) GetStdout() io.Reader {
 	return p.Provider.GetStdout()
 }
 
-func (p *Process) WriteConf(w *os.File) {
-	d := lo.Must(json.Marshal(Process{
+func (p *Msh) WriteConf(w *os.File) {
+	d := lo.Must(json.Marshal(Msh{
 		Stdin: p.Stdout,
 	}))
 	lo.Must(io.WriteString(w, string(d)+"\n"))
 	time.Sleep(100 * time.Millisecond)
 }
 
-func (p *Process) ReadConf(f *os.File) {
+func (p *Msh) ReadConf(f *os.File) {
 	L.Debug.Println("reading conf from fd", f.Fd())
 
 	d := lo.Must(readLine(f))

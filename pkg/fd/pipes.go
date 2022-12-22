@@ -1,7 +1,6 @@
 package fd
 
 import (
-	"fmt"
 	L "github.com/ryanjarv/msh/pkg/logger"
 	"io"
 	"os"
@@ -25,16 +24,16 @@ func MustCopy(dst io.WriteCloser, src io.Reader) {
 	L.Debug.Printf("MustCopy: %+v %+v\n", dst, src)
 	switch s := src.(type) {
 	case *os.File:
-		fmt.Printf("MustCopy: src (%T): %d %s\n", s, s.Fd(), s.Name())
+		L.Debug.Printf("MustCopy: src (%T): %d %s\n", s, s.Fd(), s.Name())
 	case Referable:
-		fmt.Printf("MustCopy: src (%T): %s\n", s, *s.Arn())
+		L.Debug.Printf("MustCopy: src (%T): %s\n", s, *s.Arn())
 	}
 
 	switch d := dst.(type) {
 	case *os.File:
-		fmt.Printf("MustCopy: dst (%T): %d %s\n", d, d.Fd(), d.Name())
+		L.Debug.Printf("MustCopy: dst (%T): %d %s\n", d, d.Fd(), d.Name())
 	case Referable:
-		fmt.Printf("MustCopy: dst (%T): %s\n", d, *d.Arn())
+		L.Debug.Printf("MustCopy: dst (%T): %s\n", d, *d.Arn())
 	}
 
 	w, err := io.Copy(dst, src)

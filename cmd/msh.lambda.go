@@ -1,16 +1,27 @@
 package main
 
 import (
-	"github.com/ryanjarv/msh/pkg/providers/pipes"
+	"flag"
+	L "github.com/ryanjarv/msh/pkg/logger"
+	"github.com/ryanjarv/msh/pkg/providers/command"
+	"github.com/ryanjarv/msh/pkg/providers/lambda"
 	"github.com/ryanjarv/msh/pkg/providers/process"
 )
 
 func main() {
-	awsPipe := pipes.NewPipe()
-	proc := process.NewProcess(awsPipe)
-
-	err := proc.Run()
+	flag.Parse()
+	lambda := lambda.NewLambdaCmd(
+		command.NewCommand(flag.Args()),
+	)
+	err := lambda.Deploy()
 	if err != nil {
-		panic(err)
+		L.Error.Fatalln("failed to deploy lambda:", err)
+	}
+
+	proc := process.NewMsh(lambda)
+
+	err = proc.Run()
+	if err != nil {
+		L.Error.Fatalln(err)
 	}
 }
