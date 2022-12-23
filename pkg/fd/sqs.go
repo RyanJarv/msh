@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	pipesTypes "github.com/aws/aws-sdk-go-v2/service/pipes/types"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	L "github.com/ryanjarv/msh/pkg/logger"
 	"github.com/samber/lo"
@@ -358,4 +359,13 @@ func (p Sqs) Close() (err error) {
 	lo.Must(io.Copy(os.Stdout, os.Stdin))
 
 	return nil
+}
+
+func (p Sqs) PipeSourceParameters() *pipesTypes.PipeSourceParameters {
+	return &pipesTypes.PipeSourceParameters{
+		SqsQueueParameters: &pipesTypes.PipeSourceSqsQueueParameters{
+			BatchSize:                      aws.Int32(1),
+			MaximumBatchingWindowInSeconds: aws.Int32(10),
+		},
+	}
 }

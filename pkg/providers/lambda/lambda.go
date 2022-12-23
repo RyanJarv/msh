@@ -23,15 +23,22 @@ var lambdaHandler string
 
 func NewLambdaCmd(cmd command.Command) *LambdaCmd {
 	cfg := lo.Must(config.LoadDefaultConfig(context.TODO()))
-	return &LambdaCmd{
+
+	l := &LambdaCmd{
+		Name:   aws.String("test-4919"),
 		Cmd:    cmd,
 		client: lambda.NewFromConfig(cfg),
 	}
+
+	l.pr, l.pw = io.Pipe()
+
+	return l
 }
 
 type LambdaCmd struct {
 	command.Command
-	Lambda *lambda.GetFunctionOutput
+	Name   *string
+	lambda *lambda.GetFunctionOutput
 	Input  []byte
 	pw     *io.PipeWriter
 	pr     *io.PipeReader
@@ -39,15 +46,27 @@ type LambdaCmd struct {
 	Cmd    command.Command
 }
 
+func (s *LambdaCmd) Arn() *string {
+	return s.describe().Configuration.FunctionArn
+}
+
+func (s *LambdaCmd) describe() *lambda.GetFunctionOutput {
+	if s.lambda == nil {
+		s.lambda = lo.Must(s.client.GetFunction(context.TODO(), &lambda.GetFunctionInput{
+			FunctionName: s.Name,
+		}))
+	}
+	return s.lambda
+}
+
 func (s *LambdaCmd) Deploy() error {
-	name := aws.String("test-4919")
 	code := lo.Must(LambdaZip())
 
 	_, err := s.client.CreateFunction(context.TODO(), &lambda.CreateFunctionInput{
 		Code: &lambdaTypes.FunctionCode{
 			ZipFile: code,
 		},
-		FunctionName: name,
+		FunctionName: s.Name,
 		Handler:      aws.String("lambda_handler.lambda_handler"),
 		MemorySize:   aws.Int32(128),
 		Publish:      true,
@@ -66,20 +85,16 @@ func (s *LambdaCmd) Deploy() error {
 	} else if err != nil {
 		return fmt.Errorf("failed to create function: %w", err)
 	}
-
-	s.Lambda = lo.Must(s.client.GetFunction(context.TODO(), &lambda.GetFunctionInput{
-		FunctionName: name,
-	}))
+	L.Debug.Println("function deployed:", *s.Arn())
 
 	return nil
 }
 
 func (s *LambdaCmd) Run() error {
 	defer s.pw.Close()
-	//s.CreatePipeInput.Enrichment = step.Arn()
 
 	resp := lo.Must(s.client.Invoke(context.TODO(), &lambda.InvokeInput{
-		FunctionName:   s.Lambda.Configuration.FunctionName,
+		FunctionName:   s.describe().Configuration.FunctionName,
 		InvocationType: lambdaTypes.InvocationTypeRequestResponse,
 		Payload:        s.Input,
 		LogType:        lambdaTypes.LogTypeTail,
@@ -102,7 +117,6 @@ func (s *LambdaCmd) SetStdin(p interface{}) {
 }
 
 func (s *LambdaCmd) GetStdout() io.Reader {
-	s.pr, s.pw = io.Pipe()
 	return s.pr
 }
 

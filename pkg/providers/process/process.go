@@ -20,8 +20,8 @@ type Provider interface {
 	Run() error
 }
 
-func NewMsh(provider Provider) *Msh {
-	proc := &Msh{
+func NewProcess(provider Provider) *Process {
+	proc := &Process{
 		Provider: provider,
 	}
 
@@ -42,14 +42,14 @@ func NewMsh(provider Provider) *Msh {
 	return proc
 }
 
-type Msh struct {
+type Process struct {
 	Provider Provider    `json:"-"`
 	Stdin    interface{} `json:",omitempty"`
 	Stdout   interface{} `json:"-"`
 	Pid      *int        `json:"-"`
 }
 
-func (p *Msh) Run() error {
+func (p *Process) Run() error {
 	wg := sync.WaitGroup{}
 
 	if utils.IsTTY(os.Stdout) || !fd.IsReferable(p.Stdout) {
@@ -68,7 +68,7 @@ func (p *Msh) Run() error {
 	return err
 }
 
-func (p *Msh) SetStdin(s interface{}) {
+func (p *Process) SetStdin(s interface{}) {
 	if utils.IsEmptyOrEmpty(s) {
 		L.Debug.Println("stdin set to: os.Stdin")
 		s = os.Stdin
@@ -77,19 +77,19 @@ func (p *Msh) SetStdin(s interface{}) {
 	p.Provider.SetStdin(s)
 }
 
-func (p *Msh) GetStdout() io.Reader {
+func (p *Process) GetStdout() io.Reader {
 	return p.Provider.GetStdout()
 }
 
-func (p *Msh) WriteConf(w *os.File) {
-	d := lo.Must(json.Marshal(Msh{
+func (p *Process) WriteConf(w *os.File) {
+	d := lo.Must(json.Marshal(Process{
 		Stdin: p.Stdout,
 	}))
 	lo.Must(io.WriteString(w, string(d)+"\n"))
 	time.Sleep(100 * time.Millisecond)
 }
 
-func (p *Msh) ReadConf(f *os.File) {
+func (p *Process) ReadConf(f *os.File) {
 	L.Debug.Println("reading conf from fd", f.Fd())
 
 	d := lo.Must(readLine(f))

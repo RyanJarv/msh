@@ -12,6 +12,10 @@ import (
 )
 
 func NewCommand(args []string) Command {
+	if len(args) == 0 {
+		L.Error.Fatalln("no command provided")
+	}
+
 	return Command{
 		Cmd: exec.Command(args[0], args[1:]...),
 		cfg: lo.Must(config.LoadDefaultConfig(context.TODO())),

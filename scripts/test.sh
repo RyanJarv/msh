@@ -24,13 +24,12 @@ output="$(mktemp -d)/out"
 DEBUG= script -q $output bash -c "$CMD" 1>/dev/null ||:
 
 if cat $output | grep -qE "$REGEX"; then
-  printf "      ${GREEN}[PASSED]${NC} $CMD\n"
+  printf "      ${GREEN}[PASSED]${NC} %s\n" "$CMD"
 else
-  printf "
-      ${RED}[FAILED]${NC} ${CMD}
-        Got:    '$(cat $output)'
-        Regex:  '$REGEX'
-"
+  printf "${RED}[FAILED]${NC} %s
+        Got:     '%s'
+        Regex:   '%s'
+" "${CMD}" "$(cat $output)" "$REGEX"
 fi
 
 rm $output

@@ -15,7 +15,7 @@ func main() {
 
 	sqs := &Sqs{}
 
-	proc := process.NewMsh(sqs)
+	proc := process.NewProcess(sqs)
 	err := proc.Run()
 
 	if err != nil {

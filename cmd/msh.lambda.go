@@ -18,7 +18,7 @@ func main() {
 		L.Error.Fatalln("failed to deploy lambda:", err)
 	}
 
-	proc := process.NewMsh(lambda)
+	proc := process.NewProcess(lambda)
 
 	err = proc.Run()
 	if err != nil {
