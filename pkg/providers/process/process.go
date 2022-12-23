@@ -71,7 +71,7 @@ func (p *Process) Run() error {
 }
 
 func (p *Process) SetStdin(s interface{}) {
-	if utils.IsEmptyOrEmpty(s) {
+	if utils.IsNilOrEmpty(s) {
 		L.Debug.Println("stdin set to: os.Stdin")
 		s = os.Stdin
 	}
