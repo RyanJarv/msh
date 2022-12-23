@@ -18,7 +18,7 @@ import (
 )
 
 ////type Processor interface {
-////	Setup(input Input, output Output)
+////	Setup(input Stdin, output Output)
 ////	Run() error
 ////}
 ////
@@ -189,7 +189,7 @@ func OpenSqs(ctx context.Context, url string) (*Sqs, error) {
 	return p, nil
 }
 
-func NewSqsFrom(ctx context.Context, f interface{}) (*Sqs, error) {
+func NewSqsFrom(ctx context.Context, f interface{}, name, fd string) (*Sqs, error) {
 	var pipe *Sqs
 	switch from := f.(type) {
 
@@ -204,7 +204,7 @@ func NewSqsFrom(ctx context.Context, f interface{}) (*Sqs, error) {
 		pipe = lo.Must(OpenSqs(ctx, *from.Url))
 	case io.Reader:
 		cfg := lo.Must(config.LoadDefaultConfig(ctx))
-		pipe = lo.Must(CreateSqs(cfg, "temp", "stdin"))
+		pipe = lo.Must(CreateSqs(cfg, name, fd))
 
 		L.Debug.Printf("copying to:  %s", *pipe.Url)
 		go MustCopy(pipe, from)
@@ -244,24 +244,29 @@ type Sqs struct {
 	fd       string
 }
 
-func (p Sqs) Read(d []byte) (n int, err error) {
+func (p *Sqs) Read(d []byte) (n int, err error) {
 	L.Debug.Printf("reading from pipe: expected %d, received: %d\n", *p.expected, *p.received)
+	if p.closed {
+		return 0, io.EOF
+	}
 
 	for p.buf.Len() == 0 {
 		if *p.expected != 0 && *p.received >= *p.expected {
 			L.Debug.Println("finished processing all messages")
+
+			p.wg.Done()
+			p.closed = true
+
 			return 0, io.EOF
 		}
 
-		if p.fetch() {
-			p.wg.Done()
-		}
+		p.fetch()
 	}
 
 	return p.buf.Read(d)
 }
 
-func (p Sqs) fetch() bool {
+func (p *Sqs) fetch() bool {
 	L.Debug.Println("fetching messages")
 	msgs := lo.Must(p.client.ReceiveMessage(context.TODO(), &sqs.ReceiveMessageInput{
 		QueueUrl:        p.Url,
@@ -300,17 +305,17 @@ func (p Sqs) fetch() bool {
 	return false
 }
 
-func (p Sqs) Arn() *string {
+func (p *Sqs) Arn() *string {
 	return aws.String(QueueArnFromUrl(*p.Url))
 }
 
-func (p Sqs) Env() []string {
+func (p *Sqs) Env() []string {
 	return []string{
 		fmt.Sprintf("AWS_SQS_%s_URL=%s", strings.ToUpper(p.fd), *p.Url),
 	}
 }
 
-func (p Sqs) Write(d []byte) (n int, err error) {
+func (p *Sqs) Write(d []byte) (n int, err error) {
 	L.Debug.Printf("writing to pipe: %s: %s", *p.Url, string(d))
 
 	msg := lo.Must(json.Marshal(&Event{
@@ -336,11 +341,11 @@ func (p Sqs) Write(d []byte) (n int, err error) {
 	return len(d), err
 }
 
-func (p Sqs) Wait() {
+func (p *Sqs) Wait() {
 	p.wg.Wait()
 }
 
-func (p Sqs) Close() (err error) {
+func (p *Sqs) Close() (err error) {
 	L.Debug.Println("closing pipes")
 
 	event := lo.Must(json.Marshal(&Event{
@@ -361,7 +366,7 @@ func (p Sqs) Close() (err error) {
 	return nil
 }
 
-func (p Sqs) PipeSourceParameters() *pipesTypes.PipeSourceParameters {
+func (p *Sqs) PipeSourceParameters() *pipesTypes.PipeSourceParameters {
 	return &pipesTypes.PipeSourceParameters{
 		SqsQueueParameters: &pipesTypes.PipeSourceSqsQueueParameters{
 			BatchSize:                      aws.Int32(1),

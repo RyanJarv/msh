@@ -2,6 +2,7 @@ package lambda
 
 import (
 	"archive/zip"
+	"bufio"
 	"bytes"
 	"context"
 	_ "embed"
@@ -30,20 +31,20 @@ func NewLambdaCmd(cmd command.Command) *LambdaCmd {
 		client: lambda.NewFromConfig(cfg),
 	}
 
-	l.pr, l.pw = io.Pipe()
+	l.stdoutR, l.Stdout = io.Pipe()
 
 	return l
 }
 
 type LambdaCmd struct {
 	command.Command
-	Name   *string
-	lambda *lambda.GetFunctionOutput
-	Input  []byte
-	pw     *io.PipeWriter
-	pr     *io.PipeReader
-	client *lambda.Client
-	Cmd    command.Command
+	Name    *string
+	lambda  *lambda.GetFunctionOutput
+	Stdin   io.ReadCloser
+	Stdout  io.WriteCloser
+	client  *lambda.Client
+	Cmd     command.Command
+	stdoutR *io.PipeReader
 }
 
 func (s *LambdaCmd) Arn() *string {
@@ -91,33 +92,39 @@ func (s *LambdaCmd) Deploy() error {
 }
 
 func (s *LambdaCmd) Run() error {
-	defer s.pw.Close()
+	defer s.Stdout.Close()
 
-	resp := lo.Must(s.client.Invoke(context.TODO(), &lambda.InvokeInput{
-		FunctionName:   s.describe().Configuration.FunctionName,
-		InvocationType: lambdaTypes.InvocationTypeRequestResponse,
-		Payload:        s.Input,
-		LogType:        lambdaTypes.LogTypeTail,
-	}))
-	L.Debug.Println("lambda response:", string(resp.Payload))
+	stdin := bufio.NewScanner(s.Stdin)
 
-	err := WriteOutput(s.pw, resp.Payload)
-	if err != nil {
-		return fmt.Errorf("failed to write output: %w", err)
+	for stdin.Scan() {
+		input := Input(s.Cmd.Args, stdin.Bytes())
+		L.Debug.Println("lambda input:", string(input))
+
+		resp := lo.Must(s.client.Invoke(context.TODO(), &lambda.InvokeInput{
+			FunctionName:   s.describe().Configuration.FunctionName,
+			InvocationType: lambdaTypes.InvocationTypeRequestResponse,
+			Payload:        input,
+			LogType:        lambdaTypes.LogTypeTail,
+		}))
+		L.Debug.Println("lambda response:", string(resp.Payload))
+
+		err := WriteOutput(s.Stdout, resp.Payload)
+		if err != nil {
+			return fmt.Errorf("failed to write output: %w", err)
+		}
+
+		L.Debug.Println("function logs:", Base64Decode(*resp.LogResult)+"\n")
 	}
-
-	L.Debug.Println("function logs:", Base64Decode(*resp.LogResult)+"\n")
 
 	return nil
 }
 
 func (s *LambdaCmd) SetStdin(p interface{}) {
-	stdin := lo.Must(io.ReadAll(p.(io.Reader)))
-	s.Input = Input(s.Cmd.Args, stdin)
+	s.Stdin = p.(io.ReadCloser)
 }
 
 func (s *LambdaCmd) GetStdout() io.Reader {
-	return s.pr
+	return s.stdoutR
 }
 
 func LambdaZip() ([]byte, error) {
@@ -147,7 +154,7 @@ func Base64Decode(s string) string {
 	return string(lo.Must(base64.StdEncoding.DecodeString(s)))
 }
 
-func WriteOutput(pw *io.PipeWriter, resp []byte) []string {
+func WriteOutput(pw io.Writer, resp []byte) []string {
 	var v []map[string]string
 	err := json.Unmarshal(resp, &v)
 	if err != nil {

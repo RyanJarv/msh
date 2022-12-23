@@ -52,6 +52,8 @@ type Process struct {
 func (p *Process) Run() error {
 	wg := sync.WaitGroup{}
 
+	// If stdout is a TTY, or Stdout of the process can not be passed as a reference, then
+	// copy the processes Stdout to the current Stdout.
 	if utils.IsTTY(os.Stdout) || !fd.IsReferable(p.Stdout) {
 		L.Debug.Println("copying: p.Stdout -> os.Stdout")
 		wg.Add(1)

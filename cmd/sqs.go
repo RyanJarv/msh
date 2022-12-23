@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/ryanjarv/msh/pkg/fd"
 	L "github.com/ryanjarv/msh/pkg/logger"
 	"github.com/ryanjarv/msh/pkg/providers/process"
@@ -13,7 +14,9 @@ import (
 func main() {
 	flag.Parse()
 
-	sqs := &Sqs{}
+	sqs := &Sqs{
+		Name: aws.String("test-4919"),
+	}
 
 	proc := process.NewProcess(sqs)
 	err := proc.Run()
@@ -25,6 +28,7 @@ func main() {
 
 type Sqs struct {
 	*fd.Sqs
+	Name *string
 }
 
 func (s *Sqs) Run() error {
@@ -32,7 +36,7 @@ func (s *Sqs) Run() error {
 }
 
 func (s *Sqs) SetStdin(p interface{}) {
-	s.Sqs = lo.Must(fd.NewSqsFrom(context.TODO(), p))
+	s.Sqs = lo.Must(fd.NewSqsFrom(context.TODO(), p, *s.Name, "stdin"))
 }
 
 func (s *Sqs) GetStdout() io.Reader {

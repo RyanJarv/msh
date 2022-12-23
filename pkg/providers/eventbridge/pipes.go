@@ -18,7 +18,7 @@ import (
 func NewPipe(lambda *lambda.LambdaCmd) AwsPipe {
 	cfg := lo.Must(config.LoadDefaultConfig(context.TODO()))
 
-	name := aws.String("test")
+	name := aws.String("test2")
 	return AwsPipe{
 		Name: name,
 		CreatePipeInput: &pipes.CreatePipeInput{
@@ -55,21 +55,30 @@ func (p *AwsPipe) Deploy() error {
 }
 
 func (p *AwsPipe) Run() error {
-	return p.LambdaCmd.Run()
+	p.LambdaCmd.Stdout.(*fd.Sqs).Wait()
+	return nil
 }
 
 func (p *AwsPipe) SetStdin(source interface{}) {
-	sqs := lo.Must(fd.NewSqsFrom(context.TODO(), source))
+	sqs := lo.Must(fd.NewSqsFrom(context.TODO(), source, *p.Name, "stdin"))
+
 	p.CreatePipeInput.Source = sqs.Arn()
 	p.CreatePipeInput.SourceParameters = sqs.PipeSourceParameters()
+
 	L.Debug.Println("eventbridge pipes: source:", sqs.Arn())
+
+	p.LambdaCmd.SetStdin(sqs)
 }
 
 func (p *AwsPipe) GetStdout() io.Reader {
-	cfg := lo.Must(config.LoadDefaultConfig(context.TODO()))
+	stdout := p.LambdaCmd.GetStdout()
 
-	sqs := lo.Must(fd.CreateSqs(cfg, "temp", "stdout"))
-	p.CreatePipeInput.Target = sqs.Arn()
+	sqs := lo.Must(fd.NewSqsFrom(context.TODO(), stdout, *p.Name, "stdout"))
+
 	L.Debug.Println("eventbridge pipes: target:", sqs.Arn())
+
+	p.CreatePipeInput.Target = sqs.Arn()
+	p.LambdaCmd.Stdout = sqs
+
 	return sqs
 }
