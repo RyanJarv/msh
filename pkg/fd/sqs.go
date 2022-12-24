@@ -87,10 +87,10 @@ func NewSqsFrom(ctx context.Context, f interface{}, name, fd string) (*Sqs, erro
 	switch from := f.(type) {
 
 	// Just read directly from the sqs output queue of the last command.
-	case map[string]interface{}:
-		url := from["Url"].(string)
-		L.Debug.Println("stdin is sqs, skipping copy:", url)
-		pipe = lo.Must(OpenSqs(ctx, url))
+	//case map[string]interface{}:
+	//	url := from["Url"].(string)
+	//	L.Debug.Println("stdin is sqs, skipping copy:", url)
+	//	pipe = lo.Must(OpenSqs(ctx, url))
 	case Sqs:
 		// Just read directly from the sqs output queue of the last command.
 		L.Debug.Println("stdin is sqs, skipping copy:", from.Url)
@@ -181,7 +181,6 @@ func (p *Sqs) fetch() bool {
 			QueueUrl:      p.Url,
 			ReceiptHandle: msg.ReceiptHandle,
 		}))
-		L.Debug.Printf("received message: %s\n", *msg.Body)
 
 		// Msg is a json string so unmarshal twice.
 		var body string

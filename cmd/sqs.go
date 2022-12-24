@@ -32,6 +32,7 @@ type Sqs struct {
 }
 
 func (s *Sqs) Run() error {
+	s.Sqs.Wait()
 	return nil
 }
 

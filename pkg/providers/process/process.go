@@ -1,6 +1,7 @@
 package process
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -10,7 +11,9 @@ import (
 	"github.com/samber/lo"
 	"io"
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -52,6 +55,8 @@ type Process struct {
 func (p *Process) Run() error {
 	wg := sync.WaitGroup{}
 
+	CatchShutdownSignal()
+
 	// If stdout is a TTY, or Stdout of the process can not be passed as a reference, then
 	// copy the processes Stdout to the current Stdout.
 	if utils.IsTTY(os.Stdout) || !fd.IsReferable(p.Stdout) {
@@ -61,9 +66,22 @@ func (p *Process) Run() error {
 			L.Debug.Println("copying: p.Stdout -> os.Stdout (%T)", p.Stdout)
 		}
 
+		pgid, err := syscall.Getpgid(os.Getpid())
+		if err != nil {
+			L.Error.Fatalln("failed to get pgid", err)
+		}
+		L.Debug.Println("pgid:", pgid)
+
 		wg.Add(1)
 		go func() {
 			fd.MustCopy(os.Stdout, p.Stdout.(io.Reader))
+
+			L.Debug.Println("pgid is %d, sending SIGKILL", pgid)
+			err = syscall.Kill(-pgid, syscall.SIGUSR1)
+			if err != nil {
+				L.Error.Println("failed to kill pgid", err)
+			}
+
 			wg.Done()
 		}()
 	}
@@ -72,16 +90,25 @@ func (p *Process) Run() error {
 	L.Debug.Println("provider run returned", err)
 
 	wg.Wait()
+	L.Debug.Println("all done")
 	return err
 }
 
-func (p *Process) SetStdin(s interface{}) {
-	if utils.IsNilOrEmpty(s) {
+func (p *Process) SetStdin(stdin interface{}) {
+	if utils.IsNilOrEmpty(stdin) {
 		L.Debug.Println("stdin set to: os.Stdin")
-		s = os.Stdin
+		stdin = os.Stdin
+	}
+	L.Debug.Printf("stdin (%T) set to: %+v", stdin, stdin)
+
+	switch s := stdin.(type) {
+	case map[string]interface{}:
+		url := s["Url"].(string)
+		L.Debug.Println("stdin is sqs, skipping copy:", url)
+		stdin = lo.Must(fd.OpenSqs(context.TODO(), url))
 	}
 
-	p.Provider.SetStdin(s)
+	p.Provider.SetStdin(stdin)
 }
 
 func (p *Process) GetStdout() io.Reader {
@@ -128,4 +155,20 @@ func readLine(f *os.File) ([]byte, error) {
 	}
 
 	return s, nil
+}
+
+// CatchShutdownSignal catches the process group shutdown signal and exits.
+//
+// SIGPIPE doesn't appear to be catchable, so we use SIGUSR1 instead.
+func CatchShutdownSignal() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGUSR1)
+	go func() {
+		for range c {
+			L.Debug.Println("caught SIGUSR1, shutting down")
+			os.Stdout.Sync()
+			os.Stdout.Sync()
+			os.Exit(0)
+		}
+	}()
 }
