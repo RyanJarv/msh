@@ -10,6 +10,7 @@ import (
 	pipesTypes "github.com/aws/aws-sdk-go-v2/service/pipes/types"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	L "github.com/ryanjarv/msh/pkg/logger"
+	"github.com/ryanjarv/msh/pkg/utils"
 	"github.com/samber/lo"
 	"io"
 	"os"
@@ -114,9 +115,10 @@ const (
 )
 
 type Event struct {
-	Type    EventType
-	Id      uint64
-	Content string
+	Type       EventType
+	Id         uint64
+	Content    string
+	Attributes map[string]string
 }
 
 type Sqs struct {
@@ -132,6 +134,7 @@ type Sqs struct {
 	received *uint64
 	expected *uint64
 	fd       string
+	attrs    map[string]interface{}
 }
 
 func (p *Sqs) Read(d []byte) (n int, err error) {
@@ -168,13 +171,21 @@ func (p *Sqs) fetch() bool {
 			QueueUrl:      p.Url,
 			ReceiptHandle: msg.ReceiptHandle,
 		}))
-
 		L.Debug.Printf("received message: %s\n", *msg.Body)
 
-		event := &Event{}
-		err := json.Unmarshal([]byte(*msg.Body), event)
+		// Msg is a json string so unmarshal twice.
+		var body string
+		err := json.Unmarshal([]byte(*msg.Body), &body)
 		if err != nil {
-			L.Error.Fatalln("failed to unmarshal message:", err)
+			L.Error.Fatalln("failed to unmarshal message body:", err)
+		}
+
+		L.Debug.Printf("received message (decoded): %s\n", body)
+
+		event := &Event{}
+		err = json.Unmarshal([]byte(body), event)
+		if err != nil {
+			L.Error.Fatalln("unmarshal message to event:", err)
 		}
 
 		L.Debug.Printf("event: id %d", event.Id)
@@ -205,19 +216,27 @@ func (p *Sqs) Env() []string {
 	}
 }
 
+// Write writes the contents of p to the SQS queue.
+//
+// I'm unable to get eventbridge pipes w/ a transform to work when the input is json. I'm not sure if this is a bug in
+// eventbridge or if I'm doing something wrong. To work around this, marshal the json twice to make it a string of json.
 func (p *Sqs) Write(d []byte) (n int, err error) {
 	L.Debug.Printf("writing to pipe: %s: %s", *p.Url, string(d))
 
-	msg := lo.Must(json.Marshal(&Event{
+	// Ensure msg is a json string so marshal twice.
+	msg := lo.Must(utils.JSONMarshal(&Event{
 		Type:    MessageEvent,
 		Id:      *p.sent + 1,
 		Content: string(d),
 	}))
 
+	L.Debug.Println("sending message (1):", string(msg))
+
+	msg = lo.Must(utils.JSONMarshal(string(msg)))
+	L.Debug.Println("sending message (2):", string(msg))
+
 	lo.Must(p.client.SendMessage(p.ctx, &sqs.SendMessageInput{
-		QueueUrl: p.Url,
-		//MessageGroupId:         aws.String("default"),
-		//MessageDeduplicationId: aws.String(messageId()),
+		QueueUrl:    p.Url,
 		MessageBody: aws.String(string(msg)),
 	}))
 	if err != nil {
@@ -238,14 +257,14 @@ func (p *Sqs) Wait() {
 func (p *Sqs) Close() (err error) {
 	L.Debug.Println("closing pipes")
 
-	event := lo.Must(json.Marshal(&Event{
+	event := lo.Must(utils.JSONMarshal(&Event{
 		Type: ShutdownEvent,
 		Id:   *p.sent,
 	}))
+	event = lo.Must(utils.JSONMarshal(string(event)))
+
 	lo.Must(p.client.SendMessage(context.TODO(), &sqs.SendMessageInput{
-		QueueUrl: p.Url,
-		//MessageGroupId:         aws.String("default"),
-		//MessageDeduplicationId: aws.String(messageId()),
+		QueueUrl:    p.Url,
 		MessageBody: aws.String(string(event)),
 	}))
 	L.Debug.Println("sent closed event: processed", *p.sent)

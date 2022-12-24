@@ -18,12 +18,15 @@ import (
 func NewPipe(lambda *lambda.LambdaCmd) AwsPipe {
 	cfg := lo.Must(config.LoadDefaultConfig(context.TODO()))
 
-	name := aws.String("test2")
+	name := aws.String("test11")
 	return AwsPipe{
 		Name: name,
 		CreatePipeInput: &pipes.CreatePipeInput{
-			Name:         name,
-			Enrichment:   lambda.Arn(),
+			Name:       name,
+			Enrichment: lambda.Arn(),
+			EnrichmentParameters: &pipesTypes.PipeEnrichmentParameters{
+				InputTemplate: aws.String(lambda.Input("<$.body>")),
+			},
 			DesiredState: pipesTypes.RequestedPipeStateRunning,
 			RoleArn:      aws.String("arn:aws:iam::336983520827:role/service-role/Amazon_EventBridge_Pipe_test_ed80013d"),
 		},

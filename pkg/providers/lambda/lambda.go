@@ -15,8 +15,10 @@ import (
 	lambdaTypes "github.com/aws/aws-sdk-go-v2/service/lambda/types"
 	L "github.com/ryanjarv/msh/pkg/logger"
 	"github.com/ryanjarv/msh/pkg/providers/command"
+	"github.com/ryanjarv/msh/pkg/utils"
 	"github.com/samber/lo"
 	"io"
+	"strings"
 )
 
 //go:embed function/lambda_function.py
@@ -97,13 +99,14 @@ func (s *LambdaCmd) Run() error {
 	stdin := bufio.NewScanner(s.Stdin)
 
 	for stdin.Scan() {
-		input := Input(s.Cmd.Args, stdin.Bytes())
-		L.Debug.Println("lambda input:", string(input))
+
+		payload := s.Input(stdin.Text())
+		L.Debug.Println("lambda: payload:", string(payload))
 
 		resp := lo.Must(s.client.Invoke(context.TODO(), &lambda.InvokeInput{
 			FunctionName:   s.describe().Configuration.FunctionName,
 			InvocationType: lambdaTypes.InvocationTypeRequestResponse,
-			Payload:        input,
+			Payload:        []byte(payload),
 			LogType:        lambdaTypes.LogTypeTail,
 		}))
 		L.Debug.Println("lambda response:", string(resp.Payload))
@@ -162,23 +165,33 @@ func WriteOutput(pw io.Writer, resp []byte) []string {
 	}
 
 	for _, o := range v {
-		lo.Must(fmt.Fprintf(pw, o["Content"]))
+		lo.Must(fmt.Fprintf(pw, o["body"]))
 	}
 
 	return nil
 }
 
-func Input(cmd []string, stdin []byte) []byte {
-	body := string(lo.Must(json.Marshal(map[string]interface{}{
-		"Content": string(stdin),
-	})))
+type InputTemplate struct {
+	Event string            `json:"event"`
+	Cmd   []string          `json:"cmd"`
+	Env   map[string]string `json:"env"`
+}
 
-	input := []map[string]interface{}{
-		{
-			"cmd":  cmd,
-			"body": body,
-		},
+func (s *LambdaCmd) Input(body string) string {
+	env := map[string]string{}
+
+	if s.Cmd.Env != nil {
+		for _, envVar := range s.Env {
+			parts := strings.SplitN(envVar, "=", 2)
+			env[parts[0]] = parts[1]
+		}
 	}
-	L.Debug.Println("lambda input:", input)
-	return lo.Must(json.Marshal(input))
+
+	input := lo.Must(utils.JSONMarshal(map[string]interface{}{
+		"body": body,
+		"cmd":  s.Cmd.Args,
+		"env":  env,
+	}))
+
+	return string(input)
 }

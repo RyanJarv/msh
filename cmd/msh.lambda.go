@@ -10,15 +10,17 @@ import (
 
 func main() {
 	flag.Parse()
-	lambda := lambda.NewLambdaCmd(
+	L.Debug.Println("args:", flag.Args())
+
+	function := lambda.NewLambdaCmd(
 		command.NewCommand(flag.Args()),
 	)
-	err := lambda.Deploy()
+	err := function.Deploy()
 	if err != nil {
-		L.Error.Fatalln("failed to deploy lambda:", err)
+		L.Error.Fatalln("failed to deploy function:", err)
 	}
 
-	proc := process.NewProcess(lambda)
+	proc := process.NewProcess(function)
 
 	err = proc.Run()
 	if err != nil {
