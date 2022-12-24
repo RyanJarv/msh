@@ -35,7 +35,11 @@ func GetName(args []string) string {
 	return fmt.Sprintf("%s-%s", cmd, hex)
 }
 
-func Sha256(d []byte) string {
-	sha := sha256.Sum256([]byte(d))
-	return base64.StdEncoding.EncodeToString(sha[:])
+func Sha256[T []byte | string](s T) T {
+	sha := sha256.Sum256([]byte(s))
+	return T(base64.StdEncoding.EncodeToString(sha[:]))
+}
+
+func Sha256Base64[T []byte | string](s T) T {
+	return T(base64.StdEncoding.EncodeToString([]byte(s)))
 }

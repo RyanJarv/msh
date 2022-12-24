@@ -20,12 +20,12 @@ func main() {
 
 	err := function.Deploy()
 	if err != nil {
-		L.Error.Fatalln("failed to deploy lambda:", err)
+		L.Error.Fatalln("lambda deploy:", err)
 	}
 
 	err = pipe.Deploy()
 	if err != nil {
-		L.Error.Fatalln("failed to deploy lambda:", err)
+		L.Error.Fatalln("eventbridge pipes deploy:", err)
 	}
 
 	err = proc.Run()

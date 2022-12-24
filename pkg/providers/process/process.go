@@ -55,7 +55,12 @@ func (p *Process) Run() error {
 	// If stdout is a TTY, or Stdout of the process can not be passed as a reference, then
 	// copy the processes Stdout to the current Stdout.
 	if utils.IsTTY(os.Stdout) || !fd.IsReferable(p.Stdout) {
-		L.Debug.Println("copying: p.Stdout -> os.Stdout")
+		if sqs, ok := p.Stdout.(*fd.Sqs); ok {
+			L.Debug.Printf("copying: %s -> os.Stdout\n", *sqs.Arn())
+		} else {
+			L.Debug.Println("copying: p.Stdout -> os.Stdout (%T)", p.Stdout)
+		}
+
 		wg.Add(1)
 		go func() {
 			fd.MustCopy(os.Stdout, p.Stdout.(io.Reader))

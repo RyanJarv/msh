@@ -11,11 +11,14 @@ import (
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/iam"
+	iamTypes "github.com/aws/aws-sdk-go-v2/service/iam/types"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	lambdaTypes "github.com/aws/aws-sdk-go-v2/service/lambda/types"
 	"github.com/ryanjarv/msh/pkg/fd"
 	L "github.com/ryanjarv/msh/pkg/logger"
 	"github.com/ryanjarv/msh/pkg/providers/command"
+	"github.com/ryanjarv/msh/pkg/types"
 	"github.com/ryanjarv/msh/pkg/utils"
 	"github.com/samber/lo"
 	"io"
@@ -29,9 +32,10 @@ func NewLambdaCmd(cmd command.Command) *LambdaCmd {
 	cfg := lo.Must(config.LoadDefaultConfig(context.TODO()))
 
 	l := &LambdaCmd{
-		Name:   aws.String("msh-lambda"),
+		Name:   aws.String("msh-function"),
 		Cmd:    cmd,
-		client: lambda.NewFromConfig(cfg),
+		lambda: lambda.NewFromConfig(cfg),
+		iam:    iam.NewFromConfig(cfg),
 	}
 
 	l.stdoutR, l.Stdout = io.Pipe()
@@ -41,13 +45,14 @@ func NewLambdaCmd(cmd command.Command) *LambdaCmd {
 
 type LambdaCmd struct {
 	command.Command
-	Name    *string
-	lambda  *lambda.GetFunctionOutput
-	Stdin   io.ReadCloser
-	Stdout  io.WriteCloser
-	client  *lambda.Client
-	Cmd     command.Command
-	stdoutR *io.PipeReader
+	Name     *string
+	function *lambda.GetFunctionOutput
+	Stdin    io.ReadCloser
+	Stdout   io.WriteCloser
+	lambda   *lambda.Client
+	iam      *iam.Client
+	Cmd      command.Command
+	stdoutR  *io.PipeReader
 }
 
 func (s *LambdaCmd) Arn() *string {
@@ -55,23 +60,23 @@ func (s *LambdaCmd) Arn() *string {
 }
 
 func (s *LambdaCmd) describe() *lambda.GetFunctionOutput {
-	if s.lambda == nil {
-		s.lambda = lo.Must(s.client.GetFunction(context.TODO(), &lambda.GetFunctionInput{
+	if s.function == nil {
+		s.function = lo.Must(s.lambda.GetFunction(context.TODO(), &lambda.GetFunctionInput{
 			FunctionName: s.Name,
 		}))
 	}
-	return s.lambda
+	return s.function
 }
 
 func (s *LambdaCmd) Deploy() error {
+	role := lo.Must(s.role())
 
 	code := lo.Must(LambdaZip())
 
-	resp, err := s.client.GetFunction(context.TODO(), &lambda.GetFunctionInput{
-		FunctionName: s.Name,
-	})
+	resp, err := s.lambda.GetFunction(context.TODO(), &lambda.GetFunctionInput{FunctionName: s.Name})
+
 	if _, ok := lo.ErrorsAs[*lambdaTypes.ResourceNotFoundException](err); ok {
-		_, err = s.client.CreateFunction(context.TODO(), &lambda.CreateFunctionInput{
+		_, err = s.lambda.CreateFunction(context.TODO(), &lambda.CreateFunctionInput{
 			Code: &lambdaTypes.FunctionCode{
 				ZipFile: code,
 			},
@@ -79,29 +84,29 @@ func (s *LambdaCmd) Deploy() error {
 			Handler:      aws.String("lambda_handler.lambda_handler"),
 			MemorySize:   aws.Int32(128),
 			Publish:      true,
-			Role:         aws.String("arn:aws:iam::336983520827:role/service-role/msh-test-role-ztmr8mjk"),
+			Role:         role.Arn,
 			Runtime:      lambdaTypes.RuntimePython39,
 			Timeout:      aws.Int32(900),
 		})
 		if _, ok := lo.ErrorsAs[*lambdaTypes.ResourceConflictException](err); ok {
-			L.Debug.Println("lambda not found, creating")
-			lo.Must(s.client.UpdateFunctionCode(context.TODO(), &lambda.UpdateFunctionCodeInput{
+			L.Debug.Println("function not found, creating")
+			lo.Must(s.lambda.UpdateFunctionCode(context.TODO(), &lambda.UpdateFunctionCodeInput{
 				Publish:      true,
 				FunctionName: s.Name,
 				ZipFile:      code,
 			}))
 		} else if err != nil {
-			return fmt.Errorf("failed to create lambda: %w", err)
+			return fmt.Errorf("failed to create function: %w", err)
 		}
-		L.Debug.Println("lambda deployed:", *s.Arn())
+		L.Debug.Println("function deployed:", *s.Arn())
 
 	} else if err != nil {
-		return fmt.Errorf("failed to get lambda: %w", err)
+		return fmt.Errorf("failed to get function: %w", err)
 	}
 
-	if sha := utils.Sha256(code); *resp.Configuration.CodeSha256 != sha {
-		L.Debug.Printf("lambda code changed, updating: (old: %s, new: %s)", *resp.Configuration.CodeSha256, sha)
-		lo.Must(s.client.UpdateFunctionCode(context.TODO(), &lambda.UpdateFunctionCodeInput{
+	if sha := utils.Sha256(code); *s.describe().Configuration.CodeSha256 != string(sha) {
+		L.Debug.Printf("function code changed, updating: (old: %s, new: %s)", *resp.Configuration.CodeSha256, sha)
+		lo.Must(s.lambda.UpdateFunctionCode(context.TODO(), &lambda.UpdateFunctionCodeInput{
 			FunctionName: s.Name,
 			Publish:      true,
 			ZipFile:      code,
@@ -111,6 +116,87 @@ func (s *LambdaCmd) Deploy() error {
 	return nil
 }
 
+func (s *LambdaCmd) role() (*iamTypes.Role, error) {
+	resp, err := s.iam.GetRole(context.TODO(), &iam.GetRoleInput{RoleName: s.Name})
+	if _, ok := lo.ErrorsAs[*iamTypes.NoSuchEntityException](err); ok {
+		L.Debug.Println("role not found, creating")
+		return s.createRole()
+	}
+
+	L.Debug.Println("role found:", *resp.Role.Arn)
+
+	return resp.Role, utils.Wrap(err, "failed to get role")
+}
+
+func (s *LambdaCmd) createRole() (*iamTypes.Role, error) {
+	role := lo.Must(s.iam.CreateRole(context.TODO(), &iam.CreateRoleInput{
+		RoleName:                 s.Name,
+		AssumeRolePolicyDocument: s.TrustPolicy().ToString(),
+	}))
+	L.Debug.Println("role created:", *role.Role.Arn)
+
+	lo.Must(s.iam.PutRolePolicy(context.TODO(), &iam.PutRolePolicyInput{
+		PolicyDocument: s.LogsPolicy().ToString(),
+		PolicyName:     aws.String("lambda"),
+		RoleName:       role.Role.RoleName,
+	}))
+	L.Debug.Println("inline role policy attached to", *role.Role.RoleName)
+	return role.Role, nil
+}
+
+func (s *LambdaCmd) LogsPolicy() *types.IamPolicy {
+	return &types.IamPolicy{
+		Name:    fmt.Sprintf("%s-logs", *s.Name),
+		Version: "2012-10-17",
+		Statement: []types.IamPolicyStatement{
+			{
+				Effect: "Allow",
+				Action: []string{
+					"logs:CreateLogGroup",
+					"logs:CreateLogStream",
+					"logs:PutLogEvents",
+				},
+				Resource: []string{
+					fmt.Sprintf("arn:aws:logs:*:*:log-group:/aws/lambda/%s", *s.Name),
+					fmt.Sprintf("arn:aws:logs:*:*:log-group:/aws/lambda/%s:log-stream:*", *s.Name),
+				},
+			},
+		},
+	}
+}
+
+func (s *LambdaCmd) RunPolicy() *types.IamPolicy {
+	return &types.IamPolicy{
+		Version: "2012-10-17",
+		Name:    fmt.Sprintf("%s-run", *s.Name),
+		Statement: []types.IamPolicyStatement{
+			{
+				Effect: "Allow",
+				Action: []string{"lambda:InvokeFunction"},
+				Resource: []string{
+					*s.Arn(),
+				},
+			},
+		},
+	}
+}
+
+func (s *LambdaCmd) TrustPolicy() *types.IamPolicy {
+	return &types.IamPolicy{
+		Name:    fmt.Sprintf("%s-trust", *s.Name),
+		Version: "2012-10-17",
+		Statement: []types.IamPolicyStatement{
+			{
+				Effect: "Allow",
+				Action: []string{"sts:AssumeRole"},
+				Principal: &types.Principal{
+					Service: "lambda.amazonaws.com",
+				},
+			},
+		},
+	}
+}
+
 func (s *LambdaCmd) Run() error {
 	defer s.Stdout.Close()
 
@@ -118,20 +204,21 @@ func (s *LambdaCmd) Run() error {
 
 	for stdin.Scan() {
 
-		payload := s.Input(string(lo.Must(json.Marshal(fd.Event{
+		body := lo.Must(json.Marshal(fd.Event{
 			Type:    fd.MessageEvent,
 			Content: stdin.Text(),
 			Id:      0,
-		}))))
-		L.Debug.Println("lambda: payload:", string(payload))
+		}))
+		payload := fmt.Sprintf("[%s]", s.Input(string(body)))
+		L.Debug.Println("function: payload:", payload)
 
-		resp := lo.Must(s.client.Invoke(context.TODO(), &lambda.InvokeInput{
+		resp := lo.Must(s.lambda.Invoke(context.TODO(), &lambda.InvokeInput{
 			FunctionName:   s.describe().Configuration.FunctionName,
 			InvocationType: lambdaTypes.InvocationTypeRequestResponse,
 			Payload:        []byte(payload),
 			LogType:        lambdaTypes.LogTypeTail,
 		}))
-		L.Debug.Println("lambda response:", string(resp.Payload))
+		L.Debug.Println("function response:", string(resp.Payload))
 
 		err := WriteOutput(s.Stdout, resp.Payload)
 		if err != nil {
@@ -164,7 +251,7 @@ func LambdaZip() ([]byte, error) {
 
 	_, err = f.Write([]byte(lambdaHandler))
 	if err != nil {
-		return nil, fmt.Errorf("failed to write lambda handler: %w", err)
+		return nil, fmt.Errorf("failed to write function handler: %w", err)
 	}
 
 	err = w.Close()
@@ -215,12 +302,10 @@ func (s *LambdaCmd) Input(body string) string {
 		}
 	}
 
-	input := lo.Must(utils.JSONMarshal([]map[string]interface{}{
-		{
-			"body": body,
-			"cmd":  s.Cmd.Args,
-			"env":  env,
-		},
+	input := lo.Must(utils.JSONMarshal(map[string]interface{}{
+		"body": body,
+		"cmd":  s.Cmd.Args,
+		"env":  env,
 	}))
 
 	return string(input)

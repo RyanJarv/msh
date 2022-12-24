@@ -10,6 +10,7 @@ import (
 	pipesTypes "github.com/aws/aws-sdk-go-v2/service/pipes/types"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	L "github.com/ryanjarv/msh/pkg/logger"
+	"github.com/ryanjarv/msh/pkg/types"
 	"github.com/ryanjarv/msh/pkg/utils"
 	"github.com/samber/lo"
 	"io"
@@ -52,6 +53,7 @@ func CreateSqs(cfg aws.Config, name, fd string) (*Sqs, error) {
 		client:   client,
 		ctx:      context.Background(),
 		fd:       fd,
+		Name:     fmt.Sprintf("%s-%s", name, fd),
 		wg:       &sync.WaitGroup{},
 		buf:      bytes.NewBuffer([]byte{}),
 		sent:     aws.Uint64(0),
@@ -97,7 +99,7 @@ func NewSqsFrom(ctx context.Context, f interface{}, name, fd string) (*Sqs, erro
 		cfg := lo.Must(config.LoadDefaultConfig(ctx))
 		pipe = lo.Must(CreateSqs(cfg, name, fd))
 
-		L.Debug.Printf("copying to:  %s", *pipe.Url)
+		L.Debug.Printf("copying: io.Reader -> %s", *pipe.Url)
 		go MustCopy(pipe, from)
 	default:
 		panic("not implemented")
@@ -142,6 +144,7 @@ type Sqs struct {
 	expected *uint64
 	fd       string
 	attrs    map[string]interface{}
+	Name     string
 }
 
 func (p *Sqs) Read(d []byte) (n int, err error) {
@@ -287,6 +290,44 @@ func (p *Sqs) PipeSourceParameters() *pipesTypes.PipeSourceParameters {
 		SqsQueueParameters: &pipesTypes.PipeSourceSqsQueueParameters{
 			BatchSize:                      aws.Int32(1),
 			MaximumBatchingWindowInSeconds: aws.Int32(10),
+		},
+	}
+}
+
+func (s *Sqs) WritePolicy() *types.IamPolicy {
+	return &types.IamPolicy{
+		Version: "2012-10-17",
+		Name:    fmt.Sprintf("%s-write", s.Name),
+		Statement: []types.IamPolicyStatement{
+			{
+				Effect: "Allow",
+				Action: []string{
+					"sqs:SendMessage",
+				},
+				Resource: []string{
+					*s.Arn(),
+				},
+			},
+		},
+	}
+}
+
+func (s *Sqs) ReadPolicy() *types.IamPolicy {
+	return &types.IamPolicy{
+		Version: "2012-10-17",
+		Name:    fmt.Sprintf("%s-read", s.Name),
+		Statement: []types.IamPolicyStatement{
+			{
+				Effect: "Allow",
+				Action: []string{
+					"sqs:ReceiveMessage",
+					"sqs:DeleteMessage",
+					"sqs:GetQueueAttributes",
+				},
+				Resource: []string{
+					*s.Arn(),
+				},
+			},
 		},
 	}
 }
