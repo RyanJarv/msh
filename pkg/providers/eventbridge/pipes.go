@@ -51,9 +51,13 @@ type AwsPipe struct {
 
 func (p *AwsPipe) Name() string {
 	hash := utils.Sha256Base64(
-		strings.Join(p.LambdaCmd.Cmd.Args[1:], ""),
+		strings.Join(p.LambdaCmd.Cmd.Args, ""),
 	)
-	name := fmt.Sprintf("msh-%s-%s", p.LambdaCmd.Cmd.Args[0], hash[0:8])
+	hash = strings.ReplaceAll(hash, "=", "")
+
+	l := lo.Min([]int{len(hash), 8})
+	name := fmt.Sprintf("msh-%s-%s", p.LambdaCmd.Cmd.Args[0], hash[0:l])
+
 	return name
 }
 

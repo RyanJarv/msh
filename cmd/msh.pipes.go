@@ -11,9 +11,11 @@ import (
 
 func main() {
 	flag.Parse()
-	function := lambda.NewLambdaCmd(
-		command.NewCommand(flag.Args()),
-	)
+
+	cmd := command.NewCommand(flag.Args())
+
+	function := lambda.NewLambdaCmd(cmd)
+
 	pipe := eventbridge.NewPipe(function)
 
 	proc := process.NewProcess(&pipe)

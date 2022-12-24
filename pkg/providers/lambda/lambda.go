@@ -44,7 +44,6 @@ func NewLambdaCmd(cmd command.Command) *LambdaCmd {
 }
 
 type LambdaCmd struct {
-	command.Command
 	Name     *string
 	function *lambda.GetFunctionOutput
 	Stdin    io.ReadCloser
@@ -296,7 +295,7 @@ func (s *LambdaCmd) Input(body string) string {
 	env := map[string]string{}
 
 	if s.Cmd.Env != nil {
-		for _, envVar := range s.Env {
+		for _, envVar := range s.Cmd.Env {
 			parts := strings.SplitN(envVar, "=", 2)
 			env[parts[0]] = parts[1]
 		}
