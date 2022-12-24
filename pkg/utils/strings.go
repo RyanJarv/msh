@@ -2,6 +2,8 @@ package utils
 
 import (
 	"crypto/sha1"
+	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 	"math/rand"
 	"path/filepath"
@@ -31,4 +33,9 @@ func GetName(args []string) string {
 
 	cmd := strings.ReplaceAll(filepath.Base(args[0]), ".", "-")
 	return fmt.Sprintf("%s-%s", cmd, hex)
+}
+
+func Sha256(d []byte) string {
+	sha := sha256.Sum256([]byte(d))
+	return base64.StdEncoding.EncodeToString(sha[:])
 }

@@ -29,7 +29,7 @@ func NewLambdaCmd(cmd command.Command) *LambdaCmd {
 	cfg := lo.Must(config.LoadDefaultConfig(context.TODO()))
 
 	l := &LambdaCmd{
-		Name:   aws.String("test-4919"),
+		Name:   aws.String("msh-lambda"),
 		Cmd:    cmd,
 		client: lambda.NewFromConfig(cfg),
 	}
@@ -64,32 +64,49 @@ func (s *LambdaCmd) describe() *lambda.GetFunctionOutput {
 }
 
 func (s *LambdaCmd) Deploy() error {
+
 	code := lo.Must(LambdaZip())
 
-	_, err := s.client.CreateFunction(context.TODO(), &lambda.CreateFunctionInput{
-		Code: &lambdaTypes.FunctionCode{
-			ZipFile: code,
-		},
+	resp, err := s.client.GetFunction(context.TODO(), &lambda.GetFunctionInput{
 		FunctionName: s.Name,
-		Handler:      aws.String("lambda_handler.lambda_handler"),
-		MemorySize:   aws.Int32(128),
-		Publish:      true,
-		Role:         aws.String("arn:aws:iam::336983520827:role/service-role/msh-test-role-ztmr8mjk"),
-		Runtime:      lambdaTypes.RuntimePython39,
-		Timeout:      aws.Int32(900),
 	})
+	if _, ok := lo.ErrorsAs[*lambdaTypes.ResourceNotFoundException](err); ok {
+		_, err = s.client.CreateFunction(context.TODO(), &lambda.CreateFunctionInput{
+			Code: &lambdaTypes.FunctionCode{
+				ZipFile: code,
+			},
+			FunctionName: s.Name,
+			Handler:      aws.String("lambda_handler.lambda_handler"),
+			MemorySize:   aws.Int32(128),
+			Publish:      true,
+			Role:         aws.String("arn:aws:iam::336983520827:role/service-role/msh-test-role-ztmr8mjk"),
+			Runtime:      lambdaTypes.RuntimePython39,
+			Timeout:      aws.Int32(900),
+		})
+		if _, ok := lo.ErrorsAs[*lambdaTypes.ResourceConflictException](err); ok {
+			L.Debug.Println("lambda not found, creating")
+			lo.Must(s.client.UpdateFunctionCode(context.TODO(), &lambda.UpdateFunctionCodeInput{
+				Publish:      true,
+				FunctionName: s.Name,
+				ZipFile:      code,
+			}))
+		} else if err != nil {
+			return fmt.Errorf("failed to create lambda: %w", err)
+		}
+		L.Debug.Println("lambda deployed:", *s.Arn())
 
-	if _, ok := lo.ErrorsAs[*lambdaTypes.ResourceConflictException](err); ok {
-		L.Debug.Println("function already exists, updating")
-		//lo.Must(s.client.UpdateFunctionCode(context.TODO(), &lambda.UpdateFunctionCodeInput{
-		//	Publish:      true,
-		//	FunctionName: name,
-		//	ZipFile:      code,
-		//}))
 	} else if err != nil {
-		return fmt.Errorf("failed to create function: %w", err)
+		return fmt.Errorf("failed to get lambda: %w", err)
 	}
-	L.Debug.Println("function deployed:", *s.Arn())
+
+	if sha := utils.Sha256(code); *resp.Configuration.CodeSha256 != sha {
+		L.Debug.Printf("lambda code changed, updating: (old: %s, new: %s)", *resp.Configuration.CodeSha256, sha)
+		lo.Must(s.client.UpdateFunctionCode(context.TODO(), &lambda.UpdateFunctionCodeInput{
+			FunctionName: s.Name,
+			Publish:      true,
+			ZipFile:      code,
+		}))
+	}
 
 	return nil
 }
