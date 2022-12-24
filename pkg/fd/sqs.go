@@ -115,10 +115,17 @@ const (
 )
 
 type Event struct {
-	Type       EventType
-	Id         uint64
-	Content    string
-	Attributes map[string]string
+	Type    EventType
+	Id      uint64
+	Content string
+}
+
+func (e *Event) MarshalJSON() ([]byte, error) {
+	return utils.JSONMarshal(map[string]interface{}{
+		"Type":    e.Type,
+		"Id":      e.Id,
+		"Content": e.Content,
+	})
 }
 
 type Sqs struct {

@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	lambdaTypes "github.com/aws/aws-sdk-go-v2/service/lambda/types"
+	"github.com/ryanjarv/msh/pkg/fd"
 	L "github.com/ryanjarv/msh/pkg/logger"
 	"github.com/ryanjarv/msh/pkg/providers/command"
 	"github.com/ryanjarv/msh/pkg/utils"
@@ -100,7 +101,11 @@ func (s *LambdaCmd) Run() error {
 
 	for stdin.Scan() {
 
-		payload := s.Input(stdin.Text())
+		payload := s.Input(string(lo.Must(json.Marshal(fd.Event{
+			Type:    fd.MessageEvent,
+			Content: stdin.Text(),
+			Id:      0,
+		}))))
 		L.Debug.Println("lambda: payload:", string(payload))
 
 		resp := lo.Must(s.client.Invoke(context.TODO(), &lambda.InvokeInput{
@@ -158,14 +163,20 @@ func Base64Decode(s string) string {
 }
 
 func WriteOutput(pw io.Writer, resp []byte) []string {
-	var v []map[string]string
-	err := json.Unmarshal(resp, &v)
+	var msgs []string
+	err := json.Unmarshal(resp, &msgs)
 	if err != nil {
-		return nil
+		L.Error.Fatalln("unmarshal response to string:", err)
 	}
 
-	for _, o := range v {
-		lo.Must(fmt.Fprintf(pw, o["body"]))
+	for _, o := range msgs {
+		event := fd.Event{}
+		err = json.Unmarshal([]byte(o), &event)
+		if err != nil {
+			L.Error.Fatalln("unmarshal response to map:", err)
+		}
+
+		lo.Must(fmt.Fprintf(pw, event.Content))
 	}
 
 	return nil
@@ -187,10 +198,12 @@ func (s *LambdaCmd) Input(body string) string {
 		}
 	}
 
-	input := lo.Must(utils.JSONMarshal(map[string]interface{}{
-		"body": body,
-		"cmd":  s.Cmd.Args,
-		"env":  env,
+	input := lo.Must(utils.JSONMarshal([]map[string]interface{}{
+		{
+			"body": body,
+			"cmd":  s.Cmd.Args,
+			"env":  env,
+		},
 	}))
 
 	return string(input)
