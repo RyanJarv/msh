@@ -150,12 +150,13 @@ type Sqs struct {
 func (p *Sqs) Read(d []byte) (n int, err error) {
 	L.Debug.Printf("reading from pipe: expected %d, received: %d\n", *p.expected, *p.received)
 	if p.closed {
+		L.Debug.Println("pipe is closed, returning EOF")
 		return 0, io.EOF
 	}
 
 	for p.buf.Len() == 0 {
 		if *p.expected != 0 && *p.received >= *p.expected {
-			L.Debug.Println("finished processing all messages")
+			L.Debug.Println("finished processing all messages: expected", *p.expected, "received", *p.received)
 
 			p.wg.Done()
 			p.closed = true
@@ -165,6 +166,8 @@ func (p *Sqs) Read(d []byte) (n int, err error) {
 
 		p.fetch()
 	}
+
+	L.Debug.Println("buffer length:", p.buf.Len())
 
 	return p.buf.Read(d)
 }

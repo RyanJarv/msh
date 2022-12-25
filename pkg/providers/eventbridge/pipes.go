@@ -95,7 +95,7 @@ func (p *AwsPipe) SetStdin(source interface{}) {
 	p.LambdaCmd.SetStdin(p.Stdin)
 }
 
-func (p *AwsPipe) GetStdout() io.Reader {
+func (p *AwsPipe) GetStdout() io.ReadCloser {
 	cfg := lo.Must(config.LoadDefaultConfig(context.TODO()))
 	p.Stdout = lo.Must(fd.CreateSqs(cfg, p.Name(), "stdout"))
 	L.Debug.Println("eventbridge pipes: target:", p.Stdout.Arn())

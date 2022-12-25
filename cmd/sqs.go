@@ -40,6 +40,6 @@ func (s *Sqs) SetStdin(p interface{}) {
 	s.Sqs = lo.Must(fd.NewSqsFrom(context.TODO(), p, *s.Name, "stdin"))
 }
 
-func (s *Sqs) GetStdout() io.Reader {
+func (s *Sqs) GetStdout() io.ReadCloser {
 	return s.Sqs
 }

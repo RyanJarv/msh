@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 )
 
 type ExecuteInput struct {
@@ -54,4 +55,20 @@ func InSliceStr(slice []string, str string) *int {
 		}
 	}
 	return nil
+}
+
+// IsLeader returns true if the current process is the current process group leader.
+//
+// The leader can be determined by checking if the process group id is the same as the process id
+// and means that we are the last process in the pipeline.
+func IsLeader() bool {
+	pgid, err := syscall.Getpgid(os.Getpid())
+	if err != nil {
+		L.Error.Fatalln("failed to get pgid", err)
+	}
+
+	if pid := os.Getpid(); pid == pgid {
+		return true
+	}
+	return false
 }

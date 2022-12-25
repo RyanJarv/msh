@@ -46,7 +46,7 @@ func NewLambdaCmd(cmd command.Command) *LambdaCmd {
 type LambdaCmd struct {
 	Name     *string
 	function *lambda.GetFunctionOutput
-	Stdin    io.ReadCloser
+	Stdin    io.Reader
 	Stdout   io.WriteCloser
 	lambda   *lambda.Client
 	iam      *iam.Client
@@ -245,10 +245,10 @@ func (s *LambdaCmd) Run() error {
 }
 
 func (s *LambdaCmd) SetStdin(p interface{}) {
-	s.Stdin = p.(io.ReadCloser)
+	s.Stdin = p.(io.Reader)
 }
 
-func (s *LambdaCmd) GetStdout() io.Reader {
+func (s *LambdaCmd) GetStdout() io.ReadCloser {
 	return s.stdoutR
 }
 

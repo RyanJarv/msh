@@ -21,7 +21,7 @@ echo "  * $CMD"
 
 output="$(mktemp -d)/out"
 
-DEBUG= script -q $output bash -c "$CMD" ||:
+DEBUG= script -q $output bash -c "$CMD" 1>/dev/null ||:
 
 if cat $output | grep -qE "$REGEX"; then
   printf "      ${GREEN}[PASSED]${NC} %s\n" "$CMD"

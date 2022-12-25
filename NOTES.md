@@ -182,6 +182,49 @@ And
 
 
 
+# Syntax
+
+function '@'() { MSH_TTY_0=true ./out/msh.local cat | ./out/msh.pipes "$@"; }
+
+```
+% echo asdf |@ sed 's/asdf/poiu/'
+poiu
+```
+
+```
+echo asdf |@ sed 's/asdf/poiu/' |@buf grep poiu
+```
+
+
+# Various TODO
+
+* Need to be able to detect if stdin is a local stream.
+* Make "@" its own binary.
+* Figure out buffering?
+
+personal@Ryans-MacBook-Pro ~ % alias '}'=')'  
+personal@Ryans-MacBook-Pro ~ % alias 'p{'='('
+personal@Ryans-MacBook-Pro ~ % p{ echo asdf; }
+personal@Ryans-MacBook-Pro ~ % A=1; p{ A=2; }; echo $A
+1
+
+
+
+
+
+
+
+Ryans-MacBook-Pro:~ personal$ alias '.}'=')'
+Ryans-MacBook-Pro:~ personal$ alias 'p{'='('
+Ryans-MacBook-Pro:~ personal$ p{ echo asdf; .}
+asdf
+
+
+$ echo asdf | msh{ ./out/msh.pipes sed 's/asdf/poiu/'; }
+poiu
+
+$ echo asdf | msh{ ./out/msh.pipes sed 's/asdf/poiu/'; } | cat
+{"Stdin":{"ReadWriteCloser":null,"Referable":null,"Url":"https://sqs.us-east-1.amazonaws.com/336983520827/msh-sed-c2Vkcy9h-stdout","Name":"msh-sed-c2Vkcy9h-stdout"}}
 
 
 
@@ -206,15 +249,22 @@ And
 
 
 
+# Issues
 
+## Commands operate on multiple lines.
 
+Commands that should buffer don't operate on all input.
 
+```
+% ./out/msh.local echo $'1\n2\n3' | ./out/msh.lambda wc -l 
+1
+1
+1
+```
 
+Unless multiple lines happen to be sent in a single message.
 
-
-
-
-
-
-
-
+```
+./out/msh.local echo $'1\n2\n3' | ./out/msh.pipes wc -l
+4
+```

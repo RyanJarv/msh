@@ -28,16 +28,21 @@ type Command struct {
 }
 
 func (c Command) Run() error {
-	//c.CreatePipeInput.Enrichment = step.Arn()
 	L.Debug.Println("Running command", c.Args)
 	return c.Cmd.Run()
 }
+
 func (c Command) SetStdin(f interface{}) {
 	c.Setenv(f)
-	c.Cmd.Stdin = f.(io.ReadCloser)
+	pipe, err := c.Cmd.StdinPipe()
+	if err != nil {
+		L.Error.Fatalln("failed to get stdin pipe", err)
+	}
+
+	go fd.MustCopy(pipe, f.(io.Reader))
 }
 
-func (c Command) GetStdout() io.Reader {
+func (c Command) GetStdout() io.ReadCloser {
 	return lo.Must(c.StdoutPipe())
 }
 
