@@ -196,6 +196,13 @@ func (s *LambdaCmd) TrustPolicy() *types.IamPolicy {
 	}
 }
 
+type ErrorMsg struct {
+	ErrorMessage *string   `json:"errorMessage"`
+	ErrorType    *string   `json:"errorType"`
+	RequestId    *string   `json:"requestId"`
+	StackTrace   *[]string `json:"stackTrace"`
+}
+
 func (s *LambdaCmd) Run() error {
 	defer s.Stdout.Close()
 
@@ -205,7 +212,7 @@ func (s *LambdaCmd) Run() error {
 
 		body := lo.Must(json.Marshal(fd.Event{
 			Type:    fd.MessageEvent,
-			Content: stdin.Text(),
+			Content: stdin.Text() + "\n",
 			Id:      0,
 		}))
 		payload := fmt.Sprintf("[%s]", s.Input(string(body)))
@@ -218,6 +225,13 @@ func (s *LambdaCmd) Run() error {
 			LogType:        lambdaTypes.LogTypeTail,
 		}))
 		L.Debug.Println("function response:", string(resp.Payload))
+
+		errMsg := &ErrorMsg{}
+		if err := json.Unmarshal(resp.Payload, errMsg); err == nil {
+			L.Debug.Println("error type:", *errMsg.ErrorType)
+			L.Debug.Println("error stack trace:", strings.Join(*errMsg.StackTrace, ""))
+			return fmt.Errorf("error message: %s", *errMsg.ErrorMessage)
+		}
 
 		err := WriteOutput(s.Stdout, resp.Payload)
 		if err != nil {
