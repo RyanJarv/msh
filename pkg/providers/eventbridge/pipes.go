@@ -62,6 +62,11 @@ func (p *AwsPipe) Name() string {
 }
 
 func (p *AwsPipe) Deploy() error {
+	err := p.LambdaCmd.Deploy()
+	if err != nil {
+		return fmt.Errorf("AwsPipe deploy: %w", err)
+	}
+
 	p.CreatePipeInput.Name = aws.String(p.Name())
 
 	p.CreatePipeInput.Source = p.Stdin.Arn()
@@ -69,7 +74,7 @@ func (p *AwsPipe) Deploy() error {
 	p.CreatePipeInput.Enrichment = p.LambdaCmd.Arn()
 	p.CreatePipeInput.Target = p.Stdout.Arn()
 
-	err := p.DeployIAM()
+	err = p.DeployIAM()
 	if err != nil {
 		return fmt.Errorf("deploy: %w", err)
 	}

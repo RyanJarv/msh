@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/ryanjarv/msh/pkg/fd"
 	L "github.com/ryanjarv/msh/pkg/logger"
+	"github.com/ryanjarv/msh/pkg/types"
 	"github.com/ryanjarv/msh/pkg/utils"
 	"github.com/samber/lo"
 	"io"
@@ -16,11 +17,7 @@ import (
 type Provider interface {
 	SetStdin(interface{})
 	GetStdout() io.ReadCloser
-	//StderrPipe() (io.ReadCloser, error)
-	//StdinPipe() (io.WriteCloser, error)
-	//StdoutPipe() (io.ReadCloser, error)
 	Run() error
-	//Wait()
 }
 
 func NewProcess(provider Provider) *Process {
@@ -45,6 +42,13 @@ type Process struct {
 	Provider
 	Stdin  interface{}
 	Stdout interface{}
+}
+
+func (p *Process) Deploy() error {
+	if d, ok := p.Provider.(types.Deployable); ok {
+		return utils.Wrap(d.Deploy(), "deploying %T", d)
+	}
+	return nil
 }
 
 func (p *Process) Run() error {

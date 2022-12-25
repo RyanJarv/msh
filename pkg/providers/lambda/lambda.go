@@ -22,6 +22,7 @@ import (
 	"github.com/ryanjarv/msh/pkg/utils"
 	"github.com/samber/lo"
 	"io"
+	"os"
 	"strings"
 )
 
@@ -206,46 +207,64 @@ type ErrorMsg struct {
 func (s *LambdaCmd) Run() error {
 	defer s.Stdout.Close()
 
-	stdin := bufio.NewScanner(s.Stdin)
+	if s.Stdin == nil {
+		err := s.invoke("")
 
-	for stdin.Scan() {
-
-		body := lo.Must(json.Marshal(fd.Event{
-			Type:    fd.MessageEvent,
-			Content: stdin.Text() + "\n",
-			Id:      0,
-		}))
-		payload := fmt.Sprintf("[%s]", s.Input(string(body)))
-		L.Debug.Println("function: payload:", payload)
-
-		resp := lo.Must(s.lambda.Invoke(context.TODO(), &lambda.InvokeInput{
-			FunctionName:   s.describe().Configuration.FunctionName,
-			InvocationType: lambdaTypes.InvocationTypeRequestResponse,
-			Payload:        []byte(payload),
-			LogType:        lambdaTypes.LogTypeTail,
-		}))
-		L.Debug.Println("function response:", string(resp.Payload))
-
-		errMsg := &ErrorMsg{}
-		if err := json.Unmarshal(resp.Payload, errMsg); err == nil {
-			L.Debug.Println("error type:", *errMsg.ErrorType)
-			L.Debug.Println("error stack trace:", strings.Join(*errMsg.StackTrace, ""))
-			return fmt.Errorf("error message: %s", *errMsg.ErrorMessage)
-		}
-
-		err := WriteOutput(s.Stdout, resp.Payload)
 		if err != nil {
-			return fmt.Errorf("failed to write output: %w", err)
+			return fmt.Errorf("invoke: %w", err)
 		}
 
-		L.Debug.Println("function logs:", Base64Decode(*resp.LogResult)+"\n")
+	} else {
+		stdin := bufio.NewScanner(s.Stdin)
+
+		for stdin.Scan() {
+			err := s.invoke(stdin.Text() + "\n")
+			if err != nil {
+				return fmt.Errorf("invoke: %w", err)
+			}
+		}
 	}
 
 	return nil
 }
 
+func (s *LambdaCmd) invoke(stdin string) error {
+	body := lo.Must(json.Marshal(fd.Event{
+		Type:    fd.MessageEvent,
+		Content: stdin,
+		Id:      0,
+	}))
+	payload := fmt.Sprintf("[%s]", s.Input(string(body)))
+	L.Debug.Println("payload:", payload)
+
+	resp := lo.Must(s.lambda.Invoke(context.TODO(), &lambda.InvokeInput{
+		FunctionName:   s.describe().Configuration.FunctionName,
+		InvocationType: lambdaTypes.InvocationTypeRequestResponse,
+		Payload:        []byte(payload),
+		LogType:        lambdaTypes.LogTypeTail,
+	}))
+	L.Debug.Println("response:", string(resp.Payload))
+
+	errMsg := &ErrorMsg{}
+	if err := json.Unmarshal(resp.Payload, errMsg); err == nil {
+		L.Debug.Println("error type:", *errMsg.ErrorType)
+		L.Debug.Println("error stack trace:", strings.Join(*errMsg.StackTrace, ""))
+		return fmt.Errorf("error message: %s", *errMsg.ErrorMessage)
+	}
+
+	err := WriteOutput(s.Stdout, resp.Payload)
+	if err != nil {
+		return fmt.Errorf("writing output: %w", err)
+	}
+
+	L.Debug.Println("function logs:", Base64Decode(*resp.LogResult)+"\n")
+	return nil
+}
+
 func (s *LambdaCmd) SetStdin(p interface{}) {
-	s.Stdin = p.(io.Reader)
+	if !utils.IsTTY(os.Stdin) {
+		s.Stdin = p.(io.Reader)
+	}
 }
 
 func (s *LambdaCmd) GetStdout() io.ReadCloser {
@@ -279,18 +298,18 @@ func Base64Decode(s string) string {
 	return string(lo.Must(base64.StdEncoding.DecodeString(s)))
 }
 
-func WriteOutput(pw io.Writer, resp []byte) []string {
+func WriteOutput(pw io.Writer, resp []byte) error {
 	var msgs []string
 	err := json.Unmarshal(resp, &msgs)
 	if err != nil {
-		L.Error.Fatalln("unmarshal response to string:", err)
+		fmt.Errorf("unmarshal response to string: %w", err)
 	}
 
 	for _, o := range msgs {
 		event := fd.Event{}
 		err = json.Unmarshal([]byte(o), &event)
 		if err != nil {
-			L.Error.Fatalln("unmarshal response to map:", err)
+			return fmt.Errorf("unmarshal response to map: %w", err)
 		}
 
 		lo.Must(fmt.Fprintf(pw, event.Content))

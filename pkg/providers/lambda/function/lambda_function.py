@@ -20,7 +20,7 @@ def lambda_handler(events, context):
         print("cmd env vars: " + json.dumps(env))
         print("running cmd: " + ' '.join(cmd))
 
-        if msg['Type'] == 0:
+        if msg['Type'] != 1:
             # Just forward the event if type is not message.
             response.append(event['body'])
             continue

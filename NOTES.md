@@ -202,10 +202,10 @@ echo asdf |@ sed 's/asdf/poiu/' |@buf grep poiu
 * Make "@" its own binary.
 * Figure out buffering?
 
-personal@Ryans-MacBook-Pro ~ % alias '}'=')'  
-personal@Ryans-MacBook-Pro ~ % alias 'p{'='('
-personal@Ryans-MacBook-Pro ~ % p{ echo asdf; }
-personal@Ryans-MacBook-Pro ~ % A=1; p{ A=2; }; echo $A
+% alias '}'=')'  
+% alias 'p{'='('
+% p{ echo asdf; }
+% A=1; p{ A=2; }; echo $A
 1
 
 
@@ -214,9 +214,9 @@ personal@Ryans-MacBook-Pro ~ % A=1; p{ A=2; }; echo $A
 
 
 
-Ryans-MacBook-Pro:~ personal$ alias '.}'=')'
-Ryans-MacBook-Pro:~ personal$ alias 'p{'='('
-Ryans-MacBook-Pro:~ personal$ p{ echo asdf; .}
+$ alias '.}'=')'
+$ alias 'p{'='('
+$ p{ echo asdf; .}
 asdf
 
 
@@ -228,6 +228,14 @@ $ echo asdf | msh{ ./out/msh.pipes sed 's/asdf/poiu/'; } | cat
 
 
 
+alias 'p{'='{
+
+alias 'p{'='{ function command_not_found_handler() { ./out/msh.pipes "$@"; }; export PATH_BAK=$PATH; unset PATH;'
+alias '}'='}; export PATH=$PATH_BAK;'
+p{ ls; }
+
+% A=1; p{ A=2; }; echo $A
+1
 
 
 

@@ -21,20 +21,8 @@ func IsReferable(f interface{}) bool {
 
 // MustCopy Copy calls io.Copy and panics on error.
 func MustCopy(dst io.WriteCloser, src io.Reader) {
-	L.Debug.Printf("MustCopy: %+v %+v\n", dst, src)
-	switch s := src.(type) {
-	case *os.File:
-		L.Debug.Printf("MustCopy: src (%T): %d %s\n", s, s.Fd(), s.Name())
-	case Referable:
-		L.Debug.Printf("MustCopy: src (%T): %s\n", s, *s.Arn())
-	}
-
-	switch d := dst.(type) {
-	case *os.File:
-		L.Debug.Printf("MustCopy: dst (%T): %d %s\n", d, d.Fd(), d.Name())
-	case Referable:
-		L.Debug.Printf("MustCopy: dst (%T): %s\n", d, *d.Arn())
-	}
+	fdDebug(src, "dst")
+	fdDebug(dst, "dst")
 
 	w, err := io.Copy(dst, src)
 	if err != nil {
@@ -43,8 +31,19 @@ func MustCopy(dst io.WriteCloser, src io.Reader) {
 
 	err = dst.Close()
 	if err != nil {
-		L.Error.Fatalln("failed to close dst", err)
+		L.Error.Fatalln("closing dst", err)
 	}
 
 	L.Debug.Printf("MustCopy: wrote %d bytes: err is %d\n", w, err)
+}
+
+func fdDebug(fd interface{}, msg string) {
+	switch d := fd.(type) {
+	case *os.File:
+		L.Debug.Printf("MustCopy: %s (%T): %d %s\n", msg, d, d.Fd(), d.Name())
+	case Referable:
+		L.Debug.Printf("MustCopy: %s (%T): %s\n", msg, d, *d.Arn())
+	default:
+		L.Debug.Printf("MustCopy: %s (%T)\n", msg, d)
+	}
 }

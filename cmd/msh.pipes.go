@@ -7,6 +7,8 @@ import (
 	"github.com/ryanjarv/msh/pkg/providers/eventbridge"
 	"github.com/ryanjarv/msh/pkg/providers/lambda"
 	"github.com/ryanjarv/msh/pkg/providers/process"
+	"github.com/ryanjarv/msh/pkg/utils"
+	"os"
 )
 
 func main() {
@@ -16,16 +18,17 @@ func main() {
 
 	function := lambda.NewLambdaCmd(cmd)
 
-	pipe := eventbridge.NewPipe(function)
-
-	proc := process.NewProcess(&pipe)
-
-	err := function.Deploy()
-	if err != nil {
-		L.Error.Fatalln("lambda deploy:", err)
+	var proc *process.Process
+	if utils.IsTTY(os.Stdin) {
+		L.Debug.Println("running in non-streaming mode")
+		proc = process.NewProcess(function)
+	} else {
+		L.Debug.Println("running in streaming mode")
+		pipe := eventbridge.NewPipe(function)
+		proc = process.NewProcess(&pipe)
 	}
 
-	err = pipe.Deploy()
+	err := proc.Deploy()
 	if err != nil {
 		L.Error.Fatalln("eventbridge pipes deploy:", err)
 	}

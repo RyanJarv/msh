@@ -19,6 +19,16 @@ import (
 	"sync"
 )
 
+type EventType int
+
+const (
+	ShutdownEvent EventType = iota
+	MessageEvent
+
+	// Not implemented
+	//FilterEvent = 2
+)
+
 func QueueArnFromUrl(url string) string {
 	// https://sqs.us-east-1.amazonaws.com/123456789012/cat-msh-0a0c3f9d7adb3006a923c4fd8884951b068f44b5-stdout3
 	p := strings.Split(url, "/")
@@ -107,14 +117,6 @@ func NewSqsFrom(ctx context.Context, f interface{}, name, fd string) (*Sqs, erro
 
 	return pipe, nil
 }
-
-type EventType int
-
-const (
-	ShutdownEvent EventType = iota
-	MessageEvent
-	//FilterEvent
-)
 
 type Event struct {
 	Type    EventType
