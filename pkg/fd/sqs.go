@@ -72,11 +72,11 @@ func CreateSqs(cfg aws.Config, name, fd string) (ISqs, error) {
 	client := sqs.NewFromConfig(lo.Must(config.LoadDefaultConfig(context.TODO())))
 
 	p := &Sqs{
-		url:      &url,
+		SqsUrl:   &url,
 		client:   client,
 		ctx:      context.Background(),
 		fd:       fd,
-		Name:     fmt.Sprintf("%s-%s", name, fd),
+		name:     fmt.Sprintf("%s-%s", name, fd),
 		wg:       &sync.WaitGroup{},
 		buf:      bytes.NewBuffer([]byte{}),
 		sent:     aws.Uint64(0),
@@ -91,7 +91,7 @@ func OpenSqs(ctx context.Context, url string) (*Sqs, error) {
 	client := sqs.NewFromConfig(lo.Must(config.LoadDefaultConfig(ctx)))
 
 	p := &Sqs{
-		url:      &url,
+		SqsUrl:   &url,
 		client:   client,
 		ctx:      ctx,
 		wg:       &sync.WaitGroup{},
@@ -109,15 +109,16 @@ func NewSqsFrom(ctx context.Context, f interface{}, name, fd string) (ISqs, erro
 	var pipe ISqs
 
 	switch from := f.(type) {
-	case Sqs:
+	case ISqs:
 		// Just read directly from the sqs output queue of the last command.
-		L.Debug.Println("%s is sqs, skipping copy:", fd, from.url)
-		pipe = lo.Must(OpenSqs(ctx, *from.url))
+		L.Debug.Printf("%s is sqs, skipping copy: %s\n", fd, *from.Url())
+		pipe = lo.Must(OpenSqs(ctx, *from.Url()))
 	case io.Reader:
 		cfg := lo.Must(config.LoadDefaultConfig(ctx))
 		pipe = lo.Must(CreateSqs(cfg, name, fd))
 
-		L.Debug.Printf("copying: %s (%T) -> %s", fd, f, *pipe.Url())
+		L.Debug.Printf("copying: %s (%T) -> %s\n", fd, f, *pipe.Url())
+
 		go MustCopy(pipe, from)
 	default:
 		panic("not implemented")
@@ -146,14 +147,14 @@ type Sqs struct {
 	buf      *bytes.Buffer
 	wg       *sync.WaitGroup
 	closed   bool
-	url      *string
+	SqsUrl   *string
 	client   *sqs.Client
 	sent     *uint64
 	received *uint64
 	expected *uint64
 	fd       string
 	attrs    map[string]interface{}
-	Name     string
+	name     string
 }
 
 func (s *Sqs) Read(d []byte) (n int, err error) {
@@ -184,13 +185,13 @@ func (s *Sqs) Read(d []byte) (n int, err error) {
 func (s *Sqs) fetch() bool {
 	L.Debug.Println("fetching messages")
 	msgs := lo.Must(s.client.ReceiveMessage(context.TODO(), &sqs.ReceiveMessageInput{
-		QueueUrl:        s.url,
+		QueueUrl:        s.SqsUrl,
 		WaitTimeSeconds: 2,
 	}))
 
 	for _, msg := range msgs.Messages {
 		lo.Must(s.client.DeleteMessage(context.TODO(), &sqs.DeleteMessageInput{
-			QueueUrl:      s.url,
+			QueueUrl:      s.SqsUrl,
 			ReceiptHandle: msg.ReceiptHandle,
 		}))
 
@@ -232,16 +233,16 @@ func (s *Sqs) fetch() bool {
 }
 
 func (s *Sqs) Arn() *string {
-	return aws.String(QueueArnFromUrl(*s.url))
+	return aws.String(QueueArnFromUrl(*s.SqsUrl))
 }
 
 func (s *Sqs) Url() *string {
-	return s.url
+	return s.SqsUrl
 }
 
 func (s *Sqs) Env() []string {
 	return []string{
-		fmt.Sprintf("AWS_SQS_%s_URL=%s", strings.ToUpper(s.fd), *s.url),
+		fmt.Sprintf("AWS_SQS_%s_URL=%s", strings.ToUpper(s.fd), *s.SqsUrl),
 	}
 }
 
@@ -250,7 +251,7 @@ func (s *Sqs) Env() []string {
 // I'm unable to get eventbridge pipes w/ a transform to work when the input is json. I'm not sure if this is a bug in
 // eventbridge or if I'm doing something wrong. To work around this, marshal the json twice to make it a string of json.
 func (s *Sqs) Write(d []byte) (n int, err error) {
-	L.Debug.Printf("writing to pipe: %s: %s", *s.url, string(d))
+	L.Debug.Printf("writing to pipe: %s: %s", *s.SqsUrl, string(d))
 
 	msg := event(&Event{
 		Type:    MessageEvent,
@@ -259,7 +260,7 @@ func (s *Sqs) Write(d []byte) (n int, err error) {
 	})
 
 	lo.Must(s.client.SendMessage(s.ctx, &sqs.SendMessageInput{
-		QueueUrl:    s.url,
+		QueueUrl:    s.SqsUrl,
 		MessageBody: aws.String(msg),
 	}))
 	if err != nil {
@@ -286,7 +287,7 @@ func (s *Sqs) Close() (err error) {
 	})
 
 	lo.Must(s.client.SendMessage(context.TODO(), &sqs.SendMessageInput{
-		QueueUrl:    s.url,
+		QueueUrl:    s.SqsUrl,
 		MessageBody: aws.String(body),
 	}))
 	L.Debug.Println("sent closed event: processed", *s.sent)
@@ -316,7 +317,7 @@ func (s *Sqs) PipeSourceParameters() *pipesTypes.PipeSourceParameters {
 func (s *Sqs) WritePolicy() *types.IamPolicy {
 	return &types.IamPolicy{
 		Version: "2012-10-17",
-		Name:    fmt.Sprintf("%s-write", s.Name),
+		Name:    fmt.Sprintf("%s-write", s.name),
 		Statement: []types.IamPolicyStatement{
 			{
 				Effect: "Allow",
@@ -334,7 +335,7 @@ func (s *Sqs) WritePolicy() *types.IamPolicy {
 func (s *Sqs) ReadPolicy() *types.IamPolicy {
 	return &types.IamPolicy{
 		Version: "2012-10-17",
-		Name:    fmt.Sprintf("%s-read", s.Name),
+		Name:    fmt.Sprintf("%s-read", s.name),
 		Statement: []types.IamPolicyStatement{
 			{
 				Effect: "Allow",

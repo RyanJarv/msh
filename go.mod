@@ -5,12 +5,11 @@ go 1.18
 require (
 	github.com/aws/aws-sdk-go-v2 v1.17.3
 	github.com/aws/aws-sdk-go-v2/config v1.18.5
-	github.com/aws/aws-sdk-go-v2/service/cloudformation v1.24.3
 	github.com/aws/aws-sdk-go-v2/service/iam v1.18.25
 	github.com/aws/aws-sdk-go-v2/service/lambda v1.26.2
 	github.com/aws/aws-sdk-go-v2/service/pipes v1.0.2
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.19.17
-	github.com/pkg/errors v0.9.1
+	github.com/google/go-cmp v0.5.8
 	github.com/samber/lo v1.37.0
 )
 

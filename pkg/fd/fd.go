@@ -63,9 +63,9 @@ func resolveFd(buf *bufio.Reader) (io.Reader, error) {
 		return nil, fmt.Errorf("resolveRef: failed to unmarshal: %w", err)
 	}
 
-	url, ok := conf["url"].(string)
+	url, ok := conf["SqsUrl"].(string)
 	if !ok {
-		L.Debug.Println("no url found, using stdin")
+		L.Debug.Println("no SqsUrl found, using stdin")
 		return buf, nil
 	}
 

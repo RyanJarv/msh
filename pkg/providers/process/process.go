@@ -112,21 +112,14 @@ func (p *Process) CopyStdout() *sync.WaitGroup {
 			}
 		}
 
-		if r, ok := p.Stdout.(io.Closer); ok {
-			err = r.Close()
-			if err != nil {
-				L.Debug.Println("failed to close stdin", err)
-			}
-		}
-
 		err = os.Stdin.Close()
 		if err != nil {
 			L.Debug.Println("failed to close stdin", err)
 		}
-		//err = syscall.Kill(-pgid, syscall.SIGUSR1)
-		//if err != nil {
-		//	L.Error.Println("failed to kill pgid", err)
-		//}
+		err = syscall.Kill(-pgid, syscall.SIGUSR1)
+		if err != nil {
+			L.Error.Println("failed to kill pgid", err)
+		}
 
 		wg.Done()
 	}()

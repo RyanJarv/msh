@@ -198,8 +198,11 @@ echo asdf |@ sed 's/asdf/poiu/' |@buf grep poiu
 
 # Various TODO
 
-* Remove panics and improve error handling.
+* Don't use the same eventbridge pipe for pipelined commands.
+* Longer names for SQS pipes, currently we get a collision on sort and uniq.
 * Detect messages from other pipelines.
+* Terminate pipeline by closing stdin.
+* Remove panics and improve error handling.
 * Make "@" its own binary.
 * Figure out buffering?
 

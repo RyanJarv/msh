@@ -2,6 +2,7 @@ package eventbridge
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -9,6 +10,7 @@ import (
 	iamTypes "github.com/aws/aws-sdk-go-v2/service/iam/types"
 	"github.com/aws/aws-sdk-go-v2/service/pipes"
 	pipesTypes "github.com/aws/aws-sdk-go-v2/service/pipes/types"
+	"github.com/google/go-cmp/cmp"
 	"github.com/ryanjarv/msh/pkg/fd"
 	L "github.com/ryanjarv/msh/pkg/logger"
 	"github.com/ryanjarv/msh/pkg/providers/lambda"
@@ -79,6 +81,18 @@ func (p *AwsPipe) Deploy() error {
 		return fmt.Errorf("deploy: %w", err)
 	}
 
+	resp, err := p.events.DescribePipe(context.TODO(), &pipes.DescribePipeInput{
+		Name: p.CreatePipeInput.Name,
+	})
+	if err == nil {
+		resp.TargetParameters = nil
+		resp.Tags = nil
+
+		if s := diff(resp, p.CreatePipeInput); s != "" {
+			L.Error.Fatalln("An event bridge pipe exists with a different configuration:", s)
+		}
+	}
+
 	_, err = p.events.CreatePipe(context.TODO(), p.CreatePipeInput)
 	if _, ok := lo.ErrorsAs[*pipesTypes.ConflictException](err); ok {
 		L.Debug.Println("reusing existing pipe:", p.Name())
@@ -89,6 +103,33 @@ func (p *AwsPipe) Deploy() error {
 	return nil
 }
 
+func diff(v1, v2 interface{}) string {
+	m1 := toMap(v1)
+	m2 := toMap(v2)
+
+	absent1, absent2 := lo.Difference(lo.Keys(m1), lo.Keys(m2))
+	for _, k := range absent1 {
+		delete(m1, k)
+	}
+	for _, k := range absent2 {
+		delete(m2, k)
+	}
+
+	return cmp.Diff(m1, m2)
+}
+
+func toMap(v2 interface{}) map[string]interface{} {
+	s2 := lo.Must(json.Marshal(v2))
+	var m2 map[string]interface{}
+	err := json.Unmarshal(s2, &m2)
+
+	if err != nil {
+		L.Error.Fatalln("failed to unmarshal:", err)
+	}
+
+	return m2
+}
+
 func (p *AwsPipe) Run() error {
 	p.Stdout.Wait()
 	return nil
@@ -96,14 +137,14 @@ func (p *AwsPipe) Run() error {
 
 func (p *AwsPipe) SetStdin(source interface{}) {
 	p.Stdin = lo.Must(fd.NewSqsFrom(context.TODO(), source, p.Name(), "stdin"))
-	L.Debug.Println("eventbridge pipes: source:", p.Stdin.Arn())
+	L.Debug.Println("eventbridge pipes: source:", *p.Stdin.Arn())
 	//p.LambdaCmd.SetStdin(p.Stdin)
 }
 
 func (p *AwsPipe) GetStdout() io.ReadCloser {
 	cfg := lo.Must(config.LoadDefaultConfig(context.TODO()))
 	p.Stdout = lo.Must(fd.CreateSqs(cfg, p.Name(), "stdout"))
-	L.Debug.Println("eventbridge pipes: target:", p.Stdout.Arn())
+	L.Debug.Println("eventbridge pipes: target:", *p.Stdout.Arn())
 
 	return p.Stdout
 }
