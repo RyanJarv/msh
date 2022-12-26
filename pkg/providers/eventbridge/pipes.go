@@ -45,8 +45,8 @@ type AwsPipe struct {
 	events          *pipes.Client
 	iam             *iam.Client
 	iamPolicies     []*types.IamPolicy
-	Stdout          *fd.Sqs
-	Stdin           *fd.Sqs
+	Stdout          fd.ISqs
+	Stdin           fd.ISqs
 }
 
 func (p *AwsPipe) Name() string {
@@ -81,7 +81,7 @@ func (p *AwsPipe) Deploy() error {
 
 	_, err = p.events.CreatePipe(context.TODO(), p.CreatePipeInput)
 	if _, ok := lo.ErrorsAs[*pipesTypes.ConflictException](err); ok {
-		L.Debug.Println("reusing existing pipe:", p.Name)
+		L.Debug.Println("reusing existing pipe:", p.Name())
 	} else if err != nil {
 		return fmt.Errorf("failed to create pipe: %w\n", err)
 	}
@@ -97,7 +97,7 @@ func (p *AwsPipe) Run() error {
 func (p *AwsPipe) SetStdin(source interface{}) {
 	p.Stdin = lo.Must(fd.NewSqsFrom(context.TODO(), source, p.Name(), "stdin"))
 	L.Debug.Println("eventbridge pipes: source:", p.Stdin.Arn())
-	p.LambdaCmd.SetStdin(p.Stdin)
+	//p.LambdaCmd.SetStdin(p.Stdin)
 }
 
 func (p *AwsPipe) GetStdout() io.ReadCloser {

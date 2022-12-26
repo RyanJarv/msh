@@ -14,7 +14,6 @@ import (
 	"github.com/ryanjarv/msh/pkg/utils"
 	"github.com/samber/lo"
 	"io"
-	"os"
 	"strings"
 	"sync"
 )
@@ -28,6 +27,20 @@ const (
 	// Not implemented
 	//FilterEvent = 2
 )
+
+type Referable interface {
+	Arn() *string
+	Url() *string
+}
+
+type ISqs interface {
+	io.ReadWriteCloser
+	Referable
+	Wait()
+	PipeSourceParameters() *pipesTypes.PipeSourceParameters
+	WritePolicy() *types.IamPolicy
+	ReadPolicy() *types.IamPolicy
+}
 
 func QueueArnFromUrl(url string) string {
 	// https://sqs.us-east-1.amazonaws.com/123456789012/cat-msh-0a0c3f9d7adb3006a923c4fd8884951b068f44b5-stdout3
@@ -54,12 +67,12 @@ func SetupSqsFd(cfg aws.Config, name, fd string) (arn string, uri string) {
 	return QueueArnFromUrl(*resp.QueueUrl), *resp.QueueUrl
 }
 
-func CreateSqs(cfg aws.Config, name, fd string) (*Sqs, error) {
+func CreateSqs(cfg aws.Config, name, fd string) (ISqs, error) {
 	_, url := SetupSqsFd(cfg, name, fd)
 	client := sqs.NewFromConfig(lo.Must(config.LoadDefaultConfig(context.TODO())))
 
 	p := &Sqs{
-		Url:      &url,
+		url:      &url,
 		client:   client,
 		ctx:      context.Background(),
 		fd:       fd,
@@ -78,7 +91,7 @@ func OpenSqs(ctx context.Context, url string) (*Sqs, error) {
 	client := sqs.NewFromConfig(lo.Must(config.LoadDefaultConfig(ctx)))
 
 	p := &Sqs{
-		Url:      &url,
+		url:      &url,
 		client:   client,
 		ctx:      ctx,
 		wg:       &sync.WaitGroup{},
@@ -92,24 +105,19 @@ func OpenSqs(ctx context.Context, url string) (*Sqs, error) {
 	return p, nil
 }
 
-func NewSqsFrom(ctx context.Context, f interface{}, name, fd string) (*Sqs, error) {
-	var pipe *Sqs
-	switch from := f.(type) {
+func NewSqsFrom(ctx context.Context, f interface{}, name, fd string) (ISqs, error) {
+	var pipe ISqs
 
-	// Just read directly from the sqs output queue of the last command.
-	//case map[string]interface{}:
-	//	url := from["Url"].(string)
-	//	L.Debug.Println("stdin is sqs, skipping copy:", url)
-	//	pipe = lo.Must(OpenSqs(ctx, url))
+	switch from := f.(type) {
 	case Sqs:
 		// Just read directly from the sqs output queue of the last command.
-		L.Debug.Println("stdin is sqs, skipping copy:", from.Url)
-		pipe = lo.Must(OpenSqs(ctx, *from.Url))
+		L.Debug.Println("%s is sqs, skipping copy:", fd, from.url)
+		pipe = lo.Must(OpenSqs(ctx, *from.url))
 	case io.Reader:
 		cfg := lo.Must(config.LoadDefaultConfig(ctx))
 		pipe = lo.Must(CreateSqs(cfg, name, fd))
 
-		L.Debug.Printf("copying: io.Reader -> %s", *pipe.Url)
+		L.Debug.Printf("copying: %s (%T) -> %s", fd, f, *pipe.Url())
 		go MustCopy(pipe, from)
 	default:
 		panic("not implemented")
@@ -122,6 +130,7 @@ type Event struct {
 	Type    EventType
 	Id      uint64
 	Content string
+	Stderr  string
 }
 
 func (e *Event) MarshalJSON() ([]byte, error) {
@@ -133,13 +142,11 @@ func (e *Event) MarshalJSON() ([]byte, error) {
 }
 
 type Sqs struct {
-	io.ReadWriteCloser
-	Referable
 	ctx      context.Context
 	buf      *bytes.Buffer
 	wg       *sync.WaitGroup
 	closed   bool
-	Url      *string
+	url      *string
 	client   *sqs.Client
 	sent     *uint64
 	received *uint64
@@ -149,41 +156,41 @@ type Sqs struct {
 	Name     string
 }
 
-func (p *Sqs) Read(d []byte) (n int, err error) {
-	L.Debug.Printf("reading from pipe: expected %d, received: %d\n", *p.expected, *p.received)
-	if p.closed {
+func (s *Sqs) Read(d []byte) (n int, err error) {
+	L.Debug.Printf("reading from pipe: expected %d, received: %d\n", *s.expected, *s.received)
+	if s.closed {
 		L.Debug.Println("pipe is closed, returning EOF")
 		return 0, io.EOF
 	}
 
-	for p.buf.Len() == 0 {
-		if *p.expected != 0 && *p.received >= *p.expected {
-			L.Debug.Println("finished processing all messages: expected", *p.expected, "received", *p.received)
+	for s.buf.Len() == 0 {
+		if *s.expected != 0 && *s.received >= *s.expected {
+			L.Debug.Println("finished processing all messages: expected", *s.expected, "received", *s.received)
 
-			p.wg.Done()
-			p.closed = true
+			s.wg.Done()
+			s.closed = true
 
 			return 0, io.EOF
 		}
 
-		p.fetch()
+		s.fetch()
 	}
 
-	L.Debug.Println("buffer length:", p.buf.Len())
+	L.Debug.Println("buffer length:", s.buf.Len())
 
-	return p.buf.Read(d)
+	return s.buf.Read(d)
 }
 
-func (p *Sqs) fetch() bool {
+func (s *Sqs) fetch() bool {
 	L.Debug.Println("fetching messages")
-	msgs := lo.Must(p.client.ReceiveMessage(context.TODO(), &sqs.ReceiveMessageInput{
-		QueueUrl:        p.Url,
+	msgs := lo.Must(s.client.ReceiveMessage(context.TODO(), &sqs.ReceiveMessageInput{
+		QueueUrl:        s.url,
 		WaitTimeSeconds: 2,
 	}))
 
 	for _, msg := range msgs.Messages {
-		lo.Must(p.client.DeleteMessage(context.TODO(), &sqs.DeleteMessageInput{
-			QueueUrl:      p.Url,
+		lo.Must(s.client.DeleteMessage(context.TODO(), &sqs.DeleteMessageInput{
+			QueueUrl:      s.url,
 			ReceiptHandle: msg.ReceiptHandle,
 		}))
 
@@ -202,16 +209,20 @@ func (p *Sqs) fetch() bool {
 			L.Error.Fatalln("unmarshal message to event:", err)
 		}
 
+		if event.Stderr != "" {
+			L.Info.Println("stderr:", event.Stderr)
+		}
+
 		L.Debug.Printf("event: id %d", event.Id)
 		if event.Type == ShutdownEvent {
 			L.Debug.Printf("received shutdown event: expected %d", event.Id)
-			*p.expected = event.Id
+			*s.expected = event.Id
 		} else if event.Type == MessageEvent {
-			*p.received += uint64(1)
+			*s.received += uint64(1)
 
 			L.Debug.Printf("received message event: id %d", event.Id)
-			p.buf.Truncate(0)
-			p.buf.WriteString(event.Content)
+			s.buf.Truncate(0)
+			s.buf.WriteString(event.Content)
 		} else {
 			L.Error.Fatalf("unknown event type: %d", event.Type)
 		}
@@ -220,13 +231,17 @@ func (p *Sqs) fetch() bool {
 	return false
 }
 
-func (p *Sqs) Arn() *string {
-	return aws.String(QueueArnFromUrl(*p.Url))
+func (s *Sqs) Arn() *string {
+	return aws.String(QueueArnFromUrl(*s.url))
 }
 
-func (p *Sqs) Env() []string {
+func (s *Sqs) Url() *string {
+	return s.url
+}
+
+func (s *Sqs) Env() []string {
 	return []string{
-		fmt.Sprintf("AWS_SQS_%s_URL=%s", strings.ToUpper(p.fd), *p.Url),
+		fmt.Sprintf("AWS_SQS_%s_URL=%s", strings.ToUpper(s.fd), *s.url),
 	}
 }
 
@@ -234,62 +249,62 @@ func (p *Sqs) Env() []string {
 //
 // I'm unable to get eventbridge pipes w/ a transform to work when the input is json. I'm not sure if this is a bug in
 // eventbridge or if I'm doing something wrong. To work around this, marshal the json twice to make it a string of json.
-func (p *Sqs) Write(d []byte) (n int, err error) {
-	L.Debug.Printf("writing to pipe: %s: %s", *p.Url, string(d))
+func (s *Sqs) Write(d []byte) (n int, err error) {
+	L.Debug.Printf("writing to pipe: %s: %s", *s.url, string(d))
 
-	// Ensure msg is a json string so marshal twice.
-	msg := lo.Must(utils.JSONMarshal(&Event{
+	msg := event(&Event{
 		Type:    MessageEvent,
-		Id:      *p.sent + 1,
+		Id:      *s.sent + 1,
 		Content: string(d),
-	}))
+	})
 
-	L.Debug.Println("sending message (1):", string(msg))
-
-	msg = lo.Must(utils.JSONMarshal(string(msg)))
-	L.Debug.Println("sending message (2):", string(msg))
-
-	lo.Must(p.client.SendMessage(p.ctx, &sqs.SendMessageInput{
-		QueueUrl:    p.Url,
-		MessageBody: aws.String(string(msg)),
+	lo.Must(s.client.SendMessage(s.ctx, &sqs.SendMessageInput{
+		QueueUrl:    s.url,
+		MessageBody: aws.String(msg),
 	}))
 	if err != nil {
 		return 0, err
 	}
 
-	L.Debug.Printf("sent message: id %d: %s", *p.sent+1, string(d))
+	L.Debug.Printf("sent message: id %d: %s", *s.sent+1, string(d))
 
-	*p.sent += 1
+	*s.sent += 1
 
 	return len(d), err
 }
 
-func (p *Sqs) Wait() {
-	p.wg.Wait()
+func (s *Sqs) Wait() {
+	s.wg.Wait()
 }
 
-func (p *Sqs) Close() (err error) {
+func (s *Sqs) Close() (err error) {
 	L.Debug.Println("closing pipes")
 
-	event := lo.Must(utils.JSONMarshal(&Event{
+	body := event(&Event{
 		Type: ShutdownEvent,
-		Id:   *p.sent,
-	}))
-	event = lo.Must(utils.JSONMarshal(string(event)))
+		Id:   *s.sent,
+	})
 
-	lo.Must(p.client.SendMessage(context.TODO(), &sqs.SendMessageInput{
-		QueueUrl:    p.Url,
-		MessageBody: aws.String(string(event)),
+	lo.Must(s.client.SendMessage(context.TODO(), &sqs.SendMessageInput{
+		QueueUrl:    s.url,
+		MessageBody: aws.String(body),
 	}))
-	L.Debug.Println("sent closed event: processed", *p.sent)
-
-	// wait for the collection command to signal shutdown.
-	lo.Must(io.Copy(os.Stdout, os.Stdin))
+	L.Debug.Println("sent closed event: processed", *s.sent)
 
 	return nil
 }
 
-func (p *Sqs) PipeSourceParameters() *pipesTypes.PipeSourceParameters {
+func event(event *Event) string {
+	// Ensure msg is a json string so marshal twice.
+	msg := lo.Must(utils.JSONMarshal(event))
+	msg = lo.Must(utils.JSONMarshal(string(msg)))
+
+	L.Debug.Println("msg:", string(msg))
+
+	return string(msg)
+}
+
+func (s *Sqs) PipeSourceParameters() *pipesTypes.PipeSourceParameters {
 	return &pipesTypes.PipeSourceParameters{
 		SqsQueueParameters: &pipesTypes.PipeSourceSqsQueueParameters{
 			BatchSize:                      aws.Int32(1),

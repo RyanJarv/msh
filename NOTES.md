@@ -198,7 +198,8 @@ echo asdf |@ sed 's/asdf/poiu/' |@buf grep poiu
 
 # Various TODO
 
-* Need to be able to detect if stdin is a local stream.
+* Remove panics and improve error handling.
+* Detect messages from other pipelines.
 * Make "@" its own binary.
 * Figure out buffering?
 

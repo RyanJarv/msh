@@ -21,18 +21,19 @@ type Provider interface {
 }
 
 func NewProcess(provider Provider) *Process {
-	stdin := fd.NewFd(os.Stdin)
+	stdin, localStdin := fd.NewFd(os.Stdin)
 	provider.SetStdin(stdin)
 
 	proc := &Process{
-		Stdin:    stdin,
-		Provider: provider,
+		Stdin:      stdin,
+		Provider:   provider,
+		LocalStdin: localStdin,
 	}
 
 	proc.Stdout = provider.GetStdout()
-
 	if !utils.IsTTY(os.Stdout) || os.Getenv("MSH_STDOUT_TTY") == "false" {
-		WriteConf(proc.Stdout)
+		// Write a reference to stdout so the next command can determine where to find the input.
+		WriteConf(proc.Stdout.(io.ReadCloser))
 	}
 
 	return proc
@@ -42,6 +43,9 @@ type Process struct {
 	Provider
 	Stdin  interface{}
 	Stdout interface{}
+
+	// LocalStdin is set to true when stdin is local.
+	LocalStdin bool
 }
 
 func (p *Process) Deploy() error {
@@ -52,13 +56,11 @@ func (p *Process) Deploy() error {
 }
 
 func (p *Process) Run() error {
-
 	CatchShutdownSignal()
 
 	var wg *sync.WaitGroup
 
-	// If stdout is a TTY, or Stdout of the process can not be passed as a reference, then
-	// copy the processes Stdout to the current Stdout.
+	// If Stdout is a tty or can not be passed as a reference, copy locally.
 	if p.Stdout != nil && (utils.IsTTY(os.Stdout) || !fd.IsReferable(p.Stdout)) {
 		wg = p.CopyStdout()
 	}
@@ -69,7 +71,10 @@ func (p *Process) Run() error {
 
 	L.Debug.Println("provider run returned", err)
 
-	wg.Wait()
+	if wg != nil {
+		L.Debug.Println("waiting for stdout copy to finish")
+		wg.Wait()
+	}
 
 	return err
 }
@@ -80,7 +85,7 @@ func (p *Process) CopyStdout() *sync.WaitGroup {
 	if sqs, ok := p.Stdout.(*fd.Sqs); ok {
 		L.Debug.Printf("copying: %s -> os.Stdout\n", *sqs.Arn())
 	} else {
-		L.Debug.Println("copying: p.Stdout -> os.Stdout (%T)", p.Stdout)
+		L.Debug.Printf("copying: p.Stdout -> os.Stdout (%T)\n", p.Stdout)
 	}
 
 	pgid, err := syscall.Getpgid(os.Getpid())
@@ -92,10 +97,21 @@ func (p *Process) CopyStdout() *sync.WaitGroup {
 	wg.Add(1)
 	go func() {
 		fd.MustCopy(os.Stdout, p.Stdout.(io.Reader))
-		err := p.Stdout.(io.Closer).Close()
-		if err != nil {
-			L.Debug.Println("failed to close stdout", err)
+
+		// We don't monitor remote processes, so unless we are receiving input locally, we won't know when to close
+		// stdout. To work around this we send the closed event once per pipeline and forward it to the next process
+		// remotely. This means we need to avoid closing a remote pipeline more than once across separate commands.
+		//
+		// Remote pipelines don't correlate to local pipelines since a non-msh command in the middle will cause data
+		// to be proxied through it, instead only close stdout if stdin was not a reference.
+		sqs, ok := p.Stdout.(*fd.Sqs)
+		if ok && p.LocalStdin && utils.IsTTY(os.Stdin) {
+			err := sqs.Close()
+			if err != nil {
+				L.Debug.Println("failed to close stdout", err)
+			}
 		}
+
 		if r, ok := p.Stdout.(io.Closer); ok {
 			err = r.Close()
 			if err != nil {
@@ -117,8 +133,8 @@ func (p *Process) CopyStdout() *sync.WaitGroup {
 	return wg
 }
 
-func WriteConf(out interface{}) {
-	d := lo.Must(json.Marshal(out))
+func WriteConf(stdout io.ReadCloser) {
+	d := lo.Must(json.Marshal(stdout))
 	lo.Must(io.WriteString(os.Stdout, string(d)+"\n"))
 }
 

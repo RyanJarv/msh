@@ -19,31 +19,35 @@ type Fd struct {
 	file *os.File
 }
 
-func NewFd(file *os.File) interface{} {
+func NewFd(file *os.File) (stdin interface{}, localStdin bool) {
 	buf := bufio.NewReader(file)
 
 	if utils.IsTTY(file) {
-		return buf
+		return buf, true
 	}
 
-	return lo.Must(resolveRef(buf))
+	return lo.Must2(resolveRef(buf))
 }
 
-func resolveRef(buf *bufio.Reader) (interface{}, error) {
+func resolveRef(buf *bufio.Reader) (interface{}, bool, error) {
 	peek, err := buf.Peek(1)
 	if errors.Is(err, io.EOF) {
 		L.Debug.Println("fd is closed, skipping config")
-		return buf, nil
+		return buf, true, nil
 	} else if err != nil {
-		return nil, fmt.Errorf("resolveRef: failed to peek: %w", err)
+		return nil, true, fmt.Errorf("resolveRef: failed to peek: %w", err)
 	}
 
 	if peek[0] == '{' {
+		fd, err := resolveFd(buf)
+		if err != nil {
+			return nil, true, err
+		}
 
-		return resolveFd(buf)
+		return fd, false, err
 	}
 
-	return buf, nil
+	return buf, true, nil
 }
 
 func resolveFd(buf *bufio.Reader) (io.Reader, error) {
@@ -59,7 +63,7 @@ func resolveFd(buf *bufio.Reader) (io.Reader, error) {
 		return nil, fmt.Errorf("resolveRef: failed to unmarshal: %w", err)
 	}
 
-	url, ok := conf["Url"].(string)
+	url, ok := conf["url"].(string)
 	if !ok {
 		L.Debug.Println("no url found, using stdin")
 		return buf, nil

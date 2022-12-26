@@ -1,7 +1,6 @@
 import json
 import subprocess
 import os
-import base64
 
 
 def lambda_handler(events, context):
@@ -27,12 +26,14 @@ def lambda_handler(events, context):
 
         os.environ.update(env)
 
-        proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        output = proc.communicate(input=msg['Content'].encode())[0]
+        stdout, stderr = proc.communicate(input=msg['Content'].encode())
 
         # Encode twice so that output is a json encoded string.
-        msg['Content'] = output.decode()
+        msg['Content'] = stdout.decode()
+        if stderr:
+            msg['Stderr'] = stderr.decode()
 
         print("output: " + str(msg))
 

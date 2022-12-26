@@ -10,18 +10,15 @@ type HasEnv interface {
 	Env() []string
 }
 
-type Referable interface {
-	Arn() *string
-}
-
 func IsReferable(f interface{}) bool {
+	L.Debug.Printf("%T is not referable\n", f)
 	_, ok := f.(Referable)
 	return ok
 }
 
 // MustCopy Copy calls io.Copy and panics on error.
 func MustCopy(dst io.WriteCloser, src io.Reader) {
-	fdDebug(src, "dst")
+	fdDebug(src, "src")
 	fdDebug(dst, "dst")
 
 	w, err := io.Copy(dst, src)

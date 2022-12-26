@@ -312,7 +312,11 @@ func WriteOutput(pw io.Writer, resp []byte) error {
 			return fmt.Errorf("unmarshal response to map: %w", err)
 		}
 
-		lo.Must(fmt.Fprintf(pw, event.Content))
+		fmt.Fprintf(pw, event.Content)
+
+		if event.Stderr != "" {
+			fmt.Fprintf(pw, event.Stderr)
+		}
 	}
 
 	return nil

@@ -27,19 +27,19 @@ func main() {
 }
 
 type Sqs struct {
-	*fd.Sqs
+	fd.ISqs
 	Name *string
 }
 
 func (s *Sqs) Run() error {
-	s.Sqs.Wait()
+	s.ISqs.Wait()
 	return nil
 }
 
 func (s *Sqs) SetStdin(p interface{}) {
-	s.Sqs = lo.Must(fd.NewSqsFrom(context.TODO(), p, *s.Name, "stdin"))
+	s.ISqs = lo.Must(fd.NewSqsFrom(context.TODO(), p, *s.Name, "stdin"))
 }
 
 func (s *Sqs) GetStdout() io.ReadCloser {
-	return s.Sqs
+	return s.ISqs
 }
