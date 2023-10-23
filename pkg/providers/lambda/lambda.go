@@ -11,7 +11,10 @@ import (
 	"github.com/aws/jsii-runtime-go"
 	"log"
 	"os"
+	"regexp"
 )
+
+var lambdaHandlerRe = regexp.MustCompile(`def\w+lambda_handler\w+\(`)
 
 func NewLambda(args []string) (*LambdaCmd, error) {
 	if len(args) < 1 {
@@ -21,6 +24,10 @@ func NewLambda(args []string) (*LambdaCmd, error) {
 	script, err := os.ReadFile(args[0])
 	if err != nil {
 		return nil, fmt.Errorf("reading file: %w", err)
+	}
+
+	if !lambdaHandlerRe.Match(script) {
+		return nil, fmt.Errorf("script must contain a `lambda_handler` function")
 	}
 
 	return &LambdaCmd{
@@ -41,7 +48,7 @@ func (s *LambdaCmd) CdkStep(stack awscdk.Stack) {
 	s.function = awslambda.NewFunction(stack, jsii.String(flag.Arg(0)), &awslambda.FunctionProps{
 		Runtime: awslambda.Runtime_PYTHON_3_11(),
 		Handler: jsii.String("index.lambda_handler"),
-		Code:    awslambda.Code_FromInline(jsii.String(string(s.Script))),
+		Code:    awslambda.Code_FromInline(jsii.String(s.Script)),
 	})
 }
 

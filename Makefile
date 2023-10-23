@@ -40,6 +40,9 @@ test-pass-by-ref:
 test: build test-local test-stress
 	@echo "\nRunning Tests\n"
 
+	@go run ./cmd/msh.lambda.go ./test/test.py | go run ./cmd/msh.sleep.go 34 
+
+	# Old stuff:
 	@./scripts/test.sh './out/msh.local echo "input"| ./out/sqs ' 'input'
 
 	@./scripts/test.sh 'echo "input"| ./out/sqs' 'input'

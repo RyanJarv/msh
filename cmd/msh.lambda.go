@@ -5,6 +5,7 @@ import (
 	L "github.com/ryanjarv/msh/pkg/logger"
 	"github.com/ryanjarv/msh/pkg/providers/lambda"
 	"github.com/ryanjarv/msh/pkg/state"
+	"log"
 	"os"
 )
 
@@ -22,5 +23,8 @@ func main() {
 		L.Error.Fatalln("failed to create lambda", err)
 	}
 
-	app.Run(l)
+	err = app.Run(l)
+	if err != nil {
+		log.Fatalf("run: failed to run app: %w", err)
+	}
 }
