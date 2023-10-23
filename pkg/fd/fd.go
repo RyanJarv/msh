@@ -13,12 +13,20 @@ import (
 	"os"
 )
 
-type Fd struct {
-	io.WriterTo
-	io.Closer
-	file *os.File
-}
-
+// NewFd takes a file descriptor and resolves it to a remote queue if necessary.
+//
+// For example NewFd will may be called with os.Stdin in which it will read the first byte to determine
+// if the first line is a json configuration which references a remote SQS queue. If the file descriptor is a TTY or the
+// first character is a "{" we assume the first line contains a reference to a remote SQS queue that should be used for
+// input.  In this case, an io.Reader is returned which reads from the SQS queue is used, otherwise we assume the input
+// is data and return a bufio.Reader around the file descriptor that was passed.
+//
+// This allows us to pass references in the same way as normal data on stdin. Because we peek at the first line,
+// the file descriptor passed here can not be used after this is called.
+//
+// TODO: To avoid ambiguity between configuration and data we use the shell to wrap output from all local commands in
+//
+//	an internally defined format.
 func NewFd(file *os.File) (stdin interface{}, localStdin bool) {
 	buf := bufio.NewReader(file)
 
@@ -71,23 +79,4 @@ func resolveFd(buf *bufio.Reader) (io.Reader, error) {
 
 	L.Debug.Println("fd is sqs, skipping copy:", url)
 	return OpenSqs(context.TODO(), url)
-}
-
-func readLine(f io.Reader) ([]byte, error) {
-	b := make([]byte, 1, 1)
-	var s []byte
-	for {
-		_, err := f.Read(b)
-		if err != nil {
-			return nil, fmt.Errorf("read byte: %w", err)
-		}
-		if b[0] == '\n' {
-			break
-		}
-
-		s = append(s, b...)
-
-	}
-
-	return s, nil
 }

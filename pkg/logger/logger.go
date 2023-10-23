@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 )
 
 var (
-	ProgName = "[" + os.Args[0] + "]"
+	ProgName = fmt.Sprintf("[%s]", strings.Join(os.Args, " "))
 	Debug    = log.New(os.Stderr, ProgName+" [DEBUG] ", log.Flags())
 	Info     = log.New(os.Stderr, ProgName+" [INFO] ", log.Flags())
 	Error    = log.New(os.Stderr, ProgName+" [ERROR] ", log.Flags())

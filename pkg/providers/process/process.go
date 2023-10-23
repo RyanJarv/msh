@@ -62,7 +62,7 @@ func (p *Process) Run() error {
 
 	// If Stdout is a tty or can not be passed as a reference, copy locally.
 	if p.Stdout != nil && (utils.IsTTY(os.Stdout) || !fd.IsReferable(p.Stdout)) {
-		wg = p.CopyStdout()
+		wg = p.CopyStdoutLocally()
 	}
 
 	L.Debug.Println("running process")
@@ -79,7 +79,7 @@ func (p *Process) Run() error {
 	return err
 }
 
-func (p *Process) CopyStdout() *sync.WaitGroup {
+func (p *Process) CopyStdoutLocally() *sync.WaitGroup {
 	wg := &sync.WaitGroup{}
 
 	if sqs, ok := p.Stdout.(*fd.Sqs); ok {
@@ -116,6 +116,8 @@ func (p *Process) CopyStdout() *sync.WaitGroup {
 		if err != nil {
 			L.Debug.Println("failed to close stdin", err)
 		}
+
+		L.Debug.Println("sending SIGUSR1")
 		err = syscall.Kill(-pgid, syscall.SIGUSR1)
 		if err != nil {
 			L.Error.Println("failed to kill pgid", err)
