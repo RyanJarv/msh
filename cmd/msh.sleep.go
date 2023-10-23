@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	L "github.com/ryanjarv/msh/pkg/logger"
-	"github.com/ryanjarv/msh/pkg/providers/lambda"
+	"github.com/ryanjarv/msh/pkg/providers/sleep"
 	"github.com/ryanjarv/msh/pkg/state"
 	"os"
 )
@@ -17,7 +17,7 @@ func main() {
 		L.Error.Fatalln("failed to read config", err)
 	}
 
-	l, err := lambda.NewLambda(flag.Args())
+	l, err := sleep.NewSleep(flag.Args())
 	if err != nil {
 		L.Error.Fatalln("failed to create lambda", err)
 	}

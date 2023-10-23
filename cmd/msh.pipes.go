@@ -16,7 +16,7 @@ func main() {
 
 	cmd := command.NewCommand(flag.Args())
 
-	function := lambda.NewLambdaCmd(cmd)
+	function := lambda.NewLambda(cmd)
 
 	var proc *process.Process
 	if utils.IsTTY(os.Stdin) {

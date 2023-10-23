@@ -11,6 +11,11 @@ import (
 	"os/exec"
 )
 
+type ICommand interface {
+	SetStdin(interface{})
+	GetStdout() io.ReadCloser
+}
+
 func NewCommand(args []string) Command {
 	if len(args) == 0 {
 		L.Error.Fatalln("no command provided")
@@ -27,13 +32,8 @@ type Command struct {
 	cfg aws.Config
 }
 
-func (c Command) Run() error {
-	L.Debug.Println("Running command", c.Args)
-	return c.Cmd.Run()
-}
-
 func (c Command) SetStdin(f interface{}) {
-	c.Setenv(f)
+	c.setenv(f)
 	pipe, err := c.Cmd.StdinPipe()
 	if err != nil {
 		L.Error.Fatalln("failed to get stdin pipe", err)
@@ -46,7 +46,7 @@ func (c Command) GetStdout() io.ReadCloser {
 	return lo.Must(c.StdoutPipe())
 }
 
-func (c Command) Setenv(f interface{}) {
+func (c Command) setenv(f interface{}) {
 	switch p := f.(type) {
 	case fd.HasEnv:
 		c.Env = append(c.Env, p.Env()...)

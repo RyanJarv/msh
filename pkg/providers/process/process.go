@@ -2,12 +2,18 @@ package process
 
 import (
 	"encoding/json"
+	"flag"
+	"fmt"
+	"github.com/aws/aws-cdk-go/awscdk/v2"
+	"github.com/aws/jsii-runtime-go"
 	"github.com/ryanjarv/msh/pkg/fd"
 	L "github.com/ryanjarv/msh/pkg/logger"
+	//"github.com/ryanjarv/msh/pkg/state"
 	"github.com/ryanjarv/msh/pkg/types"
 	"github.com/ryanjarv/msh/pkg/utils"
 	"github.com/samber/lo"
 	"io"
+	"log"
 	"os"
 	"os/signal"
 	"sync"
@@ -20,20 +26,37 @@ type Provider interface {
 	Run() error
 }
 
+type CloudFormationProvider interface {
+	CloudFormation(stack awscdk.Stack) error
+}
+
 func NewProcess(provider Provider) *Process {
-	stdin, localStdin := fd.NewFd(os.Stdin)
-	provider.SetStdin(stdin)
+	//config, err := state.ReadState(os.Stdin)
+	//if err != nil {
+	//	L.Error.Fatalln("failed to read config", err)
+	//}
+
+	//provider.SetStdin(config.ResolvedStdin)
 
 	proc := &Process{
-		Stdin:      stdin,
-		Provider:   provider,
-		LocalStdin: localStdin,
+		Provider: provider,
+		//Stdin:          config.ResolvedStdin,
+		//CloudFormation: config.CloudFormation,
+		//LocalStdin:     config.IsLocalStdin,
 	}
 
 	proc.Stdout = provider.GetStdout()
 	if !utils.IsTTY(os.Stdout) || os.Getenv("MSH_STDOUT_TTY") == "false" {
+		//var template string
+		//if cfn, ok := provider.(CloudFormationProvider); ok {
+		//	template = GetCloudFormation(cfn)
+		//}
+
 		// Write a reference to stdout so the next command can determine where to find the input.
-		WriteConf(proc.Stdout.(io.ReadCloser))
+		//state.Run(state.WriteConfigInput{
+		//	Stdout:         proc.Stdout.(io.ReadCloser),
+		//	CloudFormation: template,
+		//})
 	}
 
 	return proc
@@ -45,7 +68,8 @@ type Process struct {
 	Stdout interface{}
 
 	// LocalStdin is set to true when stdin is local.
-	LocalStdin bool
+	LocalStdin     bool
+	CloudFormation string
 }
 
 func (p *Process) Deploy() error {
@@ -128,11 +152,6 @@ func (p *Process) CopyStdoutLocally() *sync.WaitGroup {
 	return wg
 }
 
-func WriteConf(stdout io.ReadCloser) {
-	d := lo.Must(json.Marshal(stdout))
-	lo.Must(io.WriteString(os.Stdout, string(d)+"\n"))
-}
-
 // CatchShutdownSignal catches the process group shutdown signal and exits.
 //
 // SIGPIPE doesn't appear to be catchable, so we use SIGUSR1 instead.
@@ -147,4 +166,25 @@ func CatchShutdownSignal() {
 			os.Exit(0)
 		}
 	}()
+}
+
+func GetCloudFormation(cfn CloudFormationProvider) string {
+	app := awscdk.NewApp(nil)
+	stack := awscdk.NewStack(app, jsii.String(fmt.Sprintf("%s-%s", flag.Arg(0), os.Getpid())), &awscdk.StackProps{})
+
+	err := cfn.CloudFormation(stack)
+	if err != nil {
+		L.Error.Fatalln("failed to deploy function:", err)
+	}
+
+	synth := app.Synth(nil)
+	if synth == nil || len(*synth.Stacks()) > 1 {
+		log.Fatalf("more than one stack returned: %v", synth)
+	}
+	for _, synthStack := range *synth.Stacks() {
+		template := lo.Must(json.Marshal(synthStack.Template()))
+		return string(template)
+	}
+
+	return ""
 }

@@ -138,7 +138,7 @@ func (p *AwsPipe) Run() error {
 func (p *AwsPipe) SetStdin(source interface{}) {
 	p.Stdin = lo.Must(fd.NewSqsFrom(context.TODO(), source, p.Name(), "stdin"))
 	L.Debug.Println("eventbridge pipes: source:", *p.Stdin.Arn())
-	//p.LambdaCmd.SetStdin(p.Stdin)
+	//p.LambdaCmd.SetStdin(p.ResolvedStdin)
 }
 
 func (p *AwsPipe) GetStdout() io.ReadCloser {
