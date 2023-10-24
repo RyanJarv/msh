@@ -43,7 +43,7 @@ type LambdaCmd struct {
 func (s *LambdaCmd) Name() string { return "lambda" }
 
 func (s *LambdaCmd) Run(stack awscdk.Stack, last interface{}) (interface{}, error) {
-	chain, ok := last.(awsstepfunctions.Chain)
+	chain, ok := last.(awsstepfunctions.INextable)
 	if !ok {
 		return nil, fmt.Errorf("last step must be statemachine chain")
 	}

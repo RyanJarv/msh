@@ -9,6 +9,7 @@ import (
 	L "github.com/ryanjarv/msh/pkg/logger"
 	"github.com/ryanjarv/msh/pkg/types"
 	"github.com/ryanjarv/msh/pkg/utils"
+	"github.com/samber/lo"
 	"io"
 	"os"
 	"os/exec"
@@ -58,16 +59,33 @@ func (s *App) Build() error {
 		}
 	}
 
+	for _, step := range s.State.Steps {
+		s, ok := step.Value.(types.NeedsFinalization)
+		if !ok {
+			continue
+		}
+
+		if err := s.Finalize(stack); err != nil {
+			return fmt.Errorf("build: failed to run step: %w", err)
+		}
+	}
+
 	synth := app.Synth(nil)
 	if synth == nil || synth.Stacks() == nil || len(*synth.Stacks()) != 1 {
 		return fmt.Errorf("build: failed to synthesize app: %s", synth)
 	}
 
+	for _, stack := range *synth.Stacks() {
+		L.Debug.Println(string(lo.Must(json.Marshal(stack.Template()))))
+	}
+
 	L.Debug.Println("synth directory:", *synth.Directory())
 
-	err := Deploy(synth)
-	if err != nil {
-		return fmt.Errorf("build: failed to deploy: %w", err)
+	if os.Getenv("MSH_SKIPDEPLOY") == "" {
+		err := Deploy(synth)
+		if err != nil {
+			return fmt.Errorf("build: failed to deploy: %w", err)
+		}
 	}
 
 	return nil

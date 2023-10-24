@@ -33,7 +33,7 @@ type SleepCmd struct {
 func (s *SleepCmd) Name() string { return "sleep" }
 
 func (s *SleepCmd) Run(stack awscdk.Stack, last interface{}) (interface{}, error) {
-	chain, ok := last.(awsstepfunctions.Chain)
+	chain, ok := last.(awsstepfunctions.INextable)
 	if !ok {
 		return nil, fmt.Errorf("last step must be statemachine chain")
 	}
