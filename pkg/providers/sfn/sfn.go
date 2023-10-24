@@ -25,7 +25,7 @@ func (s *Sfn) Run(stack awscdk.Stack, last interface{}) (interface{}, error) {
 	}
 
 	chain := sfn.Chain_Start(
-		sfn.NewPass(stack, jsii.String("choice"), &sfn.PassProps{}),
+		sfn.NewPass(stack, jsii.String("pass"), &sfn.PassProps{}),
 	)
 
 	machine := sfn.NewStateMachine(stack, jsii.String("StateMachine"), &sfn.StateMachineProps{

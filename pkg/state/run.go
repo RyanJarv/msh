@@ -48,7 +48,7 @@ func (s *App) Build() error {
 	for _, step := range s.State.Steps {
 		s, ok := step.Value.(types.CdkStep)
 		if !ok {
-			return fmt.Errorf("build: type not found in registry: %T", step.Value)
+			return fmt.Errorf("build: not a cdk step (check the registry?): %T", step.Value)
 		}
 
 		var err error

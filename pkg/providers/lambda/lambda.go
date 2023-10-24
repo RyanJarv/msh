@@ -53,15 +53,14 @@ func (s *LambdaCmd) Run(stack awscdk.Stack, last interface{}) (interface{}, erro
 		Handler: jsii.String("index.lambda_handler"),
 		Code:    awslambda.Code_FromInline(jsii.String(s.Script)),
 	})
-
-	for _, chain := range *chain.EndStates() {
-		chain.Next(
-			tasks.NewLambdaInvoke(stack, jsii.String(fmt.Sprintf("invoke %s %d", flag.Arg(0), os.Getpid())), &tasks.LambdaInvokeProps{
-				LambdaFunction: s.function,
-				OutputPath:     jsii.String("$.Payload"),
-			}),
-		)
+	if chain == nil {
+		return chain, fmt.Errorf("end of chain not found")
 	}
 
-	return chain, fmt.Errorf("end of chain not found")
+	lambda := tasks.NewLambdaInvoke(stack, jsii.String(fmt.Sprintf("invoke %s %d", flag.Arg(0), os.Getpid())), &tasks.LambdaInvokeProps{
+		LambdaFunction: s.function,
+		OutputPath:     jsii.String("$.Payload"),
+	})
+
+	return chain.Next(lambda), nil
 }
