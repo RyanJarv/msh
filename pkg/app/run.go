@@ -1,4 +1,4 @@
-package state
+package app
 
 import (
 	"encoding/json"
@@ -15,41 +15,41 @@ import (
 	"os/exec"
 )
 
-func (s *App) Run(step types.IStep) error {
-	s.State.AddStep(step)
+func (a *App) Run(step types.IStep) error {
+	a.State.AddStep(step)
 
 	if utils.IsTTY(os.Stdout) || os.Getenv("MSH_BUILD") != "" {
-		return s.Build()
+		return a.Build()
 	} else {
-		return s.State.WriteState()
+		return a.State.WriteState()
 	}
 }
 
 func (s *State) WriteState() error {
 	d, err := json.Marshal(s)
 	if err != nil {
-		return fmt.Errorf("writeState: failed to marshal state: %w", err)
+		return fmt.Errorf("writeState: failed to marshal app: %w", err)
 	}
 
 	_, err = io.WriteString(os.Stdout, string(d)+"\n")
 	if err != nil {
-		return fmt.Errorf("writeState: failed to write state: %w", err)
+		return fmt.Errorf("writeState: failed to write app: %w", err)
 	}
 
 	return nil
 }
 
-func (s *App) Build() error {
+func (a *App) Build() error {
 	app := awscdk.NewApp(&awscdk.AppProps{})
 	stack := awscdk.NewStack(app, jsii.String("msh"), &awscdk.StackProps{})
 
 	// pipeline represents the output of the last step, which will be passed to the next.
 	var pipeline interface{}
 
-	for _, step := range s.State.Steps {
+	for _, step := range a.State.Steps {
 		s, ok := step.Value.(types.CdkStep)
 		if !ok {
-			return fmt.Errorf("build: not a cdk step (check the registry?): %T", step.Value)
+			return fmt.Errorf("build: not a cdk step (check the registry?): %T: %+v", step.Value, step.Value)
 		}
 
 		var err error
@@ -59,7 +59,7 @@ func (s *App) Build() error {
 		}
 	}
 
-	for _, step := range s.State.Steps {
+	for _, step := range a.State.Steps {
 		s, ok := step.Value.(types.NeedsFinalization)
 		if !ok {
 			continue
@@ -72,7 +72,7 @@ func (s *App) Build() error {
 
 	synth := app.Synth(nil)
 	if synth == nil || synth.Stacks() == nil || len(*synth.Stacks()) != 1 {
-		return fmt.Errorf("build: failed to synthesize app: %s", synth)
+		return fmt.Errorf("build: failed to synthesize app: %v", synth)
 	}
 
 	for _, stack := range *synth.Stacks() {

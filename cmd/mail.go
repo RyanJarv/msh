@@ -2,25 +2,24 @@ package main
 
 import (
 	"flag"
+	"github.com/ryanjarv/msh/cmd/mail"
+	"github.com/ryanjarv/msh/pkg/app"
 	L "github.com/ryanjarv/msh/pkg/logger"
-	"github.com/ryanjarv/msh/pkg/providers/lambda"
-	"github.com/ryanjarv/msh/pkg/state"
 	"log"
 	"os"
 )
 
 func main() {
 	flag.Parse()
-	L.Debug.Println("args:", flag.Args())
 
-	app, err := state.GetApp(os.Stdin)
+	app, err := app.GetApp(os.Stdin)
 	if err != nil {
 		L.Error.Fatalln("failed to read config", err)
 	}
 
-	l, err := lambda.NewLambda(flag.Args())
+	l, err := mail.NewMail()
 	if err != nil {
-		L.Error.Fatalln("failed to create lambda", err)
+		L.Error.Fatalln("failed to create event", err)
 	}
 
 	err = app.Run(l)

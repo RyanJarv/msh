@@ -1,4 +1,4 @@
-package state
+package app
 
 import (
 	"bufio"
@@ -29,7 +29,7 @@ func GetApp(file *os.File) (App, error) {
 
 	app.State, err = app.ReadState(line)
 	if err != nil {
-		return app, fmt.Errorf("getApp: failed to read state: %w", err)
+		return app, fmt.Errorf("getApp: failed to read app: %w", err)
 	}
 
 	return app, nil
@@ -73,7 +73,7 @@ type State struct {
 	Steps []step
 }
 
-// AddStep is called by each individual step that wants to add to the cumulative state.
+// AddStep is called by each individual step that wants to add to the cumulative app.
 func (s *State) AddStep(c types.IStep) {
 	s.Steps = append(s.Steps, step{
 		Name:  c.Name(),

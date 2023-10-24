@@ -1,7 +1,7 @@
-package state
+package app
 
 import (
-	"github.com/ryanjarv/msh/pkg/providers/lambda"
+	"github.com/ryanjarv/msh/cmd/lambda"
 	"reflect"
 	"testing"
 )
@@ -17,7 +17,7 @@ func TestReadState(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "should read state",
+			name: "should read app",
 			args: args{
 				line: []byte(`{"Steps":[{"Name":"lambda","Value":{"Event":"script","Args":["args"]}}]}`),
 			},

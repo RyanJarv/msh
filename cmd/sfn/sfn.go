@@ -34,11 +34,11 @@ func (s *Sfn) Run(stack awscdk.Stack, last interface{}) (interface{}, error) {
 }
 
 func (s *Sfn) Finalize(stack awscdk.Stack) error {
-	// The state machine must be created after the chain is set up otherwise we won't see all the steps.
+	// The app machine must be created after the chain is set up otherwise we won't see all the steps.
 	machine := sfn.NewStateMachine(stack, jsii.String("StateMachine"), &sfn.StateMachineProps{
 		DefinitionBody: sfn.DefinitionBody_FromChainable(s.Chain),
 		Timeout:        awscdk.Duration_Minutes(jsii.Number(5)),
-		Comment:        jsii.String("a super cool state machine"),
+		Comment:        jsii.String("a super cool app machine"),
 	})
 
 	target := awseventstargets.NewSfnStateMachine(machine, &awseventstargets.SfnStateMachineProps{})

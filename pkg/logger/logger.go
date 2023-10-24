@@ -17,7 +17,7 @@ var (
 func init() {
 	if os.Getenv("DEBUG") == "" {
 		if f, err := os.Open(os.DevNull); err != nil {
-			fmt.Errorf("could not open %s, debug output will print to stderr", os.DevNull)
+			log.Fatalf("could not open %s, debug output will print to stderr", os.DevNull)
 		} else {
 			Debug.SetOutput(f)
 		}

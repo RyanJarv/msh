@@ -1,9 +1,11 @@
 build:
 	go generate ./...
-	go build -o out/msh.local cmd/msh.local.go
-	go build -o out/msh.lambda cmd/msh.lambda.go
-	go build -o out/msh.pipes cmd/msh.pipes.go
-	go build -o out/sqs cmd/sqs.go
+	go build -o out/@event cmd/event.go
+	go build -o out/sfn cmd/sfn.go
+	go build -o out/sns cmd/sns.go
+	go build -o out/mail cmd/mail.go
+	go build -o out/lambda.python cmd/lambda.python.go
+	go build -o out/sleep cmd/sleep.go
 
 docker-build:
 	docker build -f test/python.msh -t python.msh .

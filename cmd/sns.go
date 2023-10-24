@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"github.com/ryanjarv/msh/cmd/event"
+	"github.com/ryanjarv/msh/cmd/sns"
 	"github.com/ryanjarv/msh/pkg/app"
 	L "github.com/ryanjarv/msh/pkg/logger"
 	"log"
@@ -17,7 +17,7 @@ func main() {
 		L.Error.Fatalln("failed to read config", err)
 	}
 
-	l, err := event.NewEvent()
+	l, err := sns.NewSns()
 	if err != nil {
 		L.Error.Fatalln("failed to create event", err)
 	}

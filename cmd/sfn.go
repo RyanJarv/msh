@@ -2,9 +2,9 @@ package main
 
 import (
 	"flag"
+	"github.com/ryanjarv/msh/cmd/sfn"
+	"github.com/ryanjarv/msh/pkg/app"
 	L "github.com/ryanjarv/msh/pkg/logger"
-	"github.com/ryanjarv/msh/pkg/providers/sfn"
-	"github.com/ryanjarv/msh/pkg/state"
 	"log"
 	"os"
 )
@@ -12,7 +12,7 @@ import (
 func main() {
 	flag.Parse()
 
-	app, err := state.GetApp(os.Stdin)
+	app, err := app.GetApp(os.Stdin)
 	if err != nil {
 		L.Error.Fatalln("failed to read config", err)
 	}
