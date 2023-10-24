@@ -21,19 +21,15 @@ type Sfn struct {
 
 func (s *Sfn) Name() string { return "statemachine" }
 
-func (s *Sfn) Run(stack awscdk.Stack, last interface{}) (interface{}, error) {
-	var ok bool
-	s.rule, ok = last.(awsevents.Rule)
+func (s *Sfn) Run(stack awscdk.Stack, next interface{}) (interface{}, error) {
+	chain, ok := next.(sfn.IChainable)
 	if !ok {
-		return nil, fmt.Errorf("last step must be eventbridge rule, got: %T", last)
+		return nil, fmt.Errorf("next step must be statemachine task, got: %T", next)
 	}
 
-	s.Chain = sfn.NewPass(stack, jsii.String("pass"), &sfn.PassProps{})
+	pass := sfn.NewPass(stack, jsii.String("pass"), &sfn.PassProps{})
+	pass.Next(chain)
 
-	return s.Chain, nil
-}
-
-func (s *Sfn) Finalize(stack awscdk.Stack) error {
 	// The app machine must be created after the chain is set up otherwise we won't see all the steps.
 	machine := sfn.NewStateMachine(stack, jsii.String("StateMachine"), &sfn.StateMachineProps{
 		DefinitionBody: sfn.DefinitionBody_FromChainable(s.Chain),
@@ -41,8 +37,5 @@ func (s *Sfn) Finalize(stack awscdk.Stack) error {
 		Comment:        jsii.String("a super cool app machine"),
 	})
 
-	target := awseventstargets.NewSfnStateMachine(machine, &awseventstargets.SfnStateMachineProps{})
-	s.rule.AddTarget(target)
-
-	return nil
+	return awseventstargets.NewSfnStateMachine(machine, &awseventstargets.SfnStateMachineProps{}), nil
 }

@@ -5,8 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/aws/aws-cdk-go/awscdk/v2"
-	"github.com/aws/aws-cdk-go/awscdk/v2/awssns"
-	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awssnssubscriptions"
 )
 
 var args = struct {
@@ -38,23 +37,10 @@ type Mail struct {
 
 func (s *Mail) Name() string { return "mail" }
 
-func (s *Mail) Run(stack awscdk.Stack, last interface{}) (interface{}, error) {
-	topic, ok := last.(awssns.Topic)
-	if !ok {
-		return nil, fmt.Errorf("last step must be a sns topic rule, got: %T", last)
+func (s *Mail) Run(stack awscdk.Stack, next interface{}) (interface{}, error) {
+	if next != nil {
+		return nil, fmt.Errorf("can not chain anything after a sns email subscription, got: %T", next)
 	}
 
-	awssns.NewSubscription(stack, aws.String(s.Name()), &awssns.SubscriptionProps{
-		Endpoint: s.To,
-		Protocol: awssns.SubscriptionProtocol_EMAIL,
-		Topic:    topic,
-
-		// TODO: implement these
-		//DeadLetterQueue:             nil,
-		//FilterPolicy:                nil,
-		//FilterPolicyWithMessageBody: nil,
-	})
-
-	// Can't chain anything after this
-	return nil, nil
+	return awssnssubscriptions.NewEmailSubscription(s.To, &awssnssubscriptions.EmailSubscriptionProps{}), nil
 }

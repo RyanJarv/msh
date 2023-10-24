@@ -61,10 +61,15 @@ type Event struct {
 
 func (s *Event) Name() string { return "event" }
 
-func (s *Event) Run(stack awscdk.Stack, last interface{}) (interface{}, error) {
-	if last != nil {
-		return nil, fmt.Errorf("event rule must be the first step in the chain")
+func (s *Event) Run(stack awscdk.Stack, next interface{}) (interface{}, error) {
+	target, ok := next.(awsevents.IRuleTarget)
+	if !ok {
+		return nil, fmt.Errorf("next step must be eventbridge target, got: %T", next)
 	}
-	return awsevents.NewRule(stack, aws.String("event"), s.RuleProp), nil
 
+	rule := awsevents.NewRule(stack, aws.String("event"), s.RuleProp)
+	rule.AddTarget(target)
+
+	// Nothing can chain into an event rule.
+	return nil, nil
 }

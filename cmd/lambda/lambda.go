@@ -42,10 +42,10 @@ type LambdaCmd struct {
 
 func (s *LambdaCmd) Name() string { return "lambda" }
 
-func (s *LambdaCmd) Run(stack awscdk.Stack, last interface{}) (interface{}, error) {
-	chain, ok := last.(awsstepfunctions.INextable)
+func (s *LambdaCmd) Run(stack awscdk.Stack, next interface{}) (interface{}, error) {
+	chain, ok := next.(awsstepfunctions.IChainable)
 	if !ok {
-		return nil, fmt.Errorf("last step must be statemachine chain")
+		return nil, fmt.Errorf("next step must be a statemachine task")
 	}
 
 	s.function = awslambda.NewFunction(stack, jsii.String(flag.Arg(0)), &awslambda.FunctionProps{
@@ -62,5 +62,5 @@ func (s *LambdaCmd) Run(stack awscdk.Stack, last interface{}) (interface{}, erro
 		OutputPath:     jsii.String("$.Payload"),
 	})
 
-	return chain.Next(lambda), nil
+	return lambda.Next(chain), nil
 }

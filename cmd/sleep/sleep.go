@@ -32,15 +32,15 @@ type SleepCmd struct {
 
 func (s *SleepCmd) Name() string { return "sleep" }
 
-func (s *SleepCmd) Run(stack awscdk.Stack, last interface{}) (interface{}, error) {
-	chain, ok := last.(awsstepfunctions.INextable)
+func (s *SleepCmd) Run(stack awscdk.Stack, next interface{}) (interface{}, error) {
+	chain, ok := next.(awsstepfunctions.IChainable)
 	if !ok {
-		return nil, fmt.Errorf("last step must be statemachine chain")
+		return nil, fmt.Errorf("next step must be statemachine chain")
 	}
 
 	wait := sfn.NewWait(stack, jsii.String("wait"), &sfn.WaitProps{
 		Time: sfn.WaitTime_Duration(awscdk.Duration_Seconds(jsii.Number(s.Seconds))),
 	})
 
-	return chain.Next(wait), nil
+	return wait.Next(chain), nil
 }

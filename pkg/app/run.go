@@ -44,28 +44,20 @@ func (a *App) Build() error {
 	stack := awscdk.NewStack(app, jsii.String("msh"), &awscdk.StackProps{})
 
 	// pipeline represents the output of the last step, which will be passed to the next.
-	var pipeline interface{}
+	var next interface{}
 
-	for _, step := range a.State.Steps {
+	// Reverse the steps so the source receives the next step instead of the previous one.
+	steps := lo.Reverse(a.State.Steps)
+
+	for _, step := range steps {
 		s, ok := step.Value.(types.CdkStep)
 		if !ok {
 			return fmt.Errorf("build: not a cdk step (check the registry?): %T: %+v", step.Value, step.Value)
 		}
 
 		var err error
-		pipeline, err = s.Run(stack, pipeline)
+		next, err = s.Run(stack, next)
 		if err != nil {
-			return fmt.Errorf("build: failed to run step: %w", err)
-		}
-	}
-
-	for _, step := range a.State.Steps {
-		s, ok := step.Value.(types.NeedsFinalization)
-		if !ok {
-			continue
-		}
-
-		if err := s.Finalize(stack); err != nil {
 			return fmt.Errorf("build: failed to run step: %w", err)
 		}
 	}

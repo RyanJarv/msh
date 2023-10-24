@@ -14,10 +14,6 @@ type CdkStep interface {
 	Run(awscdk.Stack, interface{}) (interface{}, error)
 }
 
-type NeedsFinalization interface {
-	Finalize(awscdk.Stack) error
-}
-
 type Process interface {
 	io.ReaderFrom
 	io.WriterTo
