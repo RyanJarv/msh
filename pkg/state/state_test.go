@@ -19,7 +19,7 @@ func TestReadState(t *testing.T) {
 		{
 			name: "should read state",
 			args: args{
-				line: []byte(`{"Steps":[{"Name":"lambda","Value":{"Script":"script","Args":["args"]}}]}`),
+				line: []byte(`{"Steps":[{"Name":"lambda","Value":{"Event":"script","Args":["args"]}}]}`),
 			},
 			want: &State{
 				Steps: []step{

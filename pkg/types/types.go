@@ -2,7 +2,6 @@ package types
 
 import (
 	"github.com/aws/aws-cdk-go/awscdk/v2"
-	sfn "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
 	"io"
 )
 
@@ -11,11 +10,8 @@ type IStep interface {
 }
 
 type CdkStep interface {
-	CdkStep(stack awscdk.Stack)
-}
-
-type SfnStep interface {
-	SfnHook(stack awscdk.Stack, chain sfn.Chain) sfn.Chain
+	//CdkStep(stack awscdk.Stack)
+	Run(awscdk.Stack, interface{}) (interface{}, error)
 }
 
 type Process interface {

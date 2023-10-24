@@ -1,7 +1,7 @@
 #!/usr/bin/env msh.lambda
 import json
 
- af def   lambda_handler  (event, context):
+def lambda_handler(event, context):
     print(event)
     return {
         'statusCode': 200,

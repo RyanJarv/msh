@@ -1,6 +1,7 @@
 package lambda
 
 import (
+	"bytes"
 	_ "embed"
 	"flag"
 	"fmt"
@@ -11,10 +12,7 @@ import (
 	"github.com/aws/jsii-runtime-go"
 	"log"
 	"os"
-	"regexp"
 )
-
-var lambdaHandlerRe = regexp.MustCompile(`def\w+lambda_handler\w+\(`)
 
 func NewLambda(args []string) (*LambdaCmd, error) {
 	if len(args) < 1 {
@@ -26,7 +24,7 @@ func NewLambda(args []string) (*LambdaCmd, error) {
 		return nil, fmt.Errorf("reading file: %w", err)
 	}
 
-	if !lambdaHandlerRe.Match(script) {
+	if !bytes.Contains(script, []byte("lambda_handler")) {
 		return nil, fmt.Errorf("script must contain a `lambda_handler` function")
 	}
 
@@ -44,19 +42,26 @@ type LambdaCmd struct {
 
 func (s *LambdaCmd) Name() string { return "lambda" }
 
-func (s *LambdaCmd) CdkStep(stack awscdk.Stack) {
+func (s *LambdaCmd) Run(stack awscdk.Stack, last interface{}) (interface{}, error) {
+	chain, ok := last.(awsstepfunctions.Chain)
+	if !ok {
+		return nil, fmt.Errorf("last step must be statemachine chain")
+	}
+
 	s.function = awslambda.NewFunction(stack, jsii.String(flag.Arg(0)), &awslambda.FunctionProps{
 		Runtime: awslambda.Runtime_PYTHON_3_11(),
 		Handler: jsii.String("index.lambda_handler"),
 		Code:    awslambda.Code_FromInline(jsii.String(s.Script)),
 	})
-}
 
-func (s LambdaCmd) SfnHook(stack awscdk.Stack, chain awsstepfunctions.Chain) awsstepfunctions.Chain {
-	return chain.Next(
-		tasks.NewLambdaInvoke(stack, jsii.String(fmt.Sprintf("invoke %s %d", flag.Arg(0), os.Getpid())), &tasks.LambdaInvokeProps{
-			LambdaFunction: s.function,
-			OutputPath:     jsii.String("$.Payload"),
-		}),
-	)
+	for _, chain := range *chain.EndStates() {
+		chain.Next(
+			tasks.NewLambdaInvoke(stack, jsii.String(fmt.Sprintf("invoke %s %d", flag.Arg(0), os.Getpid())), &tasks.LambdaInvokeProps{
+				LambdaFunction: s.function,
+				OutputPath:     jsii.String("$.Payload"),
+			}),
+		)
+	}
+
+	return chain, fmt.Errorf("end of chain not found")
 }
