@@ -37,10 +37,10 @@ type Mail struct {
 
 func (s *Mail) Name() string { return "mail" }
 
-func (s *Mail) Run(stack awscdk.Stack, next interface{}) (interface{}, error) {
+func (s *Mail) Compile(stack awscdk.Stack, next interface{}) ([]interface{}, error) {
 	if next != nil {
 		return nil, fmt.Errorf("can not chain anything after a sns email subscription, got: %T", next)
 	}
 
-	return awssnssubscriptions.NewEmailSubscription(s.To, &awssnssubscriptions.EmailSubscriptionProps{}), nil
+	return []interface{}{awssnssubscriptions.NewEmailSubscription(s.To, &awssnssubscriptions.EmailSubscriptionProps{})}, nil
 }

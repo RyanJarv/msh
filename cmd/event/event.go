@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsevents"
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/ryanjarv/msh/pkg/utils"
 	"os"
 )
 
@@ -61,14 +62,17 @@ type Event struct {
 
 func (s *Event) Name() string { return "event" }
 
-func (s *Event) Run(stack awscdk.Stack, next interface{}) (interface{}, error) {
-	target, ok := next.(awsevents.IRuleTarget)
+func (s *Event) Compile(stack awscdk.Stack, next []interface{}) ([]interface{}, error) {
+	target, ok := utils.EachAs[awsevents.IRuleTarget](next)
 	if !ok {
-		return nil, fmt.Errorf("next step must be eventbridge target, got: %T", next)
+		return nil, fmt.Errorf("next step must be eventbridge target, got: %T: %+v", next[0], next[0])
 	}
 
 	rule := awsevents.NewRule(stack, aws.String("event"), s.RuleProp)
-	rule.AddTarget(target)
+
+	for _, t := range target {
+		rule.AddTarget(t)
+	}
 
 	// Nothing can chain into an event rule.
 	return nil, nil

@@ -38,3 +38,17 @@ func MapEnvVars(envVars []string) map[string]string {
 	}
 	return env
 }
+
+func EachAs[T any](values []any) ([]T, bool) {
+	var out []T
+	for _, v := range values {
+		o, ok := v.(T)
+		if !ok {
+			return out, false
+		}
+
+		out = append(out, o)
+	}
+
+	return out, true
+}

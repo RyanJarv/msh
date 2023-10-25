@@ -42,7 +42,7 @@ type LambdaCmd struct {
 
 func (s *LambdaCmd) Name() string { return "lambda" }
 
-func (s *LambdaCmd) Run(stack awscdk.Stack, next interface{}) (interface{}, error) {
+func (s *LambdaCmd) Compile(stack awscdk.Stack, next interface{}) ([]interface{}, error) {
 	chain, ok := next.(awsstepfunctions.IChainable)
 	if !ok {
 		return nil, fmt.Errorf("next step must be a statemachine task")
@@ -54,7 +54,7 @@ func (s *LambdaCmd) Run(stack awscdk.Stack, next interface{}) (interface{}, erro
 		Code:    awslambda.Code_FromInline(jsii.String(s.Script)),
 	})
 	if chain == nil {
-		return chain, fmt.Errorf("end of chain not found")
+		return nil, fmt.Errorf("end of chain not found")
 	}
 
 	lambda := tasks.NewLambdaInvoke(stack, jsii.String(fmt.Sprintf("invoke %s %d", flag.Arg(0), os.Getpid())), &tasks.LambdaInvokeProps{
@@ -62,5 +62,5 @@ func (s *LambdaCmd) Run(stack awscdk.Stack, next interface{}) (interface{}, erro
 		OutputPath:     jsii.String("$.Payload"),
 	})
 
-	return lambda.Next(chain), nil
+	return []interface{}{lambda}, nil
 }

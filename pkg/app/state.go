@@ -5,49 +5,33 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ryanjarv/msh/pkg/types"
-	"github.com/ryanjarv/msh/pkg/utils"
-	"os"
+	"io"
 )
 
-func GetApp(file *os.File) (App, error) {
-	app := App{
-		State: &State{
-			[]step{},
-		},
-		registry: SetupRegistry(),
-	}
-	if utils.IsTTY(file) {
-		return app, nil
-	}
-
-	buf := bufio.NewReader(file)
+func ReadState(f io.Reader, registry types.Registry) (*State, error) {
+	buf := bufio.NewReader(f)
 
 	line, err := buf.ReadBytes('\n')
 	if err != nil {
-		return app, fmt.Errorf("readConf: failed to read line: %w", err)
+		return nil, fmt.Errorf("readConf: failed to read line: %w", err)
 	}
 
-	app.State, err = app.ReadState(line)
-	if err != nil {
-		return app, fmt.Errorf("getApp: failed to read app: %w", err)
-	}
-
-	return app, nil
+	return UnmarshalState(registry, line)
 }
 
-func (a *App) ReadState(line []byte) (*State, error) {
+func UnmarshalState(registry types.Registry, line []byte) (*State, error) {
 	state := &State{
 		Steps: []step{},
 	}
 
 	err := json.Unmarshal(line, state)
 	if err != nil {
-		return state, fmt.Errorf("readConf: failed to unmarshal: %w", err)
+		return nil, fmt.Errorf("readConf: failed to unmarshal: %w", err)
 	}
 
 	// Set the correct type for each step.
 	for i, step := range state.Steps {
-		state.Steps[i].Value = a.registry[step.Name]
+		state.Steps[i].Value = registry[step.Name]
 	}
 
 	// Unmarshall into the new types.
@@ -57,11 +41,6 @@ func (a *App) ReadState(line []byte) (*State, error) {
 	}
 
 	return state, nil
-}
-
-type App struct {
-	State    *State
-	registry Registry
 }
 
 type step struct {

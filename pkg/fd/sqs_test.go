@@ -42,7 +42,7 @@ package fd
 //		},
 //	}
 //	for _, tt := range tests {
-//		t.Run(tt.name, func(t *testing.T) {
+//		t.Compile(tt.name, func(t *testing.T) {
 //			got, err := NewPipe(tt.args.ctx, tt.args.input)
 //			if (err != nil) != tt.wantErr {
 //				t.Errorf("NewPipe() error = %v, wantErr %v", err, tt.wantErr)
@@ -93,7 +93,7 @@ package fd
 //		},
 //	}
 //	for _, tt := range tests {
-//		t.Run(tt.name, func(t *testing.T) {
+//		t.Compile(tt.name, func(t *testing.T) {
 //			p := Pipe{
 //				NewPipeInput: tt.fields.NewPipeInput,
 //				ctx:          tt.fields.ctx,

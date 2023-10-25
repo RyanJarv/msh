@@ -18,11 +18,23 @@ import (
 func (a *App) Run(step types.IStep) error {
 	a.State.AddStep(step)
 
-	if utils.IsTTY(os.Stdout) || os.Getenv("MSH_BUILD") != "" {
-		return a.Build()
-	} else {
+	if !utils.IsTTY(a.Stdout) {
 		return a.State.WriteState()
 	}
+
+	if utils.IsTTY(a.Stdout) || os.Getenv("MSH_BUILD") == "always" {
+		app := awscdk.NewApp(&awscdk.AppProps{})
+		stack := awscdk.NewStack(app, jsii.String("msh"), &awscdk.StackProps{})
+
+		_, err := a.Compile(stack, nil)
+		if err != nil {
+			return fmt.Errorf("compile: %w", err)
+		}
+
+		return a.Build(app)
+	}
+
+	return nil
 }
 
 func (s *State) WriteState() error {
@@ -39,29 +51,49 @@ func (s *State) WriteState() error {
 	return nil
 }
 
-func (a *App) Build() error {
-	app := awscdk.NewApp(&awscdk.AppProps{})
-	stack := awscdk.NewStack(app, jsii.String("msh"), &awscdk.StackProps{})
-
-	// pipeline represents the output of the last step, which will be passed to the next.
-	var next interface{}
+func (a *App) Compile(stack awscdk.Stack, next []interface{}) ([]interface{}, error) {
+	// next represents the output of the last step, which will be passed to the next.
+	if next == nil {
+		next = []interface{}{}
+	}
 
 	// Reverse the steps so the source receives the next step instead of the previous one.
 	steps := lo.Reverse(a.State.Steps)
 
 	for _, step := range steps {
-		s, ok := step.Value.(types.CdkStep)
-		if !ok {
-			return fmt.Errorf("build: not a cdk step (check the registry?): %T: %+v", step.Value, step.Value)
+		L.Debug.Println("running step:", step.Name)
+
+		switch s := step.Value.(type) {
+		case types.CdkStep:
+			var n interface{}
+			if len(next) > 1 {
+				return nil, fmt.Errorf("build: %s does not support multiple next steps", step.Name)
+			} else if len(next) != 0 {
+				n = next[0]
+			}
+
+			var err error
+			next, err = s.Compile(stack, n)
+			if err != nil {
+				return nil, fmt.Errorf("cdkstep: %s: %w", step.Name, err)
+			}
+
+		case types.CdkStepFanOut:
+			var err error
+			next, err = s.Compile(stack, next)
+			if err != nil {
+				return nil, fmt.Errorf("cdkfanout: %s: %w", step.Name, err)
+			}
+		default:
+			return nil, fmt.Errorf("not a cdk step: %T: %+v", step.Value, step.Value)
 		}
 
-		var err error
-		next, err = s.Run(stack, next)
-		if err != nil {
-			return fmt.Errorf("build: failed to run step: %w", err)
-		}
 	}
 
+	return next, nil
+}
+
+func (a *App) Build(app awscdk.App) error {
 	synth := app.Synth(nil)
 	if synth == nil || synth.Stacks() == nil || len(*synth.Stacks()) != 1 {
 		return fmt.Errorf("build: failed to synthesize app: %v", synth)

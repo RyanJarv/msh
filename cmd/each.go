@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"github.com/ryanjarv/msh/cmd/common"
-	"github.com/ryanjarv/msh/cmd/lambda"
+	"github.com/ryanjarv/msh/cmd/each"
 	"github.com/ryanjarv/msh/pkg/app"
 	L "github.com/ryanjarv/msh/pkg/logger"
 	"log"
@@ -12,14 +12,13 @@ import (
 
 func main() {
 	flag.Parse()
-	L.Debug.Println("args:", flag.Args())
 
 	app, err := app.GetApp(common.Registry, os.Stdin, os.Stdout)
 	if err != nil {
 		L.Error.Fatalln("%s: get app: %w", os.Args[0], err)
 	}
 
-	l, err := lambda.NewLambda(flag.Args())
+	l, err := each.New(app)
 	if err != nil {
 		L.Error.Fatalln("%s: new", l.Name(), err)
 	}

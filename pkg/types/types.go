@@ -5,13 +5,18 @@ import (
 	"io"
 )
 
+type Registry map[string]IStep
+
 type IStep interface {
 	Name() string
 }
 
 type CdkStep interface {
-	//CdkStep(stack awscdk.Stack)
-	Run(awscdk.Stack, interface{}) (interface{}, error)
+	Compile(awscdk.Stack, interface{}) ([]interface{}, error)
+}
+
+type CdkStepFanOut interface {
+	Compile(awscdk.Stack, []interface{}) ([]interface{}, error)
 }
 
 type Process interface {

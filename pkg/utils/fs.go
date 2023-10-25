@@ -38,6 +38,14 @@ func (t TmpDir) Remove() error {
 	return Wrap(err, "pagh %s", t.Path)
 }
 
+//func IsInputRedirected(file *os.File) bool {
+//	_, err := os.Readlink("/dev/stdin")
+//	if err == nil {
+//		return false
+//	}
+//	return true
+//}
+
 func IsTTY(file *os.File) bool {
 	if os.Getenv("MSH_TTY") == "false" {
 		return false

@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"github.com/ryanjarv/msh/cmd/common"
 	"github.com/ryanjarv/msh/cmd/event"
 	"github.com/ryanjarv/msh/pkg/app"
 	L "github.com/ryanjarv/msh/pkg/logger"
@@ -12,18 +13,18 @@ import (
 func main() {
 	flag.Parse()
 
-	app, err := app.GetApp(os.Stdin)
+	app, err := app.GetApp(common.Registry, os.Stdin, os.Stdout)
 	if err != nil {
-		L.Error.Fatalln("failed to read config", err)
+		L.Error.Fatalln("%s: get app: %w", os.Args[0], err)
 	}
 
 	l, err := event.NewEvent()
 	if err != nil {
-		L.Error.Fatalln("failed to create event", err)
+		L.Error.Fatalln("%s: new", l.Name(), err)
 	}
 
 	err = app.Run(l)
 	if err != nil {
-		log.Fatalf("run: failed to run app: %s", err)
+		log.Fatalf("%s: run: %s", l.Name(), err)
 	}
 }
