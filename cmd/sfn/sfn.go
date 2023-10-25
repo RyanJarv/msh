@@ -15,27 +15,24 @@ func NewSfn() (*Sfn, error) {
 }
 
 type Sfn struct {
-	rule  awsevents.Rule
-	Chain sfn.IChainable
+	rule awsevents.Rule
 }
 
-func (s Sfn) GetName() string { return "statemachine" }
+func (s Sfn) GetName() string { return "sfn" }
 
-func (s Sfn) Compile(stack awscdk.Stack, next interface{}) (interface{}, error) {
+func (s Sfn) Compile(stack awscdk.Stack, next interface{}) ([]interface{}, error) {
 	chain, ok := next.(sfn.IChainable)
 	if !ok {
 		return nil, fmt.Errorf("next step must be statemachine task, got: %T", next)
 	}
 
-	pass := sfn.NewPass(stack, jsii.String("pass"), &sfn.PassProps{})
-	pass.Next(chain)
-
 	// The app machine must be created after the chain is set up otherwise we won't see all the steps.
 	machine := sfn.NewStateMachine(stack, jsii.String("StateMachine"), &sfn.StateMachineProps{
-		DefinitionBody: sfn.DefinitionBody_FromChainable(s.Chain),
+		DefinitionBody: sfn.DefinitionBody_FromChainable(chain),
 		Timeout:        awscdk.Duration_Minutes(jsii.Number(5)),
 		Comment:        jsii.String("a super cool app machine"),
 	})
 
-	return awseventstargets.NewSfnStateMachine(machine, &awseventstargets.SfnStateMachineProps{}), nil
+	target := awseventstargets.NewSfnStateMachine(machine, &awseventstargets.SfnStateMachineProps{})
+	return []interface{}{target}, nil
 }

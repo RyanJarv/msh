@@ -1,1 +1,1 @@
-{"Steps":[{"Name":"event","Value":{"RuleProp":{"crossStackScope":null,"description":null,"eventPattern":{"account":null,"detail":{"state":["running"]},"detailType":null,"id":null,"region":null,"resources":null,"source":["aws.ec2"],"time":null,"version":null},"ruleName":null,"enabled":null,"eventBus":null,"schedule":null,"targets":null}}},{"Name":"statemachine","Value":{"Chain":null}}]}
+{"Steps":[{"Name":"sfn","Value":{"Chain":null}}]}

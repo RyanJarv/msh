@@ -1,6 +1,7 @@
 export MSH_SKIPDEPLOY=1
 
-build:
+
+build: build-sleep
 	go generate ./...
 	go build -o out/@event cmd/event.go
 	go build -o out/sfn cmd/sfn.go
@@ -8,6 +9,8 @@ build:
 	go build -o out/each cmd/each.go
 	go build -o out/mail cmd/mail.go
 	go build -o out/lambda.python cmd/lambda.python.go
+
+build-sleep:
 	go build -o out/sleep cmd/sleep.go
 
 install: build
@@ -24,7 +27,7 @@ test-each:
 	@./scripts/test.sh './out/each ./test/mail.json'
 
 test-sleep:
-	@./scripts/test.sh 'cat ./test/sfn.json | ./out/sleep'
+	@./scripts/test.sh 'cat ./test/sfn.json | ./out/sleep 3'
 
 test-lambda:
 	@go run ./cmd/msh.lambda.go ./test/test.py | go run ./cmd/msh.sleep.go 34

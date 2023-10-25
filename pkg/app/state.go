@@ -42,7 +42,12 @@ func UnmarshalState(registry types.Registry, line []byte) (State, error) {
 
 	// Set the correct type for each Step.
 	for _, step := range state.Steps {
-		typ := reflect.TypeOf(registry[step.Name]).Elem()
+		cmd, ok := registry[step.Name]
+		if !ok {
+			return State{}, fmt.Errorf("readConf: unknown step: %s", step.Name)
+		}
+
+		typ := reflect.TypeOf(cmd).Elem()
 		value := reflect.New(typ).Interface()
 
 		err := json.Unmarshal(step.Value, &value)

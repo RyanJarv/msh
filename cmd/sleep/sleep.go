@@ -6,14 +6,13 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
 	sfn "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
 	"github.com/aws/jsii-runtime-go"
-	"log"
 	"os"
 	"strconv"
 )
 
 func NewSleep(args []string) (*SleepCmd, error) {
 	if len(args) != 1 {
-		log.Fatalf("usage: %s <seconds>", os.Args[0])
+		return nil, fmt.Errorf("usage: %s <seconds>", os.Args[0])
 	}
 
 	seconds, err := strconv.Atoi(args[0])
@@ -32,15 +31,21 @@ type SleepCmd struct {
 
 func (s SleepCmd) GetName() string { return "sleep" }
 
-func (s SleepCmd) Compile(stack awscdk.Stack, next interface{}) (interface{}, error) {
-	chain, ok := next.(awsstepfunctions.IChainable)
-	if !ok {
-		return nil, fmt.Errorf("next step must be statemachine chain")
-	}
+func (s SleepCmd) Compile(stack awscdk.Stack, next interface{}) ([]interface{}, error) {
+	var this awsstepfunctions.INextable
 
-	wait := sfn.NewWait(stack, jsii.String("wait"), &sfn.WaitProps{
+	this = sfn.NewWait(stack, jsii.String("wait"), &sfn.WaitProps{
 		Time: sfn.WaitTime_Duration(awscdk.Duration_Seconds(jsii.Number(s.Seconds))),
 	})
 
-	return wait.Next(chain), nil
+	if next != nil {
+		chain, ok := next.(awsstepfunctions.IChainable)
+		if !ok {
+			return nil, fmt.Errorf("next step must be statemachine chain")
+		}
+
+		this = this.Next(chain)
+	}
+
+	return []interface{}{this}, nil
 }

@@ -21,7 +21,7 @@ func main() {
 
 	l, err := sleep.NewSleep(flag.Args())
 	if err != nil {
-		L.Error.Fatalln("%s: new", l.GetName(), err)
+		L.Error.Fatalln("%s: new", "sleep", err)
 	}
 
 	if err := app.Run(l); err != nil {
