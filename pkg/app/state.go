@@ -42,13 +42,8 @@ func UnmarshalState(registry types.Registry, line []byte) (State, error) {
 
 	// Set the correct type for each Step.
 	for _, step := range state.Steps {
-		// Make sure we're copying a value and not a pointer.
-		v := reflect.ValueOf(registry[step.Name])
-		if v.Kind() == reflect.Ptr {
-			v = reflect.Indirect(v)
-		}
-	
-		value := reflect.New(v.Type()).Interface()
+		typ := reflect.TypeOf(registry[step.Name]).Elem()
+		value := reflect.New(typ).Interface()
 
 		err := json.Unmarshal(step.Value, &value)
 		if err != nil {
