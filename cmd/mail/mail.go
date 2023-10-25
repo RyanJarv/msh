@@ -35,9 +35,9 @@ type Mail struct {
 	Subject *string
 }
 
-func (s *Mail) Name() string { return "mail" }
+func (s Mail) GetName() string { return "mail" }
 
-func (s *Mail) Compile(stack awscdk.Stack, next interface{}) ([]interface{}, error) {
+func (s Mail) Compile(stack awscdk.Stack, next interface{}) ([]interface{}, error) {
 	if next != nil {
 		return nil, fmt.Errorf("can not chain anything after a sns email subscription, got: %T", next)
 	}

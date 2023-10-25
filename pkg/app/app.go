@@ -8,7 +8,7 @@ import (
 )
 
 func GetApp(reg types.Registry, stdin *os.File, stdout *os.File) (App, error) {
-	var state *State
+	var state State
 
 	// We need to read the state before we can do anything else.
 	if !utils.IsTTY(stdin) {
@@ -18,8 +18,8 @@ func GetApp(reg types.Registry, stdin *os.File, stdout *os.File) (App, error) {
 			return App{}, fmt.Errorf("run: failed to read state: %w", err)
 		}
 	} else {
-		state = &State{
-			Steps: []step{},
+		state = State{
+			Steps: []types.Step{},
 		}
 	}
 
@@ -32,8 +32,8 @@ func GetApp(reg types.Registry, stdin *os.File, stdout *os.File) (App, error) {
 }
 
 type App struct {
-	State    *State
-	Registry types.Registry
-	Stdin    *os.File
-	Stdout   *os.File
+	State    State
+	Registry types.Registry `json:"-"`
+	Stdin    *os.File       `json:"-"`
+	Stdout   *os.File       `json:"-"`
 }

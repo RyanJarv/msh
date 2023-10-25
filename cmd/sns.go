@@ -20,11 +20,11 @@ func main() {
 
 	l, err := sns.NewSns()
 	if err != nil {
-		L.Error.Fatalln("%s: new", l.Name(), err)
+		L.Error.Fatalln("%s: new", l.GetName(), err)
 	}
 
 	err = app.Run(l)
 	if err != nil {
-		log.Fatalf("%s: run: %s", l.Name(), err)
+		log.Fatalf("%s: run: %s", l.GetName(), err)
 	}
 }

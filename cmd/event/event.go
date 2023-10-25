@@ -60,9 +60,9 @@ type Event struct {
 	RuleProp *awsevents.RuleProps
 }
 
-func (s *Event) Name() string { return "event" }
+func (s Event) GetName() string { return "event" }
 
-func (s *Event) Compile(stack awscdk.Stack, next []interface{}) ([]interface{}, error) {
+func (s Event) Compile(stack awscdk.Stack, next []interface{}) ([]interface{}, error) {
 	target, ok := utils.EachAs[awsevents.IRuleTarget](next)
 	if !ok {
 		return nil, fmt.Errorf("next step must be eventbridge target, got: %T: %+v", next[0], next[0])

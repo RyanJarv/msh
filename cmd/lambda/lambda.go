@@ -40,9 +40,9 @@ type LambdaCmd struct {
 	function awslambda.Function
 }
 
-func (s *LambdaCmd) Name() string { return "lambda" }
+func (s LambdaCmd) GetName() string { return "lambda" }
 
-func (s *LambdaCmd) Compile(stack awscdk.Stack, next interface{}) ([]interface{}, error) {
+func (s LambdaCmd) Compile(stack awscdk.Stack, next interface{}) ([]interface{}, error) {
 	chain, ok := next.(awsstepfunctions.IChainable)
 	if !ok {
 		return nil, fmt.Errorf("next step must be a statemachine task")

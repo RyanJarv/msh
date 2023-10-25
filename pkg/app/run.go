@@ -52,16 +52,16 @@ func (s *State) WriteState() error {
 }
 
 func (a *App) Compile(stack awscdk.Stack, next []interface{}) ([]interface{}, error) {
-	// next represents the output of the last step, which will be passed to the next.
+	// next represents the output of the last Step, which will be passed to the next.
 	if next == nil {
 		next = []interface{}{}
 	}
 
-	// Reverse the steps so the source receives the next step instead of the previous one.
+	// Reverse the steps so the source receives the next Step instead of the previous one.
 	steps := lo.Reverse(a.State.Steps)
 
 	for _, step := range steps {
-		L.Debug.Println("running step:", step.Name)
+		L.Debug.Println("running Step:", step.GetName())
 
 		switch s := step.Value.(type) {
 		case types.CdkStep:
@@ -85,7 +85,7 @@ func (a *App) Compile(stack awscdk.Stack, next []interface{}) ([]interface{}, er
 				return nil, fmt.Errorf("cdkfanout: %s: %w", step.Name, err)
 			}
 		default:
-			return nil, fmt.Errorf("not a cdk step: %T: %+v", step.Value, step.Value)
+			return nil, fmt.Errorf("not a cdk Step: %T: %+v", step.Value, step.Value)
 		}
 
 	}

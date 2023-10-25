@@ -52,3 +52,8 @@ func EachAs[T any](values []any) ([]T, bool) {
 
 	return out, true
 }
+
+func Empty[T any](t T) T {
+	var zero T
+	return zero
+}

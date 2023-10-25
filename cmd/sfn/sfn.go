@@ -19,9 +19,9 @@ type Sfn struct {
 	Chain sfn.IChainable
 }
 
-func (s *Sfn) Name() string { return "statemachine" }
+func (s Sfn) GetName() string { return "statemachine" }
 
-func (s *Sfn) Compile(stack awscdk.Stack, next interface{}) (interface{}, error) {
+func (s Sfn) Compile(stack awscdk.Stack, next interface{}) (interface{}, error) {
 	chain, ok := next.(sfn.IChainable)
 	if !ok {
 		return nil, fmt.Errorf("next step must be statemachine task, got: %T", next)

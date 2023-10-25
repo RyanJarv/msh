@@ -16,15 +16,15 @@ func NewSns() (*Sns, error) {
 
 type Sns struct{}
 
-func (s *Sns) Name() string { return "sns" }
+func (s Sns) GetName() string { return "sns" }
 
-func (s *Sns) Compile(stack awscdk.Stack, next []interface{}) ([]interface{}, error) {
+func (s Sns) Compile(stack awscdk.Stack, next []interface{}) ([]interface{}, error) {
 	subscriptions, ok := utils.EachAs[awssns.ITopicSubscription](next)
 	if !ok {
 		return nil, fmt.Errorf("expected sns topic, got: %T: %+v", next, next)
 	}
 
-	topic := awssns.NewTopic(stack, aws.String(s.Name()), &awssns.TopicProps{})
+	topic := awssns.NewTopic(stack, aws.String(s.GetName()), &awssns.TopicProps{})
 
 	for _, sub := range subscriptions {
 		topic.AddSubscription(sub)

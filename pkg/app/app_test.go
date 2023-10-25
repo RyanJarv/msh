@@ -16,7 +16,7 @@ package app
 //				line: []byte(`{"Steps":[{"Name":"lambda","Value":{"Event":"script","Args":["args"]}}]}`),
 //			},
 //			want: &State{
-//				Steps: []step{
+//				Steps: []Step{
 //					{
 //						Name:  "lambda",
 //						Value: &lambda.LambdaCmd{Script: "script", Args: []string{"args"}},

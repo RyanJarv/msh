@@ -12,6 +12,7 @@ import (
 )
 
 var Registry = types.Registry{
+
 	"sfn":    &sfn.Sfn{},
 	"event":  &event.Event{},
 	"lambda": &lambda.LambdaCmd{},

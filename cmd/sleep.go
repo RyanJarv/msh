@@ -21,10 +21,10 @@ func main() {
 
 	l, err := sleep.NewSleep(flag.Args())
 	if err != nil {
-		L.Error.Fatalln("%s: new", l.Name(), err)
+		L.Error.Fatalln("%s: new", l.GetName(), err)
 	}
 
 	if err := app.Run(l); err != nil {
-		log.Fatalf("%s: run: %s", l.Name(), err)
+		log.Fatalf("%s: run: %s", l.GetName(), err)
 	}
 }

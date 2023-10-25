@@ -8,7 +8,16 @@ import (
 type Registry map[string]IStep
 
 type IStep interface {
-	Name() string
+	GetName() string
+}
+
+type Step struct {
+	Name  string
+	Value interface{}
+}
+
+func (s Step) GetName() string {
+	return s.Name
 }
 
 type CdkStep interface {

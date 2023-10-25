@@ -30,9 +30,9 @@ type SleepCmd struct {
 	Seconds int
 }
 
-func (s *SleepCmd) Name() string { return "sleep" }
+func (s SleepCmd) GetName() string { return "sleep" }
 
-func (s *SleepCmd) Compile(stack awscdk.Stack, next interface{}) (interface{}, error) {
+func (s SleepCmd) Compile(stack awscdk.Stack, next interface{}) (interface{}, error) {
 	chain, ok := next.(awsstepfunctions.IChainable)
 	if !ok {
 		return nil, fmt.Errorf("next step must be statemachine chain")
