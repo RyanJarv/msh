@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-func GetApp(reg types.Registry, stdin *os.File, stdout *os.File) (App, error) {
+func GetPipeline(reg types.Registry, stdin *os.File, stdout *os.File) (App, error) {
 	var state State
 
 	// We need to read the state before we can do anything else.

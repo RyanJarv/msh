@@ -14,7 +14,7 @@ func main() {
 	flag.Parse()
 	L.Debug.Println("args:", flag.Args())
 
-	app, err := app.GetApp(common.Registry, os.Stdin, os.Stdout)
+	app, err := app.GetPipeline(common.Registry, os.Stdin, os.Stdout)
 	if err != nil {
 		L.Error.Fatalln("%s: get app: %w", os.Args[0], err)
 	}

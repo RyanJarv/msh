@@ -19,7 +19,7 @@ func New(registry types.Registry) (*Each, error) {
 			return nil, fmt.Errorf("opening file: %s: %w", path, err)
 		}
 
-		app, err := app.GetApp(registry, f, nil)
+		app, err := app.GetPipeline(registry, f, nil)
 		if err != nil {
 			return nil, fmt.Errorf("get app: %w", err)
 		}
