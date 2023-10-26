@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"reflect"
 	"strings"
+	"unicode"
 )
 
 func IsNilOrEmpty(i interface{}) bool {
@@ -56,4 +57,15 @@ func EachAs[T any](values []any) ([]T, bool) {
 func Empty[T any](t T) T {
 	var zero T
 	return zero
+}
+
+func UnTitle(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+
+	r := []rune(s)
+	r[0] = unicode.ToLower(r[0])
+
+	return string(r)
 }

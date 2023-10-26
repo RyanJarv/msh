@@ -18,7 +18,7 @@ func main() {
 		L.Error.Fatalln("%s: get app: %w", os.Args[0], err)
 	}
 
-	l, err := api.New()
+	l, err := api.New(flag.Args())
 	if err != nil {
 		L.Error.Fatalln("api new: %w", err)
 	}

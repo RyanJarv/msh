@@ -1,0 +1,6 @@
+[submodule "cmd/api/boto3"]
+	path = cmd/api/boto3
+	url = https://github.com/boto/boto3.git
+[submodule "cmd/api/botocore"]
+	path = cmd/api/botocore
+	url = https://github.com/boto/botocore.git
