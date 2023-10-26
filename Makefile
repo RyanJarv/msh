@@ -30,4 +30,4 @@ test-sleep:
 	@./scripts/test.sh 'cat ./test/sfn.json | ./out/sleep 3'
 
 test-lambda:
-	@go run ./cmd/msh.lambda.go ./test/test.py | go run ./cmd/msh.sleep.go 34
+	@./scripts/test.sh './out/lambda.python ./test/test.py | ./out/sleep 34'

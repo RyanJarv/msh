@@ -43,24 +43,27 @@ type LambdaCmd struct {
 func (s LambdaCmd) GetName() string { return "lambda" }
 
 func (s LambdaCmd) Compile(stack awscdk.Stack, next interface{}) ([]interface{}, error) {
-	chain, ok := next.(awsstepfunctions.IChainable)
-	if !ok {
-		return nil, fmt.Errorf("next step must be a statemachine task")
-	}
-
 	s.function = awslambda.NewFunction(stack, jsii.String(flag.Arg(0)), &awslambda.FunctionProps{
 		Runtime: awslambda.Runtime_PYTHON_3_11(),
 		Handler: jsii.String("index.lambda_handler"),
 		Code:    awslambda.Code_FromInline(jsii.String(s.Script)),
 	})
-	if chain == nil {
-		return nil, fmt.Errorf("end of chain not found")
-	}
 
-	lambda := tasks.NewLambdaInvoke(stack, jsii.String(fmt.Sprintf("invoke %s %d", flag.Arg(0), os.Getpid())), &tasks.LambdaInvokeProps{
+	var this awsstepfunctions.INextable
+
+	this = tasks.NewLambdaInvoke(stack, jsii.String(fmt.Sprintf("invoke %s %d", flag.Arg(0), os.Getpid())), &tasks.LambdaInvokeProps{
 		LambdaFunction: s.function,
 		OutputPath:     jsii.String("$.Payload"),
 	})
 
-	return []interface{}{lambda}, nil
+	if next != nil {
+		chain, ok := next.(awsstepfunctions.IChainable)
+		if !ok {
+			return nil, fmt.Errorf("next step must be statemachine chain")
+		}
+
+		this = this.Next(chain)
+	}
+
+	return []interface{}{this}, nil
 }

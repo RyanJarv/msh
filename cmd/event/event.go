@@ -9,51 +9,61 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsevents"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/ryanjarv/msh/pkg/utils"
+	"github.com/samber/lo"
 	"os"
+	"strings"
 )
 
-var args = struct {
-	Cron *string
-	Rate *string
-}{
-	Cron: flag.String("cron", "", "cron expression (i.e: 0 18 ? * MON-FRI *)"),
-	Rate: flag.String("rate", "", "rate expression (i.e: 1 minute, 5 hours, 1 day, etc...)"),
-}
+func NewEvent(args []string) (*Event, error) {
+	//args := flag.Args()
 
-type Schedule string
+	//args, err := ParseTemplateArgs(args)
+	//if err != nil {
+	//	return nil, fmt.Errorf("parse template args: %w", err)
+	//}
 
-func (s Schedule) ExpressionString() *string {
-	return aws.String(string(s))
-}
-
-func NewEvent() (*Event, error) {
-	props := &awsevents.RuleProps{
-		EventPattern: &awsevents.EventPattern{},
+	path := flag.Arg(flag.NFlag())
+	config, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("reading file: %s: %w", path, err)
 	}
 
-	if *args.Cron != "" {
-		props.Schedule = Schedule(*args.Cron)
-	} else if *args.Rate != "" {
-		props.Schedule = awsevents.Schedule_Expression(aws.String(fmt.Sprintf("rate(%s)", *args.Rate)))
-	} else if flag.NArg() < 2 {
-		// Get the last argument from the end to support running with a shebang.
-		path := flag.Arg(flag.NFlag())
+	event := &awsevents.EventPattern{}
 
-		config, err := os.ReadFile(path)
-		if err != nil {
-			return nil, fmt.Errorf("reading file: %s: %w", path, err)
-		}
-
-		if err := json.Unmarshal(config, &props.EventPattern); err != nil {
-			return nil, fmt.Errorf("unmarshalling config: %w", err)
-		}
-	} else {
-		return nil, fmt.Errorf("must provide either cron or rate expression or event pattern")
+	if err := json.Unmarshal(config, &event); err != nil {
+		return nil, fmt.Errorf("unmarshalling config: %w", err)
 	}
 
 	return &Event{
-		RuleProp: props,
+		RuleProp: &awsevents.RuleProps{
+			EventPattern: event,
+		},
 	}, nil
+}
+
+func ParseTemplateArgs(args []string) (map[string]any, []string, error) {
+	_ = map[string]any{}
+
+	start := lo.IndexOf(args, "flag{")
+	if start == -1 {
+		return nil, args, nil
+	}
+
+	end := lo.IndexOf(args[start:], "}")
+	if start == -1 {
+		return nil, nil, fmt.Errorf("expected `}` got: %s", args[start:])
+	}
+
+	for _, arg := range args[start:end] {
+		parts := strings.Split(arg, "=")
+		if len(parts) != 2 {
+			return nil, nil, fmt.Errorf("template flags must have a single `=` got: %s", arg)
+		}
+
+		//strings.TrimPrefix()
+	}
+
+	return nil, nil, fmt.Errorf("parse template args: failed to find end of template args")
 }
 
 type Event struct {
