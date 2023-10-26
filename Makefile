@@ -10,6 +10,9 @@ build: build-sleep
 	go build -o out/mail cmd/mail.go
 	go build -o out/lambda.python cmd/lambda.python.go
 
+build-api:
+	go build -o out/api cmd/api.go
+
 build-sleep:
 	go build -o out/sleep cmd/sleep.go
 

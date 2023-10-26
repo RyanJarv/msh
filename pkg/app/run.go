@@ -100,7 +100,11 @@ func (a *App) Build(app awscdk.App) error {
 	}
 
 	for _, stack := range *synth.Stacks() {
-		L.Debug.Println(string(lo.Must(json.Marshal(stack.Template()))))
+		tmpl := string(lo.Must(json.Marshal(stack.Template())))
+		L.Debug.Println(tmpl)
+		if os.Getenv("MSH_TEMPLATE") != "" {
+			fmt.Println(tmpl)
+		}
 	}
 
 	L.Debug.Println("synth directory:", *synth.Directory())
