@@ -1,9 +1,8 @@
 package main
 
 import (
-	"flag"
+	"github.com/ryanjarv/msh/cmd/aws"
 	"github.com/ryanjarv/msh/cmd/common"
-	"github.com/ryanjarv/msh/cmd/lambda"
 	"github.com/ryanjarv/msh/pkg/app"
 	L "github.com/ryanjarv/msh/pkg/logger"
 	"log"
@@ -11,21 +10,18 @@ import (
 )
 
 func main() {
-	flag.Parse()
-	L.Debug.Println("args:", flag.Args())
-
 	app, err := app.GetPipeline(common.Registry, os.Stdin, os.Stdout)
 	if err != nil {
 		L.Error.Fatalln("%s: get app: %w", os.Args[0], err)
 	}
 
-	l, err := lambda.New(flag.Args())
+	l, err := aws.New(os.Args)
 	if err != nil {
-		L.Error.Fatalln("%s: new", l.GetName(), err)
+		L.Error.Fatalln("aws new: %w", err)
 	}
 
 	err = app.Run(l)
 	if err != nil {
-		log.Fatalf("%s: run: %s", l.GetName(), err)
+		log.Fatalf("aws run: %w", err)
 	}
 }

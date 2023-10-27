@@ -14,7 +14,7 @@ import (
 	"os"
 )
 
-func NewLambda(args []string) (*LambdaCmd, error) {
+func New(args []string) (*LambdaCmd, error) {
 	if len(args) < 1 {
 		log.Fatalf("usage: %s <script>", os.Args[0])
 	}

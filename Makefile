@@ -1,20 +1,23 @@
 export MSH_SKIPDEPLOY=1
 
 
-build: build-sleep
+build: build-sleep build-api build-aws
 	go generate ./...
 	go build -o out/@event cmd/event.go
 	go build -o out/sfn cmd/sfn.go
 	go build -o out/sns cmd/sns.go
-	go build -o out/each cmd/each.go
-	go build -o out/mail cmd/mail.go
-	go build -o out/lambda.python cmd/lambda.python.go
+	go build -o out/.each cmd/each.go
+	go build -o out/.mail cmd/mail.go
+	go build -o out/.lambda.python cmd/lambda.python.go
+
+build-aws:
+	go build -o out/.aws cmd/aws.go
 
 build-api:
-	go build -o out/api cmd/api.go
+	go build -o out/.api cmd/api.go
 
 build-sleep:
-	go build -o out/sleep cmd/sleep.go
+	go build -o out/.sleep cmd/sleep.go
 
 install: build
 	mkdir -p ~/.msh/bin

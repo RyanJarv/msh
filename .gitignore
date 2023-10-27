@@ -4,3 +4,5 @@ gen
 .DS_Store
 **/*.sw*
 cdk.out
+**/node_modules
+**/venv

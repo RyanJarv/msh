@@ -127,7 +127,7 @@ func Deploy(synth cxapi.CloudAssembly) error {
 		return fmt.Errorf("build: failed to bootstrap: %w", err)
 	}
 
-	cmd = exec.Command("cdk", "deploy", "--require-approval=never", "--app", *synth.Directory())
+	cmd = exec.Command("cdk", "deploy", "--hotswap", "--require-approval=never", "--app", *synth.Directory())
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 
 	if err := cmd.Run(); err != nil {
