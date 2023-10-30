@@ -1,6 +1,7 @@
 package common
 
 import (
+	"github.com/ryanjarv/msh/cmd/aws"
 	"github.com/ryanjarv/msh/cmd/each"
 	"github.com/ryanjarv/msh/cmd/event"
 	"github.com/ryanjarv/msh/cmd/lambda"
@@ -13,14 +14,15 @@ import (
 	"github.com/ryanjarv/msh/pkg/types"
 )
 
-var Registry = types.Registry{
-	"sfn":    &sfn.Sfn{},
-	"event":  &event.Event{},
-	"lambda": &lambda.LambdaCmd{},
-	"sleep":  &sleep.SleepCmd{},
-	"mail":   &mail.Mail{},
-	"sns":    &sns.Sns{},
-	"each":   &each.Each{},
-	"filter": &sfn_filter.Filter{},
-	"map":    &sfn_map.Map{},
-}
+var Registry = types.NewRegistry(
+	&sfn.Sfn{},
+	&event.Event{},
+	&lambda.LambdaCmd{},
+	&aws.AwsCmd{},
+	&sleep.SleepCmd{},
+	&mail.Mail{},
+	&sns.Sns{},
+	&each.Each{},
+	&sfn_filter.Filter{},
+	&sfn_map.Map{},
+)

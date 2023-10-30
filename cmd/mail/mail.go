@@ -4,8 +4,8 @@ import (
 	_ "embed"
 	"flag"
 	"fmt"
-	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awssnssubscriptions"
+	"github.com/aws/constructs-go/constructs/v10"
 )
 
 var args = struct {
@@ -37,7 +37,7 @@ type Mail struct {
 
 func (s Mail) GetName() string { return "mail" }
 
-func (s Mail) Compile(stack awscdk.Stack, next interface{}) ([]interface{}, error) {
+func (s Mail) Compile(stack constructs.Construct, next interface{}) ([]interface{}, error) {
 	if next != nil {
 		return nil, fmt.Errorf("can not chain anything after a sns email subscription, got: %T", next)
 	}

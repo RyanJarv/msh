@@ -5,10 +5,10 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsevents"
 	sfn "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
 	tasks "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctionstasks"
+	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 	"github.com/ryanjarv/msh/pkg/utils"
 	"github.com/samber/lo"
@@ -41,7 +41,7 @@ type Api struct {
 
 func (s Api) GetName() string { return "sfn" }
 
-func (s Api) Compile(stack awscdk.Stack, next interface{}) ([]interface{}, error) {
+func (s Api) Compile(stack constructs.Construct, next interface{}) ([]interface{}, error) {
 	var chain sfn.IChainable
 	if next != nil {
 		var ok bool
@@ -168,7 +168,7 @@ type ActionOpts struct {
 	Path    string
 }
 
-func Paginate(stack awscdk.Stack, block sfn.Pass, next sfn.IChainable, input ActionOpts) sfn.Chain {
+func Paginate(stack constructs.Construct, block sfn.Pass, next sfn.IChainable, input ActionOpts) sfn.Chain {
 	// Stepfunctions doesn't accept [] in json paths, so we replace it with [*].
 	path := strings.Replace(input.Path, "[]", "[*]", -1)
 	path = fmt.Sprintf("$.%s", path)

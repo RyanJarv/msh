@@ -16,15 +16,15 @@ func main() {
 
 	app, err := app.GetPipeline(common.Registry, os.Stdin, os.Stdout)
 	if err != nil {
-		L.Error.Fatalln("%s: get app: %w", os.Args[0], err)
+		L.Error.Fatalf("sleep get app: %s", err)
 	}
 
 	l, err := sleep.NewSleep(flag.Args())
 	if err != nil {
-		L.Error.Fatalln("%s: new", "sleep", err)
+		L.Error.Fatalf("sleep: %s", err)
 	}
 
 	if err := app.Run(l); err != nil {
-		log.Fatalf("%s: run: %s", l.GetName(), err)
+		log.Fatalf("sleep: run: %s", err)
 	}
 }

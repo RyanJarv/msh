@@ -12,16 +12,16 @@ import (
 func main() {
 	app, err := app.GetPipeline(common.Registry, os.Stdin, os.Stdout)
 	if err != nil {
-		L.Error.Fatalln("%s: get app: %w", os.Args[0], err)
+		L.Error.Fatalln("aws get app:", err)
 	}
 
 	l, err := aws.New(os.Args)
 	if err != nil {
-		L.Error.Fatalln("aws new: %w", err)
+		L.Error.Fatalln("aws new:", err)
 	}
 
 	err = app.Run(l)
 	if err != nil {
-		log.Fatalf("aws run: %w", err)
+		log.Fatalln("aws run:", err)
 	}
 }

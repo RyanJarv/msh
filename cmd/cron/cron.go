@@ -4,9 +4,9 @@ import (
 	_ "embed"
 	"flag"
 	"fmt"
-	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsevents"
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/ryanjarv/msh/pkg/utils"
 	"strings"
 )
@@ -26,7 +26,7 @@ type Cron struct {
 
 func (s Cron) GetName() string { return "event" }
 
-func (s Cron) Compile(stack awscdk.Stack, next []interface{}) ([]interface{}, error) {
+func (s Cron) Compile(stack constructs.Construct, next []interface{}) ([]interface{}, error) {
 	target, ok := utils.EachAs[awsevents.IRuleTarget](next)
 	if !ok {
 		return nil, fmt.Errorf("next step must be eventbridge target, got: %T: %+v", next[0], next[0])

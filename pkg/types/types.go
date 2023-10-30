@@ -1,9 +1,18 @@
 package types
 
 import (
-	"github.com/aws/aws-cdk-go/awscdk/v2"
+	"github.com/aws/constructs-go/constructs/v10"
 	"io"
 )
+
+func NewRegistry(steps ...IStep) Registry {
+	r := Registry{}
+	for _, step := range steps {
+		r[step.GetName()] = step
+	}
+
+	return r
+}
 
 type Registry map[string]IStep
 
@@ -21,11 +30,11 @@ func (s Step) GetName() string {
 }
 
 type CdkStep interface {
-	Compile(awscdk.Stack, interface{}) ([]interface{}, error)
+	Compile(constructs.Construct, interface{}) ([]interface{}, error)
 }
 
 type CdkStepFanOut interface {
-	Compile(awscdk.Stack, []interface{}) ([]interface{}, error)
+	Compile(constructs.Construct, []interface{}) ([]interface{}, error)
 }
 
 type Process interface {

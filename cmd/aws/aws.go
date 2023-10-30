@@ -1,18 +1,17 @@
 package aws
 
 import (
-	"bytes"
 	_ "embed"
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsiam"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
 	tasks "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctionstasks"
 	"github.com/aws/aws-cdk-go/awscdk/v2/lambdalayerawscli"
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 	"github.com/samber/lo"
 	"os"
@@ -22,19 +21,10 @@ import (
 //go:embed cli.py
 var code []byte
 
-func New(args []string) (*LambdaCmd, error) {
+func New(args []string) (*AwsCmd, error) {
 	if lo.Contains(args, "--help") || lo.Contains(args, "help") {
 		Help(args)
 		os.Exit(1)
-	}
-
-	script, err := os.ReadFile(args[0])
-	if err != nil {
-		return nil, fmt.Errorf("reading file: %w", err)
-	}
-
-	if !bytes.Contains(script, []byte("lambda_handler")) {
-		return nil, fmt.Errorf("script must contain a `lambda_handler` function")
 	}
 
 	iamActions, err := IamActionsFromCliArgs(args)
@@ -42,14 +32,15 @@ func New(args []string) (*LambdaCmd, error) {
 		return nil, fmt.Errorf("getting iam actions from cli args: %w", err)
 	}
 
-	iamStatement := awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
-		Actions:   jsii.Strings(iamActions...),
-		Resources: jsii.Strings("*"),
-	})
-	return &LambdaCmd{
-		IamStatement: []awsiam.PolicyStatement{iamStatement},
-		Script:       string(code),
-		Args:         args,
+	return &AwsCmd{
+		IamStatementProps: []awsiam.PolicyStatementProps{
+			{
+				Actions:   jsii.Strings(iamActions...),
+				Resources: jsii.Strings("*"),
+			},
+		},
+		Script: string(code),
+		Args:   args,
 	}, nil
 }
 
@@ -60,24 +51,28 @@ func Help(args []string) {
 	cmd.Run()
 }
 
-type LambdaCmd struct {
-	Script       string
-	Args         []string
-	IamStatement []awsiam.PolicyStatement
+type AwsCmd struct {
+	Script            string
+	Args              []string
+	IamStatementProps []awsiam.PolicyStatementProps
 }
 
-func (s LambdaCmd) GetName() string { return "lambda" }
+func (s AwsCmd) GetName() string { return "aws" }
 
-func (s LambdaCmd) Compile(stack awscdk.Stack, next interface{}) ([]interface{}, error) {
-	function := awslambda.NewFunction(stack, jsii.String("awscli"), &awslambda.FunctionProps{
+func (s AwsCmd) Compile(stack constructs.Construct, next interface{}) ([]interface{}, error) {
+	function := awslambda.NewFunction(stack, jsii.String(s.GetName()), &awslambda.FunctionProps{
 		Runtime: awslambda.Runtime_PYTHON_3_11(),
 		Handler: jsii.String("index.lambda_handler"),
 		Code:    awslambda.Code_FromInline(jsii.String(s.Script)),
 	})
 	function.AddLayers(lambdalayerawscli.NewAwsCliLayer(stack, jsii.String("AwsCliLayer")))
 
+	stmts := lo.Map(s.IamStatementProps, func(item awsiam.PolicyStatementProps, index int) awsiam.PolicyStatement {
+		return awsiam.NewPolicyStatement(&item)
+	})
+
 	function.Role().AttachInlinePolicy(awsiam.NewPolicy(stack, jsii.String("AwsCliPolicy"), &awsiam.PolicyProps{
-		Statements: &s.IamStatement,
+		Statements: &stmts,
 	}))
 
 	var this awsstepfunctions.INextable

@@ -4,7 +4,7 @@ import (
 	_ "embed"
 	"flag"
 	"fmt"
-	"github.com/aws/aws-cdk-go/awscdk/v2"
+	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/ryanjarv/msh/pkg/app"
 	"github.com/ryanjarv/msh/pkg/types"
 	"os"
@@ -37,7 +37,7 @@ type Each struct {
 
 func (s Each) GetName() string { return "each" }
 
-func (s Each) Compile(stack awscdk.Stack, next []interface{}) ([]interface{}, error) {
+func (s Each) Compile(stack constructs.Construct, next []interface{}) ([]interface{}, error) {
 	var heads []interface{}
 	for _, subapp := range s.SubApp {
 		chain, err := subapp.Compile(stack, next)

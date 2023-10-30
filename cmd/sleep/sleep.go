@@ -5,6 +5,7 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
 	sfn "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
+	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 	"os"
 	"strconv"
@@ -31,10 +32,10 @@ type SleepCmd struct {
 
 func (s SleepCmd) GetName() string { return "sleep" }
 
-func (s SleepCmd) Compile(stack awscdk.Stack, next interface{}) ([]interface{}, error) {
+func (s SleepCmd) Compile(stack constructs.Construct, next interface{}) ([]interface{}, error) {
 	var this awsstepfunctions.INextable
 
-	this = sfn.NewWait(stack, jsii.String("wait"), &sfn.WaitProps{
+	this = sfn.NewWait(stack, jsii.String(s.GetName()), &sfn.WaitProps{
 		Time: sfn.WaitTime_Duration(awscdk.Duration_Seconds(jsii.Number(s.Seconds))),
 	})
 

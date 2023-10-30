@@ -5,21 +5,28 @@ import (
 	_ "embed"
 	"flag"
 	"fmt"
-	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
 	tasks "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctionstasks"
+	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 	"log"
 	"os"
 )
 
 func New(args []string) (*LambdaCmd, error) {
-	if len(args) < 1 {
+	if len(args) > 2 {
 		log.Fatalf("usage: %s <script>", os.Args[0])
 	}
+	flagset := flag.NewFlagSet("lambda", flag.ExitOnError)
+	err := flagset.Parse(args)
+	if err != nil {
+		return nil, fmt.Errorf("parsing flags: %w", err)
+	}
 
-	script, err := os.ReadFile(args[0])
+	path := flagset.Arg(flagset.NArg() - 1)
+
+	script, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("reading file: %w", err)
 	}
@@ -42,8 +49,8 @@ type LambdaCmd struct {
 
 func (s LambdaCmd) GetName() string { return "lambda" }
 
-func (s LambdaCmd) Compile(stack awscdk.Stack, next interface{}) ([]interface{}, error) {
-	s.function = awslambda.NewFunction(stack, jsii.String(flag.Arg(0)), &awslambda.FunctionProps{
+func (s LambdaCmd) Compile(stack constructs.Construct, next interface{}) ([]interface{}, error) {
+	s.function = awslambda.NewFunction(stack, jsii.String(s.GetName()), &awslambda.FunctionProps{
 		Runtime: awslambda.Runtime_PYTHON_3_11(),
 		Handler: jsii.String("index.lambda_handler"),
 		Code:    awslambda.Code_FromInline(jsii.String(s.Script)),
@@ -51,7 +58,7 @@ func (s LambdaCmd) Compile(stack awscdk.Stack, next interface{}) ([]interface{},
 
 	var this awsstepfunctions.INextable
 
-	this = tasks.NewLambdaInvoke(stack, jsii.String(fmt.Sprintf("invoke %s %d", flag.Arg(0), os.Getpid())), &tasks.LambdaInvokeProps{
+	this = tasks.NewLambdaInvoke(stack, jsii.String(fmt.Sprintf("%s-invoke", s.GetName())), &tasks.LambdaInvokeProps{
 		LambdaFunction: s.function,
 		OutputPath:     jsii.String("$.Payload"),
 	})

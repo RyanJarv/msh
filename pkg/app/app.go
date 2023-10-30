@@ -11,8 +11,18 @@ func GetPipeline(reg types.Registry, stdin *os.File, stdout *os.File) (App, erro
 	var state State
 
 	// We need to read the state before we can do anything else.
-	if !utils.IsTTY(stdin) {
+	mshStdin := os.Getenv("MSH_STDIN")
+	if !utils.IsTTY(stdin) || mshStdin != "" {
 		var err error
+
+		// Hack to allow us to read from a test file in a debugger.
+		if mshStdin != "" {
+			stdin, err = os.Open(mshStdin)
+			if err != nil {
+				return App{}, fmt.Errorf("run: failed to open stdin: %w", err)
+			}
+		}
+
 		state, err = ReadState(stdin, reg)
 		if err != nil {
 			return App{}, fmt.Errorf("run: failed to read state: %w", err)

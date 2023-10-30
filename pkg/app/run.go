@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/cxapi"
+	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 	L "github.com/ryanjarv/msh/pkg/logger"
 	"github.com/ryanjarv/msh/pkg/types"
@@ -51,7 +52,7 @@ func (s *State) WriteState() error {
 	return nil
 }
 
-func (a *App) Compile(stack awscdk.Stack, next []interface{}) ([]interface{}, error) {
+func (a *App) Compile(stack constructs.Construct, next []interface{}) ([]interface{}, error) {
 	// next represents the output of the last Step, which will be passed to the next.
 	if next == nil {
 		next = []interface{}{}
@@ -63,6 +64,8 @@ func (a *App) Compile(stack awscdk.Stack, next []interface{}) ([]interface{}, er
 	for _, step := range steps {
 		L.Debug.Println("running Step:", step.GetName())
 
+		this := constructs.NewConstruct(stack, jsii.String(step.GetName()))
+
 		switch s := step.Value.(type) {
 		case types.CdkStep:
 			var n interface{}
@@ -73,16 +76,15 @@ func (a *App) Compile(stack awscdk.Stack, next []interface{}) ([]interface{}, er
 			}
 
 			var err error
-			next, err = s.Compile(stack, n)
+			next, err = s.Compile(this, n)
 			if err != nil {
-				return nil, fmt.Errorf("cdkstep: %s: %w", step.Name, err)
+				return nil, fmt.Errorf("cdk step: %s: %w", step.Name, err)
 			}
-
 		case types.CdkStepFanOut:
 			var err error
-			next, err = s.Compile(stack, next)
+			next, err = s.Compile(this, next)
 			if err != nil {
-				return nil, fmt.Errorf("cdkfanout: %s: %w", step.Name, err)
+				return nil, fmt.Errorf("cdk step fanout: %s: %w", step.Name, err)
 			}
 		default:
 			return nil, fmt.Errorf("not a cdk Step: %T: %+v", step.Value, step.Value)
