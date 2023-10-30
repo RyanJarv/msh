@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 
-import datetime
+from datetime import datetime, timezone
+import os
 
 
 def lambda_handler(event, context):
-    input_date_str = event['date']
-    input_date = datetime.datetime.fromisoformat(input_date_str)
+    input_date_str = event['UsageOperationUpdateTime']
+    print(input_date_str)
+    input_date = datetime.fromisoformat(input_date_str)
 
-    current_date = datetime.datetime.utcnow()
+    current_date = datetime.now(timezone.utc)
     delta = current_date - input_date
 
     return {
-        'result': delta.total_seconds() < event['seconds']
+        'result': delta.total_seconds() > int(os.environ['ARG1'])
     }

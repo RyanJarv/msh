@@ -17,7 +17,7 @@ import (
 var Registry = types.NewRegistry(
 	&sfn.Sfn{},
 	&event.Event{},
-	&lambda.LambdaCmd{},
+	&lambda.Lambda{},
 	&aws.AwsCmd{},
 	&sleep.SleepCmd{},
 	&mail.Mail{},

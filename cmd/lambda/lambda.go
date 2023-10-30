@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"flag"
 	"fmt"
+	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
 	tasks "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctionstasks"
@@ -14,7 +15,7 @@ import (
 	"os"
 )
 
-func New(args []string) (*LambdaCmd, error) {
+func New(args []string) (*Lambda, error) {
 	if len(args) > 2 {
 		log.Fatalf("usage: %s <script>", os.Args[0])
 	}
@@ -24,7 +25,13 @@ func New(args []string) (*LambdaCmd, error) {
 		return nil, fmt.Errorf("parsing flags: %w", err)
 	}
 
-	path := flagset.Arg(flagset.NArg() - 1)
+	path := flagset.Arg(1)
+
+	var env map[string]*string
+	for i, arg := range flagset.Args()[2:] {
+		env[fmt.Sprintf("ARG%d", i)] = &arg
+
+	}
 
 	script, err := os.ReadFile(path)
 	if err != nil {
@@ -35,31 +42,36 @@ func New(args []string) (*LambdaCmd, error) {
 		return nil, fmt.Errorf("script must contain a `lambda_handler` function")
 	}
 
-	return &LambdaCmd{
-		Script: string(script),
-		Args:   args,
+	return &Lambda{
+		Script:         string(script),
+		Args:           args,
+		Environment:    env,
+		TimeoutSeconds: 300,
 	}, nil
 }
 
-type LambdaCmd struct {
-	Script   string
-	Args     []string
-	function awslambda.Function
+type Lambda struct {
+	Script         string
+	Args           []string
+	Environment    map[string]*string
+	TimeoutSeconds int
 }
 
-func (s LambdaCmd) GetName() string { return "lambda" }
+func (s Lambda) GetName() string { return "lambda" }
 
-func (s LambdaCmd) Compile(stack constructs.Construct, next interface{}) ([]interface{}, error) {
-	s.function = awslambda.NewFunction(stack, jsii.String(s.GetName()), &awslambda.FunctionProps{
-		Runtime: awslambda.Runtime_PYTHON_3_11(),
-		Handler: jsii.String("index.lambda_handler"),
-		Code:    awslambda.Code_FromInline(jsii.String(s.Script)),
+func (s Lambda) Compile(stack constructs.Construct, next interface{}) ([]interface{}, error) {
+	function := awslambda.NewFunction(stack, jsii.String(s.GetName()), &awslambda.FunctionProps{
+		Runtime:     awslambda.Runtime_PYTHON_3_11(),
+		Handler:     jsii.String("index.lambda_handler"),
+		Code:        awslambda.Code_FromInline(jsii.String(s.Script)),
+		Environment: &s.Environment,
+		Timeout:     awscdk.Duration_Seconds(jsii.Number(s.TimeoutSeconds)),
 	})
 
 	var this awsstepfunctions.INextable
 
 	this = tasks.NewLambdaInvoke(stack, jsii.String(fmt.Sprintf("%s-invoke", s.GetName())), &tasks.LambdaInvokeProps{
-		LambdaFunction: s.function,
+		LambdaFunction: function,
 		OutputPath:     jsii.String("$.Payload"),
 	})
 

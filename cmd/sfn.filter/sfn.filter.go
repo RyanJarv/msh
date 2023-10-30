@@ -21,7 +21,7 @@ func New(args []string) (*Filter, error) {
 }
 
 type Filter struct {
-	Lambda *lambda.LambdaCmd
+	Lambda *lambda.Lambda
 }
 
 func (s Filter) GetName() string { return "filter" }

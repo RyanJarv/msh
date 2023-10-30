@@ -3,8 +3,8 @@ package aws
 import (
 	_ "embed"
 	"encoding/json"
-	"flag"
 	"fmt"
+	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsiam"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
@@ -41,6 +41,9 @@ func New(args []string) (*AwsCmd, error) {
 		},
 		Script: string(code),
 		Args:   args,
+		Environment: map[string]*string{
+			"PYTHONPATH": jsii.String("/opt/awscli"),
+		},
 	}, nil
 }
 
@@ -55,15 +58,18 @@ type AwsCmd struct {
 	Script            string
 	Args              []string
 	IamStatementProps []awsiam.PolicyStatementProps
+	Environment       map[string]*string
 }
 
 func (s AwsCmd) GetName() string { return "aws" }
 
 func (s AwsCmd) Compile(stack constructs.Construct, next interface{}) ([]interface{}, error) {
 	function := awslambda.NewFunction(stack, jsii.String(s.GetName()), &awslambda.FunctionProps{
-		Runtime: awslambda.Runtime_PYTHON_3_11(),
-		Handler: jsii.String("index.lambda_handler"),
-		Code:    awslambda.Code_FromInline(jsii.String(s.Script)),
+		Runtime:     awslambda.Runtime_PYTHON_3_11(),
+		Handler:     jsii.String("index.lambda_handler"),
+		Code:        awslambda.Code_FromInline(jsii.String(s.Script)),
+		Timeout:     awscdk.Duration_Seconds(jsii.Number(300)),
+		Environment: &s.Environment,
 	})
 	function.AddLayers(lambdalayerawscli.NewAwsCliLayer(stack, jsii.String("AwsCliLayer")))
 
@@ -82,7 +88,7 @@ func (s AwsCmd) Compile(stack constructs.Construct, next interface{}) ([]interfa
 		return nil, fmt.Errorf("marshalling payload: %w", err)
 	}
 
-	this = tasks.NewLambdaInvoke(stack, jsii.String(fmt.Sprintf("invoke %s %d", flag.Arg(0), os.Getpid())), &tasks.LambdaInvokeProps{
+	this = tasks.NewLambdaInvoke(stack, jsii.String(fmt.Sprintf("%s-invoke", s.GetName())), &tasks.LambdaInvokeProps{
 		LambdaFunction: function,
 		Payload:        awsstepfunctions.TaskInput_FromText(aws.String(string(payload))),
 		OutputPath:     jsii.String("$.Payload"),
