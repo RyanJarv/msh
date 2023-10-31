@@ -15,8 +15,15 @@ import (
 	"os"
 )
 
-func New(args []string) (*Lambda, error) {
-	if len(args) > 2 {
+type LambdaOpts struct {
+	InputPath      *string
+	ResultSelector *map[string]interface{}
+	OutputPath     *string
+	ResultPath     *string
+}
+
+func New(args []string, opts *LambdaOpts) (*Lambda, error) {
+	if len(args) < 1 {
 		log.Fatalf("usage: %s <script>", os.Args[0])
 	}
 	flagset := flag.NewFlagSet("lambda", flag.ExitOnError)
@@ -27,9 +34,9 @@ func New(args []string) (*Lambda, error) {
 
 	path := flagset.Arg(1)
 
-	var env map[string]*string
+	env := map[string]*string{}
 	for i, arg := range flagset.Args()[2:] {
-		env[fmt.Sprintf("ARG%d", i)] = &arg
+		env[fmt.Sprintf("ARG%d", i+1)] = &arg
 
 	}
 
@@ -42,15 +49,23 @@ func New(args []string) (*Lambda, error) {
 		return nil, fmt.Errorf("script must contain a `lambda_handler` function")
 	}
 
+	if opts == nil {
+		opts = &LambdaOpts{
+			OutputPath: jsii.String("$.Payload"),
+		}
+	}
+
 	return &Lambda{
 		Script:         string(script),
 		Args:           args,
 		Environment:    env,
 		TimeoutSeconds: 300,
+		LambdaOpts:     opts,
 	}, nil
 }
 
 type Lambda struct {
+	*LambdaOpts
 	Script         string
 	Args           []string
 	Environment    map[string]*string
@@ -72,7 +87,10 @@ func (s Lambda) Compile(stack constructs.Construct, next interface{}) ([]interfa
 
 	this = tasks.NewLambdaInvoke(stack, jsii.String(fmt.Sprintf("%s-invoke", s.GetName())), &tasks.LambdaInvokeProps{
 		LambdaFunction: function,
-		OutputPath:     jsii.String("$.Payload"),
+		InputPath:      s.InputPath,
+		ResultSelector: s.ResultSelector,
+		OutputPath:     s.OutputPath,
+		ResultPath:     s.ResultPath,
 	})
 
 	if next != nil {

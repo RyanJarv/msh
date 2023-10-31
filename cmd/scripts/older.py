@@ -12,6 +12,4 @@ def lambda_handler(event, context):
     current_date = datetime.now(timezone.utc)
     delta = current_date - input_date
 
-    return {
-        'result': delta.total_seconds() > int(os.environ['ARG1'])
-    }
+    return delta.total_seconds() > int(os.environ['ARG1'])

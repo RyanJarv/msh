@@ -18,7 +18,7 @@ func main() {
 		L.Error.Fatalln("%s: get app: %w", os.Args[0], err)
 	}
 
-	l, err := lambda.New(os.Args)
+	l, err := lambda.New(os.Args, nil)
 	if err != nil {
 		L.Error.Fatalln("%s: new", l.GetName(), err)
 	}
