@@ -1,6 +1,7 @@
 package common
 
 import (
+	"github.com/ryanjarv/msh/cmd/api"
 	"github.com/ryanjarv/msh/cmd/aws"
 	"github.com/ryanjarv/msh/cmd/each"
 	"github.com/ryanjarv/msh/cmd/event"
@@ -16,6 +17,7 @@ import (
 
 var Registry = types.NewRegistry(
 	&sfn.Sfn{},
+	&api.Api{},
 	&event.Event{},
 	&lambda.Lambda{},
 	&aws.AwsCmd{},

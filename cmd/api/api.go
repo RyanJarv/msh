@@ -39,7 +39,7 @@ type Api struct {
 	ActionOpts ActionOpts
 }
 
-func (s Api) GetName() string { return "sfn" }
+func (s Api) GetName() string { return "api" }
 
 func (s Api) Compile(stack constructs.Construct, next interface{}) ([]interface{}, error) {
 	var chain sfn.IChainable
@@ -50,10 +50,10 @@ func (s Api) Compile(stack constructs.Construct, next interface{}) ([]interface{
 			return nil, fmt.Errorf("next step must be chainable")
 		}
 	} else {
-		chain = sfn.NewSucceed(stack, jsii.String("succeed"), &sfn.SucceedProps{})
+		chain = sfn.NewSucceed(stack, jsii.String("api-succeed"), &sfn.SucceedProps{})
 	}
 
-	block := sfn.NewPass(stack, jsii.String("pass"), &sfn.PassProps{})
+	block := sfn.NewPass(stack, jsii.String("api-pass"), &sfn.PassProps{})
 
 	call := Paginate(stack, block, chain, s.ActionOpts)
 
@@ -173,12 +173,12 @@ func Paginate(stack constructs.Construct, block sfn.Pass, next sfn.IChainable, i
 	path := strings.Replace(input.Path, "[]", "[*]", -1)
 	path = fmt.Sprintf("$.%s", path)
 
-	iter := sfn.NewMap(stack, jsii.String("map"), &sfn.MapProps{
+	iter := sfn.NewMap(stack, jsii.String("api-map"), &sfn.MapProps{
 		InputPath:  sfn.JsonPath_StringAt(jsii.String(path)),
 		ResultPath: sfn.JsonPath_DISCARD(),
 	})
 
-	call := tasks.NewCallAwsService(stack, jsii.String("call"), &tasks.CallAwsServiceProps{
+	call := tasks.NewCallAwsService(stack, jsii.String("api-call"), &tasks.CallAwsServiceProps{
 		Service:      jsii.String(input.Service),
 		Action:       jsii.String(utils.UnTitle(input.Action)),
 		IamResources: jsii.Strings("*"),
@@ -197,7 +197,7 @@ func Paginate(stack constructs.Construct, block sfn.Pass, next sfn.IChainable, i
 	//	paginator = sfn.Condition_And(paginator, sfn.Condition_IsPresent(jsii.String(override)))
 	//}
 
-	more := tasks.NewCallAwsService(stack, jsii.String("more"), &tasks.CallAwsServiceProps{
+	more := tasks.NewCallAwsService(stack, jsii.String("api-more"), &tasks.CallAwsServiceProps{
 		Service:      jsii.String("ec2"),
 		Action:       jsii.String("describeInstances"),
 		IamResources: jsii.Strings("*"),
@@ -208,7 +208,7 @@ func Paginate(stack constructs.Construct, block sfn.Pass, next sfn.IChainable, i
 	}).Next(iter)
 
 	iter.Iterator(block).
-		Next(sfn.NewChoice(stack, jsii.String("choice"), &sfn.ChoiceProps{}).
+		Next(sfn.NewChoice(stack, jsii.String("api-choice"), &sfn.ChoiceProps{}).
 			When(paginator, more, &sfn.ChoiceTransitionOptions{}).
 			Otherwise(next))
 
