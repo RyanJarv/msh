@@ -2,7 +2,6 @@ package aws
 
 import (
 	_ "embed"
-	"encoding/json"
 	"fmt"
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsiam"
@@ -10,12 +9,13 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
 	tasks "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctionstasks"
 	"github.com/aws/aws-cdk-go/awscdk/v2/lambdalayerawscli"
-	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
+	L "github.com/ryanjarv/msh/pkg/logger"
 	"github.com/samber/lo"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 //go:embed cli.py
@@ -84,17 +84,24 @@ func (s AwsCmd) Compile(stack constructs.Construct, next interface{}, i int) ([]
 
 	var this awsstepfunctions.INextable
 
-	payload, err := json.Marshal(map[string]interface{}{
-		"command": s.Args[1:],
+	args := lo.Map(s.Args[1:], func(arg string, index int) *string {
+		if strings.HasPrefix(arg, "$") {
+			return awsstepfunctions.JsonPath_StringAt(jsii.String(arg))
+		} else {
+			return jsii.String(arg)
+		}
 	})
-	if err != nil {
-		return nil, fmt.Errorf("marshalling payload: %w", err)
+
+	for i, arg := range args {
+		L.Info.Printf("arg %d: %s", i, *arg)
 	}
 
 	this = tasks.NewLambdaInvoke(stack, jsii.String(fmt.Sprintf("%s-invoke", s.getName(i))), &tasks.LambdaInvokeProps{
 		LambdaFunction: function,
-		Payload:        awsstepfunctions.TaskInput_FromText(aws.String(string(payload))),
-		OutputPath:     jsii.String("$.Payload"),
+		Payload: awsstepfunctions.TaskInput_FromObject(&map[string]interface{}{
+			"command": awsstepfunctions.JsonPath_Array(args...),
+		}),
+		OutputPath: jsii.String("$.Payload"),
 	})
 
 	if next != nil {
