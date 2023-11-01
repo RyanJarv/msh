@@ -30,7 +30,7 @@ type Filter struct {
 
 func (s Filter) GetName() string { return "filter" }
 
-func (s Filter) Compile(stack constructs.Construct, _next interface{}) ([]interface{}, error) {
+func (s Filter) Compile(stack constructs.Construct, _next interface{}, i int) ([]interface{}, error) {
 	next, ok := _next.(sfn.IChainable)
 	if !ok {
 		return nil, fmt.Errorf("filtermap: next is not a chain")
@@ -48,7 +48,7 @@ func (s Filter) Compile(stack constructs.Construct, _next interface{}) ([]interf
 		Comment: jsii.String("save input to $.__input"),
 	})
 
-	function, err := s.Lambda.Compile(stack, choice)
+	function, err := s.Lambda.Compile(stack, choice, 0)
 	if err != nil {
 		return nil, fmt.Errorf("filter: %w", err)
 	}

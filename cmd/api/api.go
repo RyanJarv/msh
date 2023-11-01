@@ -41,7 +41,7 @@ type Api struct {
 
 func (s Api) GetName() string { return "api" }
 
-func (s Api) Compile(stack constructs.Construct, next interface{}) ([]interface{}, error) {
+func (s Api) Compile(stack constructs.Construct, next interface{}, i int) ([]interface{}, error) {
 	var chain sfn.IChainable
 	if next != nil {
 		var ok bool

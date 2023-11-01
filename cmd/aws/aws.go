@@ -61,10 +61,11 @@ type AwsCmd struct {
 	Environment       map[string]*string
 }
 
-func (s AwsCmd) GetName() string { return "aws" }
+func (s AwsCmd) GetName() string      { return "aws" }
+func (s AwsCmd) getName(i int) string { return fmt.Sprintf("aws-%d", i) }
 
-func (s AwsCmd) Compile(stack constructs.Construct, next interface{}) ([]interface{}, error) {
-	function := awslambda.NewFunction(stack, jsii.String(s.GetName()), &awslambda.FunctionProps{
+func (s AwsCmd) Compile(stack constructs.Construct, next interface{}, i int) ([]interface{}, error) {
+	function := awslambda.NewFunction(stack, jsii.String(s.getName(i)), &awslambda.FunctionProps{
 		Runtime:     awslambda.Runtime_PYTHON_3_11(),
 		Handler:     jsii.String("index.lambda_handler"),
 		Code:        awslambda.Code_FromInline(jsii.String(s.Script)),
@@ -83,12 +84,14 @@ func (s AwsCmd) Compile(stack constructs.Construct, next interface{}) ([]interfa
 
 	var this awsstepfunctions.INextable
 
-	payload, err := json.Marshal(map[string]interface{}{"command": s.Args[1:]})
+	payload, err := json.Marshal(map[string]interface{}{
+		"command": s.Args[1:],
+	})
 	if err != nil {
 		return nil, fmt.Errorf("marshalling payload: %w", err)
 	}
 
-	this = tasks.NewLambdaInvoke(stack, jsii.String(fmt.Sprintf("%s-invoke", s.GetName())), &tasks.LambdaInvokeProps{
+	this = tasks.NewLambdaInvoke(stack, jsii.String(fmt.Sprintf("%s-invoke", s.getName(i))), &tasks.LambdaInvokeProps{
 		LambdaFunction: function,
 		Payload:        awsstepfunctions.TaskInput_FromText(aws.String(string(payload))),
 		OutputPath:     jsii.String("$.Payload"),

@@ -26,7 +26,7 @@ type Cron struct {
 
 func (s Cron) GetName() string { return "event" }
 
-func (s Cron) Compile(stack constructs.Construct, next []interface{}) ([]interface{}, error) {
+func (s Cron) Compile(stack constructs.Construct, next []interface{}, i int) ([]interface{}, error) {
 	target, ok := utils.EachAs[awsevents.IRuleTarget](next)
 	if !ok {
 		return nil, fmt.Errorf("next step must be eventbridge target, got: %T: %+v", next[0], next[0])

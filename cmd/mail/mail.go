@@ -37,7 +37,7 @@ type Mail struct {
 
 func (s Mail) GetName() string { return "mail" }
 
-func (s Mail) Compile(stack constructs.Construct, next interface{}) ([]interface{}, error) {
+func (s Mail) Compile(stack constructs.Construct, next interface{}, i int) ([]interface{}, error) {
 	if next != nil {
 		return nil, fmt.Errorf("can not chain anything after a sns email subscription, got: %T", next)
 	}

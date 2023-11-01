@@ -18,7 +18,7 @@ type Sns struct{}
 
 func (s Sns) GetName() string { return "sns" }
 
-func (s Sns) Compile(stack constructs.Construct, next []interface{}) ([]interface{}, error) {
+func (s Sns) Compile(stack constructs.Construct, next []interface{}, i int) ([]interface{}, error) {
 	subscriptions, ok := utils.EachAs[awssns.ITopicSubscription](next)
 	if !ok {
 		return nil, fmt.Errorf("expected sns topic, got: %T: %+v", next, next)

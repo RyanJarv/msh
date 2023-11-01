@@ -30,11 +30,11 @@ func (s Step) GetName() string {
 }
 
 type CdkStep interface {
-	Compile(constructs.Construct, interface{}) ([]interface{}, error)
+	Compile(constructs.Construct, interface{}, int) ([]interface{}, error)
 }
 
 type CdkStepFanOut interface {
-	Compile(constructs.Construct, []interface{}) ([]interface{}, error)
+	Compile(constructs.Construct, []interface{}, int) ([]interface{}, error)
 }
 
 type Process interface {

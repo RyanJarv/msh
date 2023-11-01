@@ -17,7 +17,7 @@ type Map struct{}
 
 func (s Map) GetName() string { return "map" }
 
-func (s Map) Compile(stack constructs.Construct, _next interface{}) ([]interface{}, error) {
+func (s Map) Compile(stack constructs.Construct, _next interface{}, i int) ([]interface{}, error) {
 	next, ok := _next.(sfn.IChainable)
 	if !ok {
 		return nil, fmt.Errorf("next is not a chain: got %T", _next)

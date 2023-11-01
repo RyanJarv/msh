@@ -21,7 +21,7 @@ type Sfn struct {
 
 func (s Sfn) GetName() string { return "sfn" }
 
-func (s Sfn) Compile(stack constructs.Construct, next interface{}) ([]interface{}, error) {
+func (s Sfn) Compile(stack constructs.Construct, next interface{}, i int) ([]interface{}, error) {
 	chain, ok := next.(sfn.IChainable)
 	if !ok {
 		return nil, fmt.Errorf("next step must be statemachine task, got: %T", next)

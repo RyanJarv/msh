@@ -37,10 +37,10 @@ type Each struct {
 
 func (s Each) GetName() string { return "each" }
 
-func (s Each) Compile(stack constructs.Construct, next []interface{}) ([]interface{}, error) {
+func (s Each) Compile(stack constructs.Construct, next []interface{}, i int) ([]interface{}, error) {
 	var heads []interface{}
 	for _, subapp := range s.SubApp {
-		chain, err := subapp.Compile(stack, next)
+		chain, err := subapp.Compile(stack, next, 0)
 		if err != nil {
 			return nil, fmt.Errorf("each: %w", err)
 		}

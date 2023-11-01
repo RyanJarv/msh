@@ -74,7 +74,7 @@ type Lambda struct {
 
 func (s Lambda) GetName() string { return "lambda" }
 
-func (s Lambda) Compile(stack constructs.Construct, next interface{}) ([]interface{}, error) {
+func (s Lambda) Compile(stack constructs.Construct, next interface{}, i int) ([]interface{}, error) {
 	function := awslambda.NewFunction(stack, jsii.String(s.GetName()), &awslambda.FunctionProps{
 		Runtime:     awslambda.Runtime_PYTHON_3_11(),
 		Handler:     jsii.String("index.lambda_handler"),

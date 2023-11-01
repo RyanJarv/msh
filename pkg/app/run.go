@@ -27,7 +27,7 @@ func (a *App) Run(step types.IStep) error {
 		app := awscdk.NewApp(&awscdk.AppProps{})
 		stack := awscdk.NewStack(app, jsii.String("msh"), &awscdk.StackProps{})
 
-		_, err := a.Compile(stack, nil)
+		_, err := a.Compile(stack, nil, 0)
 		if err != nil {
 			return fmt.Errorf("compile: %w", err)
 		}
@@ -52,7 +52,7 @@ func (s *State) WriteState() error {
 	return nil
 }
 
-func (a *App) Compile(stack constructs.Construct, next []interface{}) ([]interface{}, error) {
+func (a *App) Compile(stack constructs.Construct, next []interface{}, i int) ([]interface{}, error) {
 	// next represents the output of the last Step, which will be passed to the next.
 	if next == nil {
 		next = []interface{}{}
@@ -61,10 +61,10 @@ func (a *App) Compile(stack constructs.Construct, next []interface{}) ([]interfa
 	// Reverse the steps so the source receives the next Step instead of the previous one.
 	steps := lo.Reverse(a.State.Steps)
 
-	for _, step := range steps {
+	for i, step := range steps {
 		L.Debug.Println("running Step:", step.GetName())
 
-		this := constructs.NewConstruct(stack, jsii.String(step.GetName()))
+		this := constructs.NewConstruct(stack, jsii.String(fmt.Sprintf("%s-%d", step.GetName(), i)))
 
 		switch s := step.Value.(type) {
 		case types.CdkStep:
@@ -76,13 +76,13 @@ func (a *App) Compile(stack constructs.Construct, next []interface{}) ([]interfa
 			}
 
 			var err error
-			next, err = s.Compile(this, n)
+			next, err = s.Compile(this, n, i)
 			if err != nil {
 				return nil, fmt.Errorf("cdk step: %s: %w", step.Name, err)
 			}
 		case types.CdkStepFanOut:
 			var err error
-			next, err = s.Compile(this, next)
+			next, err = s.Compile(this, next, i)
 			if err != nil {
 				return nil, fmt.Errorf("cdk step fanout: %s: %w", step.Name, err)
 			}

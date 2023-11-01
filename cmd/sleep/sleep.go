@@ -32,7 +32,7 @@ type SleepCmd struct {
 
 func (s SleepCmd) GetName() string { return "sleep" }
 
-func (s SleepCmd) Compile(stack constructs.Construct, next interface{}) ([]interface{}, error) {
+func (s SleepCmd) Compile(stack constructs.Construct, next interface{}, i int) ([]interface{}, error) {
 	var this awsstepfunctions.INextable
 
 	this = sfn.NewWait(stack, jsii.String(s.GetName()), &sfn.WaitProps{
