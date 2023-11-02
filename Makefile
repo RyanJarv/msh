@@ -4,6 +4,7 @@ export MSH_SKIPDEPLOY=1
 build: build-event build-sleep build-api build-aws build-filter
 	go generate ./...
 	go build -o out/sfn cmd/sfn.go
+	go build -o out/.call cmd/call.go
 	go build -o out/@sns cmd/sns.go
 	go build -o out/.map cmd/sfn.map.go
 	go build -o out/.each cmd/each.go
