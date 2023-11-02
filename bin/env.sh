@@ -27,4 +27,4 @@ rehash || :
 
 
 # TODO: Come back to this
-# alias 'sfn{'='cat | {'
+ alias 'sfn{'='sfn | {'

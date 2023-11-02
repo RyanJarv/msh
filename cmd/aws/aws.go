@@ -11,7 +11,6 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2/lambdalayerawscli"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	L "github.com/ryanjarv/msh/pkg/logger"
 	"github.com/samber/lo"
 	"os"
 	"os/exec"
@@ -91,10 +90,6 @@ func (s AwsCmd) Compile(stack constructs.Construct, next interface{}, i int) ([]
 			return jsii.String(arg)
 		}
 	})
-
-	for i, arg := range args {
-		L.Info.Printf("arg %d: %s", i, *arg)
-	}
 
 	this = tasks.NewLambdaInvoke(stack, jsii.String(fmt.Sprintf("%s-invoke", s.getName(i))), &tasks.LambdaInvokeProps{
 		LambdaFunction: function,

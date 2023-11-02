@@ -3,6 +3,7 @@ package common
 import (
 	"github.com/ryanjarv/msh/cmd/api"
 	"github.com/ryanjarv/msh/cmd/aws"
+	"github.com/ryanjarv/msh/cmd/cron"
 	"github.com/ryanjarv/msh/cmd/each"
 	"github.com/ryanjarv/msh/cmd/event"
 	"github.com/ryanjarv/msh/cmd/lambda"
@@ -18,6 +19,7 @@ import (
 var Registry = types.NewRegistry(
 	&sfn.Sfn{},
 	&api.Api{},
+	&cron.Cron{},
 	&event.Event{},
 	&lambda.Lambda{},
 	&aws.AwsCmd{},

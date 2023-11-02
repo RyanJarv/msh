@@ -11,7 +11,7 @@ import (
 	"github.com/aws/jsii-runtime-go"
 )
 
-func NewSfn() (*Sfn, error) {
+func NewSfn([]string) (*Sfn, error) {
 	return &Sfn{}, nil
 }
 

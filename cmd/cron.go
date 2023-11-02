@@ -17,7 +17,7 @@ func main() {
 		L.Error.Fatalf("cron: get app: %w", err)
 	}
 
-	l, err := event.NewCron()
+	l, err := cron.New()
 	if err != nil {
 		L.Error.Fatalf("cron: new: %w", err)
 	}
