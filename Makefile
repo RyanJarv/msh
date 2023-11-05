@@ -19,13 +19,13 @@ build-filter:
 	go build -o out/.filter cmd/sfn.filter.go
 
 build-aws:
-	go build -o out/.aws cmd/aws.go
+	go build -o out/msh.aws cmd/aws.go
 
 build-api:
-	go build -o out/.api cmd/api.go
+	go build -o out/msh.api cmd/api.go
 
 build-sleep:
-	go build -o out/.sleep cmd/sleep.go
+	go build -o out/msh.sleep cmd/sleep.go
 
 install: build
 	mkdir -p ~/.msh/bin
@@ -38,7 +38,7 @@ test: test-each test-sleep test-lambda
 	@echo "\nRunning Tests\n"
 
 test-each:
-	@./scripts/test.sh './out/.each ./test/mail.json'
+	@./scripts/test.sh './out/msh.each ./test/mail.json'
 
 test-sleep:
 	@./scripts/test.sh 'cat ./test/sfn.json | ./out/.sleep 3'

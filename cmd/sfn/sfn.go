@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 	"github.com/aws/aws-cdk-go/awscdk/v2"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsevents"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awseventstargets"
 	sfn "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
 	"github.com/aws/constructs-go/constructs/v10"
@@ -27,11 +28,12 @@ func New(app app.App) (*Sfn, error) {
 
 type Sfn struct {
 	Name string
+	awsevents.IRuleTarget
 }
 
 func (s Sfn) GetName() string { return "sfn" }
 
-func (s Sfn) Compile(stack constructs.Construct, next interface{}, i int) ([]interface{}, error) {
+func (s *Sfn) Compile(stack constructs.Construct, next interface{}, i int) ([]interface{}, error) {
 	chain, ok := next.(sfn.IChainable)
 	if !ok {
 		return nil, fmt.Errorf("next step must be statemachine task, got: %T", next)
