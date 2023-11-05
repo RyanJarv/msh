@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/aws/aws-cdk-go/awscdk/v2"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsevents"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awssns"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
 	"github.com/aws/aws-cdk-go/awscdk/v2/cxapi"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
@@ -16,7 +19,7 @@ import (
 	"os/exec"
 )
 
-func (a *App) Run(step types.IStep) error {
+func (a *App) Run(step types.CdkStep) error {
 	a.State.AddStep(step)
 
 	if !utils.IsTTY(a.Stdout) {
@@ -52,44 +55,62 @@ func (s *State) WriteState() error {
 	return nil
 }
 
-func (a *App) Compile(stack constructs.Construct, next []interface{}, i int) ([]interface{}, error) {
-	// next represents the output of the last Step, which will be passed to the next.
-	if next == nil {
-		next = []interface{}{}
-	}
-
+func (a *App) Compile(scope constructs.Construct, next types.CdkStep, i int) (types.CdkStep, error) {
 	// Reverse the steps so the source receives the next Step instead of the previous one.
 	steps := lo.Reverse(a.State.Steps)
 
+	//var next types.CdkStep
+
 	for i, step := range steps {
-		L.Debug.Println("running Step:", step.GetName())
+		scope := constructs.NewConstruct(scope, jsii.String(fmt.Sprintf("%s%d", step.Name, i)))
 
-		this := constructs.NewConstruct(stack, jsii.String(fmt.Sprintf("%s-%d", step.GetName(), i)))
-
-		switch s := step.Value.(type) {
-		case types.CdkStep:
-			var n interface{}
-			if len(next) > 1 {
-				return nil, fmt.Errorf("build: %s does not support multiple next steps", step.Name)
-			} else if len(next) != 0 {
-				n = next[0]
-			}
-
-			var err error
-			next, err = s.Compile(this, n, i)
-			if err != nil {
-				return nil, fmt.Errorf("cdk step: %s: %w", step.Name, err)
-			}
-		case types.CdkStepFanOut:
-			var err error
-			next, err = s.Compile(this, next, i)
-			if err != nil {
-				return nil, fmt.Errorf("cdk step fanout: %s: %w", step.Name, err)
-			}
-		default:
-			return nil, fmt.Errorf("not a cdk Step: %T: %+v", step.Value, step.Value)
+		cdkstep, ok := step.Value.(types.CdkStep)
+		if !ok {
+			return nil, fmt.Errorf("step must implement CdkStep, got: %T", step.Value)
 		}
 
+		err := cdkstep.Compile(scope, i)
+		if err != nil {
+			return nil, fmt.Errorf("compile: %w", err)
+		}
+
+		if next == nil {
+			continue
+		}
+
+		switch s := cdkstep.(type) {
+		// We don't use Next on iterators currently, so make sure this is higher priority than INextable.
+		case types.IIterator:
+			chain, ok := next.(awsstepfunctions.IChainable)
+			if !ok {
+				return nil, fmt.Errorf("next step must be a statemachine task, got: %T", next)
+			}
+
+			s.Iterator(chain)
+		case awsstepfunctions.INextable:
+			chain, ok := next.(awsstepfunctions.IChainable)
+			if !ok {
+				return nil, fmt.Errorf("next step must be a statemachine task, got: %T", next)
+			}
+
+			s.Next(chain)
+		case awsevents.Rule:
+			n, ok := next.(awsevents.IRuleTarget)
+			if !ok {
+				return nil, fmt.Errorf("next step must be a event rule target, got: %T", next)
+			}
+
+			s.AddTarget(n)
+		case awssns.ITopic:
+			n, ok := next.(awssns.ITopicSubscription)
+			if !ok {
+				return nil, fmt.Errorf("next step must be a topic subscription, got: %T", next)
+			}
+
+			s.AddSubscription(n)
+		}
+
+		next = cdkstep
 	}
 
 	return next, nil

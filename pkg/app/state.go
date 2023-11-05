@@ -55,9 +55,14 @@ func UnmarshalState(registry types.Registry, line []byte) (State, error) {
 			return State{}, fmt.Errorf("readConf: failed to unmarshal step: %w", err)
 		}
 
+		cdkStep, ok := value.(types.CdkStep)
+		if !ok {
+			return State{}, fmt.Errorf("readConf: step must implement CdkStep: %T", value)
+		}
+
 		steps = append(steps, types.Step{
 			Name:  step.Name,
-			Value: value,
+			Value: cdkStep,
 		})
 	}
 
@@ -71,7 +76,7 @@ type State struct {
 }
 
 // AddStep is called by each individual Step that wants to add to the cumulative app.
-func (s *State) AddStep(c types.IStep) {
+func (s *State) AddStep(c types.CdkStep) {
 	s.Steps = append(s.Steps, types.Step{
 		Name:  c.GetName(),
 		Value: c,

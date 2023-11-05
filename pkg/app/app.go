@@ -1,6 +1,7 @@
 package app
 
 import (
+	"flag"
 	"fmt"
 	"github.com/ryanjarv/msh/pkg/types"
 	"github.com/ryanjarv/msh/pkg/utils"
@@ -34,18 +35,20 @@ func GetPipeline(reg types.Registry, stdin *os.File, stdout *os.File, args []str
 	}
 
 	return App{
+		FlagSet:  utils.ParseArgs(args),
 		State:    state,
 		Stdin:    stdin,
 		Stdout:   stdout,
 		Registry: reg,
-		Args:     args,
+		OsArgs:   args,
 	}, nil
 }
 
 type App struct {
-	State    State
-	Registry types.Registry `json:"-"`
-	Args     []string       `json:"-"`
-	Stdin    *os.File       `json:"-"`
-	Stdout   *os.File       `json:"-"`
+	*flag.FlagSet `json:"-"`
+	State         State
+	Registry      types.Registry `json:"-"`
+	OsArgs        []string       `json:"-"`
+	Stdin         *os.File       `json:"-"`
+	Stdout        *os.File       `json:"-"`
 }

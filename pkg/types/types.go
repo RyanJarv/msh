@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
 	"github.com/aws/constructs-go/constructs/v10"
 	"io"
 	"reflect"
@@ -44,11 +45,8 @@ func (s Step) GetName() string {
 }
 
 type CdkStep interface {
-	Compile(constructs.Construct, interface{}, int) ([]interface{}, error)
-}
-
-type CdkStepFanOut interface {
-	Compile(constructs.Construct, []interface{}, int) ([]interface{}, error)
+	IStep
+	Compile(construct constructs.Construct, i int) error
 }
 
 type Process interface {
@@ -59,4 +57,13 @@ type Process interface {
 
 type Deployable interface {
 	Deploy() error
+}
+
+type IChain interface {
+	awsstepfunctions.INextable
+	awsstepfunctions.IChainable
+}
+
+type IIterator interface {
+	Iterator(iterator awsstepfunctions.IChainable) awsstepfunctions.Map
 }

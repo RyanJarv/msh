@@ -27,43 +27,44 @@ func New(app app.App) (*Filter, error) {
 }
 
 type Filter struct {
-	Lambda *lambda.Lambda
+	*lambda.Lambda
+	sfn.Pass
+	choice   sfn.Choice
+	filtered sfn.IChainable
 }
 
 func (s Filter) GetName() string { return "filter" }
 
-func (s Filter) Compile(stack constructs.Construct, _next interface{}, i int) ([]interface{}, error) {
-	next, ok := _next.(sfn.IChainable)
-	if !ok {
-		return nil, fmt.Errorf("filtermap: next is not a chain")
+func (s *Filter) Compile(stack constructs.Construct, i int) error {
+	err := s.Lambda.Compile(stack, 0)
+	if err != nil {
+		return fmt.Errorf("filter: %w", err)
 	}
 
-	choice := sfn.NewChoice(stack, jsii.String("choice"), &sfn.ChoiceProps{
+	s.choice = sfn.NewChoice(stack, jsii.String("choice"), &sfn.ChoiceProps{
 		Comment:    jsii.String("choice"),
 		OutputPath: jsii.String("$.__input"),
 	})
 
-	this := sfn.NewPass(stack, jsii.String("pass"), &sfn.PassProps{
+	s.Pass = sfn.NewPass(stack, jsii.String("pass"), &sfn.PassProps{
 		Parameters: &map[string]interface{}{
 			"__input.$": "$",
 		},
 		Comment: jsii.String("save input to $.__input"),
 	})
 
-	function, err := s.Lambda.Compile(stack, choice, 0)
-	if err != nil {
-		return nil, fmt.Errorf("filter: %w", err)
-	}
+	s.filtered = sfn.NewSucceed(stack, jsii.String("filtered"), &sfn.SucceedProps{})
+	return nil
+}
 
-	this.Next(function[0].(sfn.IChainable))
-
-	choice.When(sfn.Condition_BooleanEquals(jsii.String("$.__choice.result"), jsii.Bool(true)),
-		next, &sfn.ChoiceTransitionOptions{},
-	).Otherwise(
-		sfn.NewSucceed(stack, jsii.String("filtered"), &sfn.SucceedProps{}),
-	)
-
-	return []interface{}{
-		this,
-	}, nil
+func (s *Filter) Next(next sfn.Chain) sfn.Chain {
+	return s.Pass.
+		Next(s.Lambda).
+		Next(
+			s.choice.When(sfn.Condition_BooleanEquals(jsii.String("$.__choice.result"), jsii.Bool(true)),
+				next, &sfn.ChoiceTransitionOptions{},
+			).Otherwise(
+				s.filtered,
+			),
+		)
 }

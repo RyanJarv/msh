@@ -22,12 +22,12 @@ import (
 var code []byte
 
 func New(app app.App) (*AwsCmd, error) {
-	if lo.Contains(app.Args, "--help") || lo.Contains(app.Args, "help") {
-		Help(app.Args)
+	if lo.Contains(app.OsArgs, "--help") || lo.Contains(app.OsArgs, "help") {
+		Help(app.OsArgs)
 		os.Exit(1)
 	}
 
-	iamActions, err := IamActionsFromCliArgs(app.Args)
+	iamActions, err := IamActionsFromCliArgs(app.OsArgs)
 	if err != nil {
 		return nil, fmt.Errorf("getting iam actions from cli args: %w", err)
 	}
@@ -40,7 +40,7 @@ func New(app app.App) (*AwsCmd, error) {
 			},
 		},
 		Script: string(code),
-		Args:   app.Args,
+		Args:   app.OsArgs,
 		Environment: map[string]*string{
 			"PYTHONPATH": jsii.String("/opt/awscli"),
 		},
@@ -55,6 +55,8 @@ func Help(args []string) {
 }
 
 type AwsCmd struct {
+	awslambda.Function `json:"-"`
+	tasks.LambdaInvoke
 	Script            string
 	Args              []string
 	IamStatementProps []awsiam.PolicyStatementProps
@@ -64,25 +66,23 @@ type AwsCmd struct {
 func (s AwsCmd) GetName() string      { return "aws" }
 func (s AwsCmd) getName(i int) string { return fmt.Sprintf("aws-%d", i) }
 
-func (s AwsCmd) Compile(stack constructs.Construct, next interface{}, i int) ([]interface{}, error) {
-	function := awslambda.NewFunction(stack, jsii.String(s.getName(i)), &awslambda.FunctionProps{
+func (s AwsCmd) Compile(stack constructs.Construct, i int) error {
+	s.Function = awslambda.NewFunction(stack, jsii.String(s.getName(i)), &awslambda.FunctionProps{
 		Runtime:     awslambda.Runtime_PYTHON_3_11(),
 		Handler:     jsii.String("index.lambda_handler"),
 		Code:        awslambda.Code_FromInline(jsii.String(s.Script)),
 		Timeout:     awscdk.Duration_Seconds(jsii.Number(300)),
 		Environment: &s.Environment,
 	})
-	function.AddLayers(lambdalayerawscli.NewAwsCliLayer(stack, jsii.String("AwsCliLayer")))
+	s.Function.AddLayers(lambdalayerawscli.NewAwsCliLayer(stack, jsii.String("AwsCliLayer")))
 
 	stmts := lo.Map(s.IamStatementProps, func(item awsiam.PolicyStatementProps, index int) awsiam.PolicyStatement {
 		return awsiam.NewPolicyStatement(&item)
 	})
 
-	function.Role().AttachInlinePolicy(awsiam.NewPolicy(stack, jsii.String("AwsCliPolicy"), &awsiam.PolicyProps{
+	s.Function.Role().AttachInlinePolicy(awsiam.NewPolicy(stack, jsii.String("AwsCliPolicy"), &awsiam.PolicyProps{
 		Statements: &stmts,
 	}))
-
-	var this awsstepfunctions.INextable
 
 	args := lo.Map(s.Args[1:], func(arg string, index int) *string {
 		if strings.HasPrefix(arg, "$") {
@@ -92,22 +92,13 @@ func (s AwsCmd) Compile(stack constructs.Construct, next interface{}, i int) ([]
 		}
 	})
 
-	this = tasks.NewLambdaInvoke(stack, jsii.String(fmt.Sprintf("%s-invoke", s.getName(i))), &tasks.LambdaInvokeProps{
-		LambdaFunction: function,
+	s.LambdaInvoke = tasks.NewLambdaInvoke(stack, jsii.String(fmt.Sprintf("%s-invoke", s.getName(i))), &tasks.LambdaInvokeProps{
+		LambdaFunction: s.Function,
 		Payload: awsstepfunctions.TaskInput_FromObject(&map[string]interface{}{
 			"command": awsstepfunctions.JsonPath_Array(args...),
 		}),
 		OutputPath: jsii.String("$.Payload"),
 	})
 
-	if next != nil {
-		chain, ok := next.(awsstepfunctions.IChainable)
-		if !ok {
-			return nil, fmt.Errorf("next step must be statemachine chain")
-		}
-
-		this = this.Next(chain)
-	}
-
-	return []interface{}{this}, nil
+	return nil
 }

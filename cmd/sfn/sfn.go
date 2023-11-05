@@ -7,16 +7,14 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsevents"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awseventstargets"
 	sfn "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
+	tasks "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctionstasks"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 	"github.com/ryanjarv/msh/pkg/app"
-	"github.com/ryanjarv/msh/pkg/utils"
 )
 
 func New(app app.App) (*Sfn, error) {
-	flags := utils.ParseArgs(app.Args)
-
-	name := flags.Arg(1)
+	name := app.Arg(1)
 	if name == "" {
 		name = "sfn"
 	}
@@ -27,26 +25,38 @@ func New(app app.App) (*Sfn, error) {
 }
 
 type Sfn struct {
-	Name string
 	awsevents.IRuleTarget
+	sfn.INextable
+	Name    string
+	Chain   sfn.IChainable
+	machine sfn.StateMachine
 }
 
 func (s Sfn) GetName() string { return "sfn" }
 
-func (s *Sfn) Compile(stack constructs.Construct, next interface{}, i int) ([]interface{}, error) {
-	chain, ok := next.(sfn.IChainable)
-	if !ok {
-		return nil, fmt.Errorf("next step must be statemachine task, got: %T", next)
-	}
-
+func (s *Sfn) Compile(stack constructs.Construct, i int) error {
 	// The app machine must be created after the chain is set up otherwise we won't see all the steps.
-	machine := sfn.NewStateMachine(stack, jsii.String(s.Name), &sfn.StateMachineProps{
+	s.machine = sfn.NewStateMachine(stack, jsii.String(s.Name), &sfn.StateMachineProps{
 		StateMachineName: jsii.String(s.Name),
-		DefinitionBody:   sfn.DefinitionBody_FromChainable(chain),
+		DefinitionBody:   sfn.NewChainDefinitionBody(sfn.NewPass(stack, jsii.String("this-should-be-overridden"), &sfn.PassProps{})),
 		Timeout:          awscdk.Duration_Minutes(jsii.Number(5)),
 		Comment:          jsii.String("a super cool app machine"),
 	})
 
-	target := awseventstargets.NewSfnStateMachine(machine, &awseventstargets.SfnStateMachineProps{})
-	return []interface{}{target}, nil
+	s.IRuleTarget = awseventstargets.NewSfnStateMachine(s.machine, &awseventstargets.SfnStateMachineProps{})
+
+	return nil
+}
+
+func (s *Sfn) Next(chain sfn.IChainable) sfn.Chain {
+	sfn.NewStateMachine_Override(s.machine, s.machine.Stack(), jsii.String(s.Name), &sfn.StateMachineProps{
+		DefinitionBody: sfn.DefinitionBody_FromChainable(chain),
+	})
+
+	props := tasks.StepFunctionsStartExecutionProps{
+		StateMachine: s.machine,
+	}
+
+	invoke := tasks.NewStepFunctionsStartExecution(s.machine.Stack(), jsii.String(fmt.Sprintf("invoke-%s", s.Name)), &props)
+	return invoke.Next(chain)
 }

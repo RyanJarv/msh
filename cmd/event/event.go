@@ -9,20 +9,12 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/ryanjarv/msh/pkg/app"
-	"github.com/ryanjarv/msh/pkg/utils"
 	"github.com/samber/lo"
 	"os"
 	"strings"
 )
 
-func New(app app.App) (*Event, error) {
-	//args := flag.Args()
-
-	//args, err := ParseTemplateArgs(args)
-	//if err != nil {
-	//	return nil, fmt.Errorf("parse template args: %w", err)
-	//}
-
+func New(_ app.App) (*Event, error) {
 	path := flag.Arg(flag.NFlag())
 	config, err := os.ReadFile(path)
 	if err != nil {
@@ -60,31 +52,20 @@ func ParseTemplateArgs(args []string) (map[string]any, []string, error) {
 		if len(parts) != 2 {
 			return nil, nil, fmt.Errorf("template flags must have a single `=` got: %s", arg)
 		}
-
-		//strings.TrimPrefix()
 	}
 
 	return nil, nil, fmt.Errorf("parse template args: failed to find end of template args")
 }
 
 type Event struct {
+	awsevents.Rule
 	RuleProp *awsevents.RuleProps
 }
 
 func (s Event) GetName() string { return "event" }
 
-func (s Event) Compile(stack constructs.Construct, next []interface{}, i int) ([]interface{}, error) {
-	target, ok := utils.EachAs[awsevents.IRuleTarget](next)
-	if !ok {
-		return nil, fmt.Errorf("next step must be eventbridge target, got: %T: %+v", next[0], next[0])
-	}
+func (s Event) Compile(stack constructs.Construct, i int) error {
+	s.Rule = awsevents.NewRule(stack, aws.String("event"), s.RuleProp)
 
-	rule := awsevents.NewRule(stack, aws.String("event"), s.RuleProp)
-
-	for _, t := range target {
-		rule.AddTarget(t)
-	}
-
-	// Nothing can chain into an event rule.
-	return nil, nil
+	return nil
 }

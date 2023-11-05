@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"flag"
 	"fmt"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awssns"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awssnssubscriptions"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/ryanjarv/msh/pkg/app"
@@ -34,14 +35,12 @@ func New(app app.App) (*Mail, error) {
 type Mail struct {
 	To      *string
 	Subject *string
+	awssns.ITopicSubscription
 }
 
 func (s Mail) GetName() string { return "mail" }
 
-func (s Mail) Compile(stack constructs.Construct, next interface{}, i int) ([]interface{}, error) {
-	if next != nil {
-		return nil, fmt.Errorf("can not chain anything after a sns email subscription, got: %T", next)
-	}
-
-	return []interface{}{awssnssubscriptions.NewEmailSubscription(s.To, &awssnssubscriptions.EmailSubscriptionProps{})}, nil
+func (s *Mail) Compile(stack constructs.Construct, i int) error {
+	s.ITopicSubscription = awssnssubscriptions.NewEmailSubscription(s.To, &awssnssubscriptions.EmailSubscriptionProps{})
+	return nil
 }

@@ -22,6 +22,7 @@ func New(a app.App) (*Each, error) {
 		if err != nil {
 			return nil, fmt.Errorf("get app: %w", err)
 		}
+
 		apps = append(apps, app)
 
 	}
@@ -36,16 +37,13 @@ type Each struct {
 
 func (s Each) GetName() string { return "each" }
 
-func (s Each) Compile(stack constructs.Construct, next []interface{}, i int) ([]interface{}, error) {
-	var heads []interface{}
+func (s Each) Compile(stack constructs.Construct, i int) error {
 	for _, subapp := range s.SubApp {
-		chain, err := subapp.Compile(stack, next, 0)
+		_, err := subapp.Compile(stack, s, 0)
 		if err != nil {
-			return nil, fmt.Errorf("each: %w", err)
+			return fmt.Errorf("each: %w", err)
 		}
-
-		heads = append(heads, chain[0])
 	}
 
-	return heads, nil
+	return nil
 }

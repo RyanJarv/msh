@@ -22,13 +22,11 @@ import (
 )
 
 func New(app app.App) (*Api, error) {
-	flags := utils.ParseArgs(app.Args)
-
-	if len(flags.Args()) != 2 {
+	if len(app.Args()) != 2 {
 		return nil, fmt.Errorf("usage: %s <service> <action>", app.Args)
 	}
 
-	opts, err := GetActionOpts(flags.Arg(0), flag.Arg(1))
+	opts, err := GetActionOpts(app.Arg(0), flag.Arg(1))
 	if err != nil {
 		return nil, fmt.Errorf("getActionOpts: %w", err)
 	}
@@ -41,27 +39,18 @@ func New(app app.App) (*Api, error) {
 type Api struct {
 	rule       awsevents.Rule
 	ActionOpts ActionOpts
+	Chain      sfn.Chain
 }
 
 func (s Api) GetName() string { return "api" }
 
-func (s Api) Compile(stack constructs.Construct, next interface{}, i int) ([]interface{}, error) {
-	var chain sfn.IChainable
-	if next != nil {
-		var ok bool
-		chain, ok = next.(sfn.IChainable)
-		if !ok {
-			return nil, fmt.Errorf("next step must be chainable")
-		}
-	} else {
-		chain = sfn.NewSucceed(stack, jsii.String("api-succeed"), &sfn.SucceedProps{})
-	}
+func (s Api) Compile(stack constructs.Construct, i int) error {
+	iteratorBlock := sfn.NewPass(stack, jsii.String("api-pass"), &sfn.PassProps{})
+	done := sfn.NewSucceed(stack, jsii.String("api-succeed"), &sfn.SucceedProps{})
 
-	block := sfn.NewPass(stack, jsii.String("api-pass"), &sfn.PassProps{})
+	s.Chain = Paginate(stack, iteratorBlock, done, s.ActionOpts)
 
-	call := Paginate(stack, block, chain, s.ActionOpts)
-
-	return []interface{}{call}, nil
+	return nil
 }
 
 func GetActionOpts(svc string, name string) (args *ActionOpts, err error) {

@@ -8,6 +8,7 @@ import (
 	"github.com/ryanjarv/msh/pkg/app"
 	"github.com/ryanjarv/msh/cmd/api"
 	"github.com/ryanjarv/msh/cmd/aws"
+	"github.com/ryanjarv/msh/cmd/build"
 	"github.com/ryanjarv/msh/cmd/call"
 	"github.com/ryanjarv/msh/cmd/cron"
 	"github.com/ryanjarv/msh/cmd/each"
@@ -24,6 +25,7 @@ import (
 var Registry = types.NewRegistry(
 	api.New,
 	aws.New,
+	build.New,
 	call.New,
 	cron.New,
 	each.New,
@@ -37,7 +39,7 @@ var Registry = types.NewRegistry(
 	sns.New,
 )
 
-func NewModule(app app.App, name string) (types.IStep, error) {
+func NewModule(app app.App, name string) (types.CdkStep, error) {
     flag.Parse()
 
 	switch name {
@@ -45,6 +47,8 @@ func NewModule(app app.App, name string) (types.IStep, error) {
 		 return api.New(app)
 	case ".aws":
 		 return aws.New(app)
+	case ".build":
+		 return build.New(app)
 	case ".call":
 		 return call.New(app)
 	case ".cron":
