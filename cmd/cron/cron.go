@@ -8,23 +8,25 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
+	"github.com/ryanjarv/msh/pkg/app"
 	"github.com/ryanjarv/msh/pkg/utils"
 	"strings"
 )
 
-func New() (*Cron, error) {
-	args := strings.Split(strings.Join(flag.Args(), " "), " ")
-	if len(args) != 6 {
-		return nil, fmt.Errorf("cron: must have 6 args, got: %d", len(args))
+func New(app app.App) (*Cron, error) {
+	flags := utils.ParseArgs(app.Args)
+	opts := strings.Split(strings.Join(flags.Args(), " "), " ")
+	if len(opts) != 6 {
+		return nil, fmt.Errorf("cron: must have 6 args, got: %d", len(flag.Args()))
 	}
 
 	cronopts := awsevents.CronOptions{
-		Minute:  &args[0],
-		Hour:    &args[1],
-		Day:     &args[2],
-		WeekDay: &args[3],
-		Month:   &args[4],
-		Year:    &args[5],
+		Minute:  jsii.String(flags.Arg(0)),
+		Hour:    jsii.String(flags.Arg(1)),
+		Day:     jsii.String(flags.Arg(2)),
+		WeekDay: jsii.String(flags.Arg(3)),
+		Month:   jsii.String(flags.Arg(4)),
+		Year:    jsii.String(flags.Arg(5)),
 	}
 
 	// Cdk doesn't like when both day and weekday are specified.

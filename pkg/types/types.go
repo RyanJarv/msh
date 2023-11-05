@@ -1,14 +1,28 @@
 package types
 
 import (
+	"fmt"
 	"github.com/aws/constructs-go/constructs/v10"
 	"io"
+	"reflect"
 )
 
-func NewRegistry(steps ...IStep) Registry {
+func NewRegistry(steps ...interface{}) Registry {
 	r := Registry{}
 	for _, step := range steps {
-		r[step.GetName()] = step
+		f := reflect.TypeOf(step)
+		if f.Kind() != reflect.Func {
+			panic("step must be func")
+		}
+
+		out := reflect.New(f.Out(0).Elem())
+		value := out.Interface()
+
+		if v, ok := value.(IStep); !ok {
+			panic(fmt.Sprintf("step must return CdkStep, got: %T %+v", value, value))
+		} else {
+			r[v.GetName()] = v
+		}
 	}
 
 	return r

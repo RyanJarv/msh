@@ -7,10 +7,11 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2/awssns"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/constructs-go/constructs/v10"
+	"github.com/ryanjarv/msh/pkg/app"
 	"github.com/ryanjarv/msh/pkg/utils"
 )
 
-func NewSns() (*Sns, error) {
+func New(app app.App) (*Sns, error) {
 	return &Sns{}, nil
 }
 

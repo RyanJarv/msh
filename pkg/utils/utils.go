@@ -3,10 +3,18 @@ package utils
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
+	"github.com/samber/lo"
 	"reflect"
 	"strings"
 	"unicode"
 )
+
+func ParseArgs(args []string) *flag.FlagSet {
+	flagset := flag.NewFlagSet("args", flag.ExitOnError)
+	lo.Must0(flagset.Parse(args))
+	return flagset
+}
 
 func IsNilOrEmpty(i interface{}) bool {
 	switch v := i.(type) {

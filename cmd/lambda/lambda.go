@@ -11,7 +11,8 @@ import (
 	tasks "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctionstasks"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"log"
+	"github.com/ryanjarv/msh/pkg/app"
+	"github.com/ryanjarv/msh/pkg/utils"
 	"os"
 )
 
@@ -22,20 +23,12 @@ type LambdaOpts struct {
 	ResultPath     *string
 }
 
-func New(args []string, opts *LambdaOpts) (*Lambda, error) {
-	if len(args) < 1 {
-		log.Fatalf("usage: %s <script>", os.Args[0])
-	}
-	flagset := flag.NewFlagSet("lambda", flag.ExitOnError)
-	err := flagset.Parse(args)
-	if err != nil {
-		return nil, fmt.Errorf("parsing flags: %w", err)
-	}
-
-	path := flagset.Arg(1)
+func New(app app.App) (*Lambda, error) {
+	flags := utils.ParseArgs(app.Args)
+	path := flags.Arg(1)
 
 	env := map[string]*string{}
-	for i, arg := range flagset.Args()[2:] {
+	for i, arg := range flag.Args()[2:] {
 		env[fmt.Sprintf("ARG%d", i+1)] = &arg
 
 	}
@@ -49,18 +42,11 @@ func New(args []string, opts *LambdaOpts) (*Lambda, error) {
 		return nil, fmt.Errorf("script must contain a `lambda_handler` function")
 	}
 
-	if opts == nil {
-		opts = &LambdaOpts{
-			OutputPath: jsii.String("$.Payload"),
-		}
-	}
-
 	return &Lambda{
 		Script:         string(script),
-		Args:           args,
+		Args:           flags.Args(),
 		Environment:    env,
 		TimeoutSeconds: 300,
-		LambdaOpts:     opts,
 	}, nil
 }
 
@@ -103,4 +89,8 @@ func (s Lambda) Compile(stack constructs.Construct, next interface{}, i int) ([]
 	}
 
 	return []interface{}{this}, nil
+}
+
+func (s *Lambda) SetOpts(opts *LambdaOpts) {
+	s.LambdaOpts = opts
 }

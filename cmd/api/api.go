@@ -4,12 +4,14 @@ import (
 	"embed"
 	_ "embed"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsevents"
 	sfn "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
 	tasks "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctionstasks"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
+	"github.com/ryanjarv/msh/pkg/app"
 	"github.com/ryanjarv/msh/pkg/utils"
 	"github.com/samber/lo"
 	"io/fs"
@@ -19,12 +21,14 @@ import (
 	"time"
 )
 
-func New(args []string) (*Api, error) {
-	if len(args) != 2 {
-		return nil, fmt.Errorf("usage: %s <service> <action>", args)
+func New(app app.App) (*Api, error) {
+	flags := utils.ParseArgs(app.Args)
+
+	if len(flags.Args()) != 2 {
+		return nil, fmt.Errorf("usage: %s <service> <action>", app.Args)
 	}
 
-	opts, err := GetActionOpts(args[0], args[1])
+	opts, err := GetActionOpts(flags.Arg(0), flag.Arg(1))
 	if err != nil {
 		return nil, fmt.Errorf("getActionOpts: %w", err)
 	}

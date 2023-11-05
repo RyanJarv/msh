@@ -1,15 +1,15 @@
 export MSH_SKIPDEPLOY=1
 
+.PHONY: build clean
 
-build: build-event build-sleep build-api build-aws build-filter
+build: clean
 	go generate ./...
-	go build -o out/sfn cmd/sfn.go
-	go build -o out/.call cmd/call.go
-	go build -o out/@sns cmd/sns.go
-	go build -o out/.map cmd/sfn.map.go
-	go build -o out/.each cmd/each.go
-	go build -o out/.mail cmd/mail.go
-	go build -o out/.lambda.python cmd/lambda.python.go
+	mkdir -p out
+	go build -o out/msh cmd/*.go
+	./scripts/link_cmds.sh
+
+clean:
+	rm -rf out
 
 build-event:
 	go build -o out/@cron cmd/cron.go
@@ -34,14 +34,14 @@ install: build
 	cp test/* ~/.msh/bin/
 	chmod +x ~/.msh/bin/msh
 
-test: build test-each test-sleep test-lambda
+test: test-each test-sleep test-lambda
 	@echo "\nRunning Tests\n"
 
 test-each:
-	@./scripts/test.sh './out/each ./test/mail.json'
+	@./scripts/test.sh './out/.each ./test/mail.json'
 
 test-sleep:
-	@./scripts/test.sh 'cat ./test/sfn.json | ./out/sleep 3'
+	@./scripts/test.sh 'cat ./test/sfn.json | ./out/.sleep 3'
 
 test-lambda:
-	@./scripts/test.sh './out/lambda.python ./test/test.py | ./out/sleep 34'
+	@./scripts/test.sh './out/.lambda.python ./test/test.py | ./out/.sleep 34'

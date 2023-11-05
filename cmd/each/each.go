@@ -6,11 +6,10 @@ import (
 	"fmt"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/ryanjarv/msh/pkg/app"
-	"github.com/ryanjarv/msh/pkg/types"
 	"os"
 )
 
-func New(registry types.Registry) (*Each, error) {
+func New(a app.App) (*Each, error) {
 	apps := []app.App{}
 
 	for _, path := range flag.Args() {
@@ -19,7 +18,7 @@ func New(registry types.Registry) (*Each, error) {
 			return nil, fmt.Errorf("opening file: %s: %w", path, err)
 		}
 
-		app, err := app.GetPipeline(registry, f, nil)
+		app, err := app.GetPipeline(a.Registry, f, nil, nil)
 		if err != nil {
 			return nil, fmt.Errorf("get app: %w", err)
 		}

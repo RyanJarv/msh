@@ -2,24 +2,26 @@ package sfn
 
 import (
 	_ "embed"
-	"flag"
 	"fmt"
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awseventstargets"
 	sfn "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
+	"github.com/ryanjarv/msh/pkg/app"
+	"github.com/ryanjarv/msh/pkg/utils"
 )
 
-func NewSfn(args []string) (*Sfn, error) {
-	flagset := flag.NewFlagSet("sfn", flag.ExitOnError)
-	err := flagset.Parse(args)
-	if err != nil {
-		return nil, fmt.Errorf("sfn: %w", err)
+func New(app app.App) (*Sfn, error) {
+	flags := utils.ParseArgs(app.Args)
+
+	name := flags.Arg(1)
+	if name == "" {
+		name = "sfn"
 	}
 
 	return &Sfn{
-		Name: flagset.Arg(1),
+		Name: name,
 	}, nil
 }
 

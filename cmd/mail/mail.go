@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awssnssubscriptions"
 	"github.com/aws/constructs-go/constructs/v10"
+	"github.com/ryanjarv/msh/pkg/app"
 )
 
-var args = struct {
+var opts = struct {
 	To      *string
 	Subject *string
 }{
@@ -16,17 +17,17 @@ var args = struct {
 	Subject: flag.String("subject", "", "Subject of the notification email."),
 }
 
-func NewMail() (*Mail, error) {
-	if *args.To == "" {
+func New(app app.App) (*Mail, error) {
+	if *opts.To == "" {
 		return nil, fmt.Errorf("missing required argument: to")
 	}
 
-	if *args.Subject == "" {
+	if *opts.Subject == "" {
 		return nil, fmt.Errorf("missing required argument: to")
 	}
 	return &Mail{
-		To:      args.To,
-		Subject: args.Subject,
+		To:      opts.To,
+		Subject: opts.Subject,
 	}, nil
 }
 

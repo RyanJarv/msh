@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-func GetPipeline(reg types.Registry, stdin *os.File, stdout *os.File) (App, error) {
+func GetPipeline(reg types.Registry, stdin *os.File, stdout *os.File, args []string) (App, error) {
 	var state State
 
 	// We need to read the state before we can do anything else.
@@ -38,12 +38,14 @@ func GetPipeline(reg types.Registry, stdin *os.File, stdout *os.File) (App, erro
 		Stdin:    stdin,
 		Stdout:   stdout,
 		Registry: reg,
+		Args:     args,
 	}, nil
 }
 
 type App struct {
 	State    State
 	Registry types.Registry `json:"-"`
+	Args     []string       `json:"-"`
 	Stdin    *os.File       `json:"-"`
 	Stdout   *os.File       `json:"-"`
 }

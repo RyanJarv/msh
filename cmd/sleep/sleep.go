@@ -1,22 +1,27 @@
 package sleep
 
 import (
+	"flag"
 	"fmt"
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
 	sfn "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
+	"github.com/ryanjarv/msh/pkg/app"
+	"github.com/ryanjarv/msh/pkg/utils"
 	"os"
 	"strconv"
 )
 
-func NewSleep(args []string) (*SleepCmd, error) {
-	if len(args) != 1 {
+func New(app app.App) (*SleepCmd, error) {
+	fmt.Println(app.Args)
+	flags := utils.ParseArgs(app.Args)
+	if flag.NArg() != 1 {
 		return nil, fmt.Errorf("usage: %s <seconds>", os.Args[0])
 	}
 
-	seconds, err := strconv.Atoi(args[0])
+	seconds, err := strconv.Atoi(flags.Arg(1))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse seconds: %w", err)
 	}

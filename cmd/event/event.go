@@ -8,13 +8,14 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsevents"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/constructs-go/constructs/v10"
+	"github.com/ryanjarv/msh/pkg/app"
 	"github.com/ryanjarv/msh/pkg/utils"
 	"github.com/samber/lo"
 	"os"
 	"strings"
 )
 
-func NewEvent(args []string) (*Event, error) {
+func New(app app.App) (*Event, error) {
 	//args := flag.Args()
 
 	//args, err := ParseTemplateArgs(args)

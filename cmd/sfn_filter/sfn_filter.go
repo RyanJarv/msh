@@ -7,20 +7,22 @@ import (
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 	"github.com/ryanjarv/msh/cmd/lambda"
+	"github.com/ryanjarv/msh/pkg/app"
 )
 
-func New(args []string) (*Filter, error) {
-	lambda, err := lambda.New(args, &lambda.LambdaOpts{
-		InputPath:      jsii.String("$.__input"),
-		ResultSelector: &map[string]interface{}{"result.$": "$.Payload"},
-		ResultPath:     jsii.String("$.__choice"),
-	})
+func New(app app.App) (*Filter, error) {
+	l, err := lambda.New(app)
 	if err != nil {
 		return nil, err
 	}
 
+	l.SetOpts(&lambda.LambdaOpts{
+		InputPath:      jsii.String("$.__input"),
+		ResultSelector: &map[string]interface{}{"result.$": "$.Payload"},
+		ResultPath:     jsii.String("$.__choice"),
+	})
 	return &Filter{
-		Lambda: lambda,
+		Lambda: l,
 	}, nil
 }
 

@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2/lambdalayerawscli"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
+	"github.com/ryanjarv/msh/pkg/app"
 	"github.com/samber/lo"
 	"os"
 	"os/exec"
@@ -20,13 +21,13 @@ import (
 //go:embed cli.py
 var code []byte
 
-func New(args []string) (*AwsCmd, error) {
-	if lo.Contains(args, "--help") || lo.Contains(args, "help") {
-		Help(args)
+func New(app app.App) (*AwsCmd, error) {
+	if lo.Contains(app.Args, "--help") || lo.Contains(app.Args, "help") {
+		Help(app.Args)
 		os.Exit(1)
 	}
 
-	iamActions, err := IamActionsFromCliArgs(args)
+	iamActions, err := IamActionsFromCliArgs(app.Args)
 	if err != nil {
 		return nil, fmt.Errorf("getting iam actions from cli args: %w", err)
 	}
@@ -39,7 +40,7 @@ func New(args []string) (*AwsCmd, error) {
 			},
 		},
 		Script: string(code),
-		Args:   args,
+		Args:   app.Args,
 		Environment: map[string]*string{
 			"PYTHONPATH": jsii.String("/opt/awscli"),
 		},
