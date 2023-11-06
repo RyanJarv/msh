@@ -1,4 +1,4 @@
-package sfn_map
+package foreach
 
 import (
 	_ "embed"
@@ -9,19 +9,19 @@ import (
 	"github.com/ryanjarv/msh/pkg/types"
 )
 
-func New(app app.App) (*Map, error) {
-	return &Map{}, nil
+func New(app app.App) (*Foreach, error) {
+	return &Foreach{}, nil
 }
 
-type Map struct {
+type Foreach struct {
 	types.IChain
 	types.IIterator
 	sfn.Map
 }
 
-func (s Map) GetName() string { return "map" }
+func (s Foreach) GetName() string { return "map" }
 
-func (s *Map) Compile(stack constructs.Construct, i int) error {
+func (s *Foreach) Compile(stack constructs.Construct, i int) error {
 	s.Map = sfn.NewMap(stack, jsii.String("map"), &sfn.MapProps{
 		Comment: jsii.String("map"),
 	})

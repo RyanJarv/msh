@@ -1,4 +1,4 @@
-package sfn_filter
+package filter
 
 import (
 	_ "embed"

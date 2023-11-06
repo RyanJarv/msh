@@ -26,14 +26,12 @@ rehash || :
 #   b
 
 function sfn {
-  local name="$1"
-  shift
-
-  if type "$name" | grep -q 'shell function'; then
-    command sfn "$name" | "$name" "$@"
-  else
+  if [ $# -eq 0 ]; then
+    command .sfn
+  elif type "$name" | grep -q 'shell function'; then
+    command .sfn "$name" | "$name" "$@"
   fi
 }
 
 # TODO: Come back to this
- alias 'sfn{'='sfn | {'
+ alias 'sfn{'='.sfn | {'
