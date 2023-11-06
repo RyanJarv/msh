@@ -61,6 +61,8 @@ func InSliceStr(slice []string, str string) *int {
 //
 // The leader can be determined by checking if the process group id is the same as the process id
 // and means that we are the last process in the pipeline.
+//
+// EDIT: It's the first process in the pipeline, not the last.
 func IsLeader() bool {
 	pgid, err := syscall.Getpgid(os.Getpid())
 	if err != nil {

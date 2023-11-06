@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
 	"github.com/aws/constructs-go/constructs/v10"
-	"io"
 	"reflect"
 )
 
@@ -47,16 +46,6 @@ func (s Step) GetName() string {
 type CdkStep interface {
 	IStep
 	Compile(construct constructs.Construct, i int) error
-}
-
-type Process interface {
-	io.ReaderFrom
-	io.WriterTo
-	Run() error
-}
-
-type Deployable interface {
-	Deploy() error
 }
 
 type IChain interface {
