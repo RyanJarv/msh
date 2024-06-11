@@ -9,6 +9,8 @@ this here:
 ## Challange 1: Write a fork bomb for AWS in the Multivac Shell
 
 Request: https://x.com/eigenseries/status/1719883102187876768
+
+
 Result: https://www.youtube.com/watch?v=fBQqqTbr6zw
 
 ## More Fun Ideas?
