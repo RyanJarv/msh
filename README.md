@@ -17,5 +17,5 @@ Feel free to open an issue.
 ## Boto3 IAM Mappings
 
 For those who are interested in the AWS CLI IAM mappings of IAN's [iam-dataset](https://github.com/iann0036/iam-dataset)
-you can find them in this [map file](./data/map.json). The code that generates them is in [scripts](./scripts).
+you can find them in this [map file](./data/map.json). The code that generates them is in [scripts](./scripts/awscli_iam_map).
 
