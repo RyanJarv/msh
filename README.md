@@ -1,9 +1,10 @@
 ## The Multivac Shell
 
 I would explain this, but that would take the fun out of trying to figure out how it works. Instead, I'll just leave 
-a link to this thread here:
+this here:
 
-https://x.com/Ryan_Jarv/status/1719868525026938922
+![F94zTUBbwAA51JW](https://github.com/RyanJarv/msh/assets/4079939/8c120edf-35b9-48da-ad1c-fcef7f62fb87)
+
 
 ## Challange 1: Write a fork bomb for AWS in the Multivac Shell
 
