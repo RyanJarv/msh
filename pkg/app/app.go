@@ -3,12 +3,14 @@ package app
 import (
 	"flag"
 	"fmt"
+	L "github.com/ryanjarv/msh/pkg/logger"
 	"github.com/ryanjarv/msh/pkg/types"
 	"github.com/ryanjarv/msh/pkg/utils"
 	"os"
 )
 
 func GetPipeline(reg types.Registry, stdin *os.File, stdout *os.File, args []string) (App, error) {
+	L.Debug.Printf("GetPipeline: %s:", args)
 	var state State
 
 	// We need to read the state before we can do anything else.

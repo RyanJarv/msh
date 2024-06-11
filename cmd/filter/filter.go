@@ -13,7 +13,7 @@ import (
 func New(app app.App) (*Filter, error) {
 	l, err := lambda.New(app)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("lambda: %w", err)
 	}
 
 	l.SetOpts(&lambda.LambdaOpts{
@@ -27,8 +27,9 @@ func New(app app.App) (*Filter, error) {
 }
 
 type Filter struct {
-	*lambda.Lambda
-	sfn.Pass
+	sfn.INextable
+	Start    sfn.Pass
+	Lambda   *lambda.Lambda
 	choice   sfn.Choice
 	filtered sfn.IChainable
 }
@@ -46,7 +47,7 @@ func (s *Filter) Compile(stack constructs.Construct, i int) error {
 		OutputPath: jsii.String("$.__input"),
 	})
 
-	s.Pass = sfn.NewPass(stack, jsii.String("pass"), &sfn.PassProps{
+	s.Start = sfn.NewPass(stack, jsii.String("pass"), &sfn.PassProps{
 		Parameters: &map[string]interface{}{
 			"__input.$": "$",
 		},
@@ -57,8 +58,8 @@ func (s *Filter) Compile(stack constructs.Construct, i int) error {
 	return nil
 }
 
-func (s *Filter) Next(next sfn.Chain) sfn.Chain {
-	return s.Pass.
+func (s *Filter) Next(next sfn.IChainable) sfn.Chain {
+	return s.Start.
 		Next(s.Lambda).
 		Next(
 			s.choice.When(sfn.Condition_BooleanEquals(jsii.String("$.__choice.result"), jsii.Bool(true)),

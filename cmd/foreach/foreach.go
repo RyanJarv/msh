@@ -15,14 +15,12 @@ func New(app app.App) (*Foreach, error) {
 
 type Foreach struct {
 	types.IChain
-	types.IIterator
-	sfn.Map
 }
 
 func (s Foreach) GetName() string { return "map" }
 
 func (s *Foreach) Compile(stack constructs.Construct, i int) error {
-	s.Map = sfn.NewMap(stack, jsii.String("map"), &sfn.MapProps{
+	s.IChain = sfn.NewMap(stack, jsii.String("map"), &sfn.MapProps{
 		Comment: jsii.String("map"),
 	})
 

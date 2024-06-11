@@ -1,0 +1,1332 @@
+{
+  "Budgets": [
+    "budgets",
+    "iam"
+  ],
+  "CloudSearchDomain": [
+    "cloudsearch"
+  ],
+  "DynamoDB": [
+    "iam",
+    "dynamodb"
+  ],
+  "Lambda": [
+    "iam",
+    "lambda"
+  ],
+  "S3": [
+    "iam",
+    "s3",
+    "s3-object-lambda"
+  ],
+  "S3Control": [
+    "iam",
+    "s3",
+    "s3-outposts"
+  ],
+  "Greengrass": [
+    "iam",
+    "iot",
+    "greengrass"
+  ],
+  "Glue": [
+    "iam",
+    "glue"
+  ],
+  "Mobile": [
+    "mobilehub"
+  ],
+  "MediaPackage": [
+    "mediapackage",
+    "iam"
+  ],
+  "FSx": [
+    "ec2",
+    "fsx",
+    "logs",
+    "s3"
+  ],
+  "LexModelsV2": [
+    "lex"
+  ],
+  "TimestreamQuery": [
+    "iam",
+    "timestream"
+  ],
+  "KMS": [
+    "kms",
+    "cloudhsm"
+  ],
+  "Route53": [
+    "route53",
+    "ec2"
+  ],
+  "STS": [
+    "sts"
+  ],
+  "CognitoIdentity": [
+    "iam",
+    "cognito-identity"
+  ],
+  "ACM": [
+    "acm"
+  ],
+  "ApplicationAutoScaling": [
+    "iam",
+    "application-autoscaling"
+  ],
+  "AppStream": [
+    "iam",
+    "appstream"
+  ],
+  "AutoScaling": [
+    "iam",
+    "autoscaling"
+  ],
+  "Batch": [
+    "iam",
+    "batch"
+  ],
+  "CloudDirectory": [
+    "clouddirectory"
+  ],
+  "CloudFormation": [
+    "cloudformation",
+    "iam"
+  ],
+  "CloudFront": [
+    "cloudfront"
+  ],
+  "CloudHSM": [
+    "iam",
+    "cloudhsm"
+  ],
+  "CloudSearch": [
+    "cloudsearch"
+  ],
+  "CloudTrail": [
+    "iam",
+    "cloudtrail",
+    "s3"
+  ],
+  "CloudWatch": [
+    "cloudwatch"
+  ],
+  "CloudWatchEvents": [
+    "events"
+  ],
+  "CloudWatchLogs": [
+    "iam",
+    "logs"
+  ],
+  "CodeBuild": [
+    "codebuild",
+    "iam"
+  ],
+  "CodeCommit": [
+    "codecommit"
+  ],
+  "CodeDeploy": [
+    "codedeploy",
+    "iam"
+  ],
+  "CodePipeline": [
+    "iam",
+    "codepipeline"
+  ],
+  "CognitoIdentityServiceProvider": [
+    "iam",
+    "cognito-idp"
+  ],
+  "CognitoSync": [
+    "iam",
+    "cognito-sync"
+  ],
+  "ConfigService": [
+    "cloudformation",
+    "iam",
+    "config"
+  ],
+  "CUR": [
+    "cur"
+  ],
+  "DataPipeline": [
+    "iam",
+    "datapipeline"
+  ],
+  "DeviceFarm": [
+    "devicefarm"
+  ],
+  "DirectConnect": [
+    "directconnect"
+  ],
+  "DirectoryService": [
+    "ds",
+    "ec2",
+    "sns"
+  ],
+  "Discovery": [
+    "discovery"
+  ],
+  "DMS": [
+    "iam",
+    "dms"
+  ],
+  "DynamoDBStreams": [
+    "dynamodb"
+  ],
+  "EC2": [
+    "logs",
+    "organizations",
+    "route53",
+    "iam",
+    "ec2"
+  ],
+  "ECR": [
+    "ecr"
+  ],
+  "ECS": [
+    "ecs",
+    "iam"
+  ],
+  "EFS": [
+    "elasticfilesystem"
+  ],
+  "ElastiCache": [
+    "ec2",
+    "s3",
+    "elasticache"
+  ],
+  "ElasticBeanstalk": [
+    "elasticbeanstalk",
+    "iam"
+  ],
+  "ELB": [
+    "elasticloadbalancing"
+  ],
+  "ELBv2": [
+    "elasticloadbalancing"
+  ],
+  "EMR": [
+    "elasticmapreduce",
+    "iam"
+  ],
+  "ES": [
+    "iam",
+    "es"
+  ],
+  "ElasticTranscoder": [
+    "iam",
+    "elastictranscoder"
+  ],
+  "Firehose": [
+    "firehose",
+    "iam"
+  ],
+  "GameLift": [
+    "iam",
+    "gamelift"
+  ],
+  "Glacier": [
+    "glacier"
+  ],
+  "Health": [
+    "organizations",
+    "iam",
+    "health"
+  ],
+  "IAM": [
+    "organizations",
+    "iam"
+  ],
+  "ImportExport": [
+    "importexport"
+  ],
+  "Inspector": [
+    "iam",
+    "inspector"
+  ],
+  "Iot": [
+    "iam",
+    "iot"
+  ],
+  "IotData": [
+    "iot"
+  ],
+  "Kinesis": [
+    "kinesis"
+  ],
+  "KinesisAnalytics": [
+    "kinesisanalytics",
+    "iam"
+  ],
+  "LexRuntime": [
+    "lex"
+  ],
+  "Lightsail": [
+    "lightsail"
+  ],
+  "MachineLearning": [
+    "machinelearning",
+    "iam"
+  ],
+  "MarketplaceCommerceAnalytics": [
+    "marketplacecommerceanalytics"
+  ],
+  "MarketplaceMetering": [
+    "aws-marketplace"
+  ],
+  "MTurk": [
+    "mechanicalturk"
+  ],
+  "MobileAnalytics": [
+    "mobileanalytics"
+  ],
+  "OpsWorks": [
+    "opsworks",
+    "iam"
+  ],
+  "OpsWorksCM": [
+    "iam",
+    "opsworks-cm"
+  ],
+  "Organizations": [
+    "organizations",
+    "iam"
+  ],
+  "Pinpoint": [
+    "iam",
+    "mobiletargeting"
+  ],
+  "Polly": [
+    "polly",
+    "s3"
+  ],
+  "RDS": [
+    "iam",
+    "rds",
+    "mediaimport",
+    "kms"
+  ],
+  "Redshift": [
+    "iam",
+    "redshift",
+    "acm"
+  ],
+  "Rekognition": [
+    "iam",
+    "rekognition"
+  ],
+  "ResourceGroupsTaggingAPI": [
+    "tag"
+  ],
+  "Route53Domains": [
+    "route53domains"
+  ],
+  "ServiceCatalog": [
+    "servicecatalog"
+  ],
+  "SES": [
+    "iam",
+    "ses"
+  ],
+  "Shield": [
+    "cloudfront",
+    "s3",
+    "route53",
+    "iam",
+    "shield"
+  ],
+  "SimpleDB": [
+    "sdb"
+  ],
+  "SMS": [
+    "iam",
+    "sms"
+  ],
+  "Snowball": [
+    "iam",
+    "snowball"
+  ],
+  "SNS": [
+    "iam",
+    "sns"
+  ],
+  "SQS": [
+    "sqs"
+  ],
+  "SSM": [
+    "ssm",
+    "iam"
+  ],
+  "StorageGateway": [
+    "iam",
+    "storagegateway"
+  ],
+  "StepFunctions": [
+    "iam",
+    "states"
+  ],
+  "Support": [
+    "support"
+  ],
+  "SWF": [
+    "swf",
+    "iam"
+  ],
+  "XRay": [
+    "xray"
+  ],
+  "WAF": [
+    "iam",
+    "waf",
+    "s3"
+  ],
+  "WAFRegional": [
+    "iam",
+    "s3",
+    "waf-regional"
+  ],
+  "WorkDocs": [
+    "workdocs"
+  ],
+  "WorkSpaces": [
+    "ec2",
+    "workspaces"
+  ],
+  "CodeStar": [
+    "iam",
+    "codestar"
+  ],
+  "LexModelBuildingService": [
+    "iam",
+    "lex"
+  ],
+  "MarketplaceEntitlementService": [
+    "aws-marketplace"
+  ],
+  "Athena": [
+    "athena"
+  ],
+  "DAX": [
+    "iam",
+    "dax"
+  ],
+  "MigrationHub": [
+    "mgh"
+  ],
+  "CloudHSMV2": [
+    "cloudhsm"
+  ],
+  "Pricing": [
+    "pricing"
+  ],
+  "CostExplorer": [
+    "ce"
+  ],
+  "MediaConvert": [
+    "iam",
+    "mediaconvert"
+  ],
+  "MediaLive": [
+    "iam",
+    "medialive"
+  ],
+  "MediaStore": [
+    "mediastore"
+  ],
+  "MediaStoreData": [
+    "mediastore"
+  ],
+  "AppSync": [
+    "iam",
+    "appsync"
+  ],
+  "GuardDuty": [
+    "s3",
+    "guardduty"
+  ],
+  "MQ": [
+    "ec2",
+    "iam",
+    "mq"
+  ],
+  "Comprehend": [
+    "iam",
+    "comprehend"
+  ],
+  "IoTJobsDataPlane": [
+    "iot"
+  ],
+  "KinesisVideoArchivedMedia": [
+    "kinesisvideo"
+  ],
+  "KinesisVideoMedia": [
+    "kinesisvideo"
+  ],
+  "KinesisVideo": [
+    "kinesisvideo"
+  ],
+  "SageMakerRuntime": [
+    "sagemaker"
+  ],
+  "SageMaker": [
+    "sagemaker",
+    "iam"
+  ],
+  "Translate": [
+    "iam",
+    "translate"
+  ],
+  "ResourceGroups": [
+    "cloudformation",
+    "resource-groups"
+  ],
+  "AlexaForBusiness": [
+    "a4b"
+  ],
+  "Cloud9": [
+    "ec2",
+    "iam",
+    "cloud9"
+  ],
+  "ServerlessApplicationRepository": [
+    "serverlessrepo"
+  ],
+  "ServiceDiscovery": [
+    "servicediscovery"
+  ],
+  "WorkMail": [
+    "iam",
+    "workmail"
+  ],
+  "AutoScalingPlans": [
+    "autoscaling-plans"
+  ],
+  "TranscribeService": [
+    "s3",
+    "transcribe"
+  ],
+  "Connect": [
+    "sms-voice",
+    "lex",
+    "ds",
+    "kms",
+    "s3",
+    "events",
+    "iam",
+    "lambda",
+    "app-integrations",
+    "ec2",
+    "connect"
+  ],
+  "ACMPCA": [
+    "acm-pca"
+  ],
+  "FMS": [
+    "iam",
+    "fms"
+  ],
+  "SecretsManager": [
+    "secretsmanager"
+  ],
+  "IoTAnalytics": [
+    "iam",
+    "iotanalytics"
+  ],
+  "IoT1ClickDevicesService": [
+    "iot1click"
+  ],
+  "IoT1ClickProjects": [
+    "iot1click"
+  ],
+  "PI": [
+    "pi"
+  ],
+  "Neptune": [
+    "iam",
+    "rds"
+  ],
+  "MediaTailor": [
+    "mediatailor",
+    "iam"
+  ],
+  "EKS": [
+    "eks",
+    "iam"
+  ],
+  "Macie": [
+    "macie"
+  ],
+  "DLM": [
+    "iam",
+    "dlm"
+  ],
+  "Signer": [
+    "signer"
+  ],
+  "Chime": [
+    "chime",
+    "logs"
+  ],
+  "PinpointEmail": [
+    "iam",
+    "ses"
+  ],
+  "RAM": [
+    "ram"
+  ],
+  "Route53Resolver": [
+    "ec2",
+    "outposts",
+    "route53resolver"
+  ],
+  "PinpointSMSVoice": [
+    "iam",
+    "sms-voice"
+  ],
+  "QuickSight": [
+    "iam",
+    "quicksight"
+  ],
+  "Amplify": [
+    "iam",
+    "amplify"
+  ],
+  "DataSync": [
+    "iam",
+    "datasync"
+  ],
+  "RoboMaker": [
+    "iam",
+    "s3",
+    "robomaker"
+  ],
+  "Transfer": [
+    "iam",
+    "transfer"
+  ],
+  "GlobalAccelerator": [
+    "globalaccelerator"
+  ],
+  "ComprehendMedical": [
+    "comprehendmedical"
+  ],
+  "KinesisAnalyticsV2": [
+    "kinesisanalytics",
+    "iam"
+  ],
+  "MediaConnect": [
+    "iam",
+    "mediaconnect"
+  ],
+  "SecurityHub": [
+    "organizations",
+    "iam",
+    "securityhub"
+  ],
+  "AppMesh": [
+    "appmesh"
+  ],
+  "LicenseManager": [
+    "license-manager"
+  ],
+  "Kafka": [
+    "ec2",
+    "iam",
+    "kms",
+    "kafka"
+  ],
+  "DocDB": [
+    "iam",
+    "rds"
+  ],
+  "Backup": [
+    "iam",
+    "backup"
+  ],
+  "WorkLink": [
+    "worklink"
+  ],
+  "Textract": [
+    "textract",
+    "s3"
+  ],
+  "ManagedBlockchain": [
+    "iam",
+    "managedblockchain"
+  ],
+  "MediaPackageVod": [
+    "iam",
+    "mediapackage-vod"
+  ],
+  "GroundStation": [
+    "groundstation"
+  ],
+  "IoTThingsGraph": [
+    "iam",
+    "iot",
+    "iotthingsgraph"
+  ],
+  "IoTEvents": [
+    "iam",
+    "iotevents"
+  ],
+  "IoTEventsData": [
+    "iotevents"
+  ],
+  "Personalize": [
+    "iam",
+    "personalize"
+  ],
+  "PersonalizeEvents": [
+    "personalize"
+  ],
+  "PersonalizeRuntime": [
+    "personalize"
+  ],
+  "ApplicationInsights": [
+    "applicationinsights"
+  ],
+  "ServiceQuotas": [
+    "servicequotas"
+  ],
+  "EC2InstanceConnect": [
+    "ec2-instance-connect"
+  ],
+  "EventBridge": [
+    "iam",
+    "events"
+  ],
+  "LakeFormation": [
+    "iam",
+    "lakeaformation",
+    "lakeformation"
+  ],
+  "ForecastService": [
+    "iam",
+    "forecast"
+  ],
+  "ForecastQueryService": [
+    "forecast"
+  ],
+  "QLDB": [
+    "iam",
+    "qldb"
+  ],
+  "QLDBSession": [
+    "qldb"
+  ],
+  "WorkMailMessageFlow": [
+    "workmailmessageflow"
+  ],
+  "CodeStarNotifications": [
+    "codestar-notifications"
+  ],
+  "SavingsPlans": [
+    "savingsplans"
+  ],
+  "MarketplaceCatalog": [
+    "aws-marketplace"
+  ],
+  "DataExchange": [
+    "dataexchange"
+  ],
+  "SESV2": [
+    "iam",
+    "ses"
+  ],
+  "MigrationHubConfig": [
+    "mgh"
+  ],
+  "AppConfig": [
+    "appconfig",
+    "iam"
+  ],
+  "IoTSecureTunneling": [
+    "iot"
+  ],
+  "WAFV2": [
+    "iam",
+    "wafv2"
+  ],
+  "Imagebuilder": [
+    "ecr",
+    "kms",
+    "s3",
+    "iam",
+    "ec2",
+    "sns",
+    "inspector2",
+    "imagebuilder"
+  ],
+  "Schemas": [
+    "schemas"
+  ],
+  "AccessAnalyzer": [
+    "access-analyzer",
+    "iam"
+  ],
+  "CodeGuruReviewer": [
+    "s3",
+    "events",
+    "iam",
+    "codecommit",
+    "codeguru-reviewer"
+  ],
+  "CodeGuruProfiler": [
+    "codeguru-profiler"
+  ],
+  "ComputeOptimizer": [
+    "compute-optimizer",
+    "ecs",
+    "autoscaling",
+    "lambda",
+    "ec2"
+  ],
+  "FraudDetector": [
+    "iam",
+    "frauddetector"
+  ],
+  "Kendra": [
+    "iam",
+    "kendra"
+  ],
+  "NetworkManager": [
+    "iam",
+    "networkmanager"
+  ],
+  "Outposts": [
+    "outposts"
+  ],
+  "AugmentedAIRuntime": [
+    "sagemaker"
+  ],
+  "EBS": [
+    "ebs"
+  ],
+  "KinesisVideoSignalingChannels": [
+    "kinesisvideo"
+  ],
+  "Detective": [
+    "organizations",
+    "iam",
+    "detective"
+  ],
+  "CodeStarconnections": [
+    "iam",
+    "codestar-connections"
+  ],
+  "Synthetics": [
+    "iam",
+    "synthetics"
+  ],
+  "IoTSiteWise": [
+    "iam",
+    "sso",
+    "iotsitewise"
+  ],
+  "Macie2": [
+    "macie2"
+  ],
+  "CodeArtifact": [
+    "codeartifact"
+  ],
+  "Honeycode": [
+    "honeycode"
+  ],
+  "IVS": [
+    "ivs"
+  ],
+  "Braket": [
+    "braket"
+  ],
+  "IdentityStore": [
+    "identitystore"
+  ],
+  "Appflow": [
+    "appflow",
+    "iam"
+  ],
+  "RedshiftData": [
+    "redshift-data"
+  ],
+  "SSOAdmin": [
+    "organizations",
+    "iam",
+    "sso"
+  ],
+  "TimestreamWrite": [
+    "timestream"
+  ],
+  "S3Outposts": [
+    "s3-outposts"
+  ],
+  "DataBrew": [
+    "databrew"
+  ],
+  "ServiceCatalogAppRegistry": [
+    "iam",
+    "servicecatalog"
+  ],
+  "NetworkFirewall": [
+    "network-firewall",
+    "iam"
+  ],
+  "MWAA": [
+    "airflow"
+  ],
+  "AmplifyBackend": [
+    "amplifybackend"
+  ],
+  "AppIntegrations": [
+    "iam",
+    "app-integrations"
+  ],
+  "DevOpsGuru": [
+    "sns",
+    "devops-guru"
+  ],
+  "ECRPUBLIC": [
+    "ecr-public"
+  ],
+  "LookoutVision": [
+    "lookoutvision"
+  ],
+  "SageMakerFeatureStoreRuntime": [
+    "sagemaker"
+  ],
+  "CustomerProfiles": [
+    "kinesis",
+    "iam",
+    "profile"
+  ],
+  "AuditManager": [
+    "auditmanager"
+  ],
+  "EMRcontainers": [
+    "emr-containers"
+  ],
+  "SagemakerEdge": [
+    "sagemaker"
+  ],
+  "Amp": [
+    "aps",
+    "ec2",
+    "eks",
+    "iam"
+  ],
+  "GreengrassV2": [
+    "iot",
+    "greengrass"
+  ],
+  "IotDeviceAdvisor": [
+    "iotdeviceadvisor"
+  ],
+  "IoTFleetHub": [
+    "iotfleethub",
+    "sso"
+  ],
+  "IoTWireless": [
+    "iotwireless",
+    "iot"
+  ],
+  "Location": [
+    "geo"
+  ],
+  "WellArchitected": [
+    "wellarchitected"
+  ],
+  "LexRuntimeV2": [
+    "lex"
+  ],
+  "Fis": [
+    "iam",
+    "fis"
+  ],
+  "LookoutMetrics": [
+    "lookoutmetrics"
+  ],
+  "Mgn": [
+    "ec2",
+    "iam",
+    "mgn",
+    "s3"
+  ],
+  "LookoutEquipment": [
+    "lookoutequipment"
+  ],
+  "HealthLake": [
+    "healthlake"
+  ],
+  "Nimble": [
+    "ds",
+    "iam",
+    "fsx",
+    "nimble",
+    "sso",
+    "sso-directory",
+    "ec2"
+  ],
+  "AppRunner": [
+    "apprunner"
+  ],
+  "ElasticInference": [
+    "elastic-inference"
+  ],
+  "SSMContacts": [
+    "ssm-contacts"
+  ],
+  "SSMIncidents": [
+    "iam",
+    "ssm-incidents"
+  ],
+  "ApplicationCostProfiler": [
+    "application-cost-profiler"
+  ],
+  "Finspace": [
+    "finspace"
+  ],
+  "Finspacedata": [
+    "finspace-api"
+  ],
+  "Proton": [
+    "iam",
+    "proton",
+    "codestar-connections"
+  ],
+  "RDSDataService": [
+    "rds-data"
+  ],
+  "ConnectContactLens": [
+    "connect"
+  ],
+  "ApiGatewayManagementApi": [
+    "execute-api"
+  ],
+  "MemoryDB": [
+    "ec2",
+    "memorydb",
+    "s3"
+  ],
+  "OpenSearch": [
+    "es"
+  ],
+  "KafkaConnect": [
+    "logs",
+    "kafkaconnect",
+    "s3",
+    "firehose",
+    "iam",
+    "ec2"
+  ],
+  "APIGateway": [
+    "apigateway"
+  ],
+  "ApiGatewayV2": [
+    "apigateway"
+  ],
+  "Wisdom": [
+    "wisdom"
+  ],
+  "CloudControl": [
+    "cloudformation"
+  ],
+  "Account": [
+    "account"
+  ],
+  "Grafana": [
+    "organizations",
+    "aws-marketplace",
+    "sso",
+    "grafana"
+  ],
+  "Panorama": [
+    "panorama"
+  ],
+  "Resiliencehub": [
+    "servicecatalog",
+    "fis",
+    "cloudwatch",
+    "resiliencehub",
+    "s3",
+    "cloudformation",
+    "ssm",
+    "resource-groups"
+  ],
+  "MigrationHubStrategy": [
+    "migrationhub-strategy"
+  ],
+  "Drs": [
+    "s3",
+    "iam",
+    "drs",
+    "ec2",
+    "cloudformation"
+  ],
+  "Evidently": [
+    "evidently"
+  ],
+  "Inspector2": [
+    "inspector2"
+  ],
+  "Rbin": [
+    "rbin"
+  ],
+  "RUM": [
+    "iam",
+    "rum"
+  ],
+  "IoTTwinMaker": [
+    "iottwinmaker"
+  ],
+  "AmplifyUIBuilder": [
+    "amplifyuibuilder",
+    "amplify"
+  ],
+  "AppConfigData": [
+    "appconfig"
+  ],
+  "Route53RecoveryCluster": [
+    "route53-recovery-cluster"
+  ],
+  "Route53RecoveryControlConfig": [
+    "route53-recovery-control-config"
+  ],
+  "Route53RecoveryReadiness": [
+    "route53-recovery-readiness"
+  ],
+  "SnowDeviceManagement": [
+    "snow-device-management"
+  ],
+  "VoiceID": [
+    "voiceid"
+  ],
+  "BackupGateway": [
+    "iam",
+    "backup-gateway"
+  ],
+  "WorkSpacesWeb": [
+    "kinesis",
+    "workspaces-web",
+    "kms",
+    "iam",
+    "ec2"
+  ],
+  "ChimeSDKIdentity": [
+    "chime"
+  ],
+  "ChimeSDKMessaging": [
+    "chime"
+  ],
+  "ChimeSDKMeetings": [
+    "chime"
+  ],
+  "MigrationHubRefactorSpaces": [
+    "refactor-spaces"
+  ],
+  "Billingconductor": [
+    "billingconductor"
+  ],
+  "GameSparks": [
+    "gamesparks"
+  ],
+  "Ivschat": [
+    "ivschat"
+  ],
+  "M2": [
+    "elasticloadbalancing",
+    "s3",
+    "m2",
+    "iam",
+    "fsx",
+    "ec2",
+    "elasticfilesystem"
+  ],
+  "ConnectCampaigns": [
+    "connect-campaigns"
+  ],
+  "RolesAnywhere": [
+    "rolesanywhere"
+  ],
+  "PrivateNetworks": [
+    "private-networks"
+  ],
+  "EMRServerless": [
+    "iam",
+    "emr-serverless"
+  ],
+  "RedshiftServerless": [
+    "acm",
+    "redshift-serverless"
+  ],
+  "LicenseManagerUserSubscriptions": [
+    "license-manager-user-subscriptions"
+  ],
+  "ControlTower": [
+    "controltower"
+  ],
+  "IoTFleetWise": [
+    "iotfleetwise",
+    "iot",
+    "iam"
+  ],
+  "MigrationHubOrchestrator": [
+    "migrationhub-orchestrator"
+  ],
+  "Keyspaces": [
+    "cassandra"
+  ],
+  "PinpointSMSVoiceV2": [
+    "sms-voice"
+  ],
+  "ChimeSDKMediaPipelines": [
+    "chime"
+  ],
+  "BackupStorage": [
+    "backup-storage"
+  ],
+  "Scheduler": [
+    "scheduler"
+  ],
+  "OAM": [
+    "oam"
+  ],
+  "Omics": [
+    "omics"
+  ],
+  "SecurityLake": [
+    "glue",
+    "organizations",
+    "securitylake",
+    "kms",
+    "s3",
+    "ram",
+    "events",
+    "iam",
+    "lambda",
+    "lakeformation",
+    "sqs"
+  ],
+  "SimSpaceWeaver": [
+    "simspaceweaver"
+  ],
+  "Pipes": [
+    "pipes",
+    "iam"
+  ],
+  "CleanRooms": [
+    "logs",
+    "glue",
+    "s3",
+    "iam",
+    "cleanrooms",
+    "cleanrooms-ml"
+  ],
+  "SupportApp": [
+    "supportapp"
+  ],
+  "ResourceExplorer2": [
+    "resource-explorer-2"
+  ],
+  "IoTRoboRunner": [
+    "iam",
+    "iotroborunner"
+  ],
+  "SsmSap": [
+    "ssm-sap"
+  ],
+  "ARCZonalShift": [
+    "cloudwatch",
+    "iam",
+    "arc-zonal-shift"
+  ],
+  "DocDBElastic": [
+    "kms",
+    "iam",
+    "secretsmanager",
+    "docdb-elastic",
+    "ec2"
+  ],
+  "SageMakerGeospatial": [
+    "sagemaker-geospatial"
+  ],
+  "LicenseManagerLinuxSubscriptions": [
+    "license-manager-linux-subscriptions"
+  ],
+  "KendraRanking": [
+    "kendra-ranking"
+  ],
+  "CloudTrailData": [
+    "cloudtrail-data"
+  ],
+  "Tnb": [
+    "tnb"
+  ],
+  "InternetMonitor": [
+    "internetmonitor"
+  ],
+  "OSIS": [
+    "osis"
+  ],
+  "VPCLattice": [
+    "ec2",
+    "iam",
+    "vpc-lattice",
+    "logs"
+  ],
+  "MediaPackageV2": [
+    "mediapackagev2"
+  ],
+  "PaymentCryptography": [
+    "payment-cryptography"
+  ],
+  "CodeGuruSecurity": [
+    "codeguru-security"
+  ],
+  "VerifiedPermissions": [
+    "verifiedpermissions"
+  ],
+  "AppFabric": [
+    "appfabric"
+  ],
+  "EntityResolution": [
+    "entityresolution"
+  ],
+  "Bedrock": [
+    "bedrock"
+  ],
+  "DataZone": [
+    "datazone"
+  ],
+  "TrustedAdvisor": [
+    "trustedadvisor"
+  ],
+  "FreeTier": [
+    "freetier"
+  ],
+  "Repostspace": [
+    "repostspace"
+  ],
+  "B2bi": [
+    "b2bi"
+  ],
+  "QBusiness": [
+    "qbusiness"
+  ],
+  "CleanRoomsML": [
+    "cleanrooms-ml"
+  ],
+  "NetworkMonitor": [
+    "networkmonitor"
+  ],
+  "Artifact": [
+    "artifact"
+  ],
+  "Chatbot": [
+    "chatbot"
+  ],
+  "CodeConnections": [
+    "codeconnections"
+  ]
+}

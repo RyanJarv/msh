@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"github.com/ryanjarv/msh/pkg/types"
 	"github.com/ryanjarv/msh/pkg/app"
+	"github.com/ryanjarv/msh/pkg/utils"
 
 	{{- range .Modules}}
 	"github.com/ryanjarv/msh/{{.Path}}"
@@ -36,17 +37,19 @@ var Registry = types.NewRegistry(
 	{{- end}}
 )
 
-func NewModule(app app.App, name string) (types.CdkStep, error) {
+func NewModule(app app.App, name string) (step types.CdkStep, err error) {
     flag.Parse()
 
 	switch name {
 	{{- range .Modules}}
 	case ".{{.Name}}":
-		 return {{.Name}}.New(app)
+		 step, err = {{.Name}}.New(app)
 	{{- end}}
+	default:
+		err = fmt.Errorf("unknown module: %s", name)
 	}
 
-	return nil, fmt.Errorf("unknown module: %s", name)
+	return step, utils.Wrap(err, name)
 }
 `
 

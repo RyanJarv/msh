@@ -18,7 +18,7 @@ func NewRegistry(steps ...interface{}) Registry {
 		out := reflect.New(f.Out(0).Elem())
 		value := out.Interface()
 
-		if v, ok := value.(IStep); !ok {
+		if v, ok := value.(CdkStep); !ok {
 			panic(fmt.Sprintf("step must return CdkStep, got: %T %+v", value, value))
 		} else {
 			r[v.GetName()] = v
@@ -28,11 +28,7 @@ func NewRegistry(steps ...interface{}) Registry {
 	return r
 }
 
-type Registry map[string]IStep
-
-type IStep interface {
-	GetName() string
-}
+type Registry map[string]CdkStep
 
 type Step struct {
 	Name  string
@@ -44,7 +40,7 @@ func (s Step) GetName() string {
 }
 
 type CdkStep interface {
-	IStep
+	GetName() string
 	Compile(construct constructs.Construct, i int) error
 }
 

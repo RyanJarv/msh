@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	L "github.com/ryanjarv/msh/pkg/logger"
 	"github.com/ryanjarv/msh/pkg/types"
 	"io"
 	"reflect"
@@ -77,6 +78,7 @@ type State struct {
 
 // AddStep is called by each individual Step that wants to add to the cumulative app.
 func (s *State) AddStep(c types.CdkStep) {
+	L.Debug.Println("State.AddStep: %T", c)
 	s.Steps = append(s.Steps, types.Step{
 		Name:  c.GetName(),
 		Value: c,

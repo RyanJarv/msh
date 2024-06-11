@@ -64,7 +64,7 @@ type Event struct {
 
 func (s Event) GetName() string { return "event" }
 
-func (s Event) Compile(stack constructs.Construct, i int) error {
+func (s *Event) Compile(stack constructs.Construct, i int) error {
 	s.Rule = awsevents.NewRule(stack, aws.String("event"), s.RuleProp)
 
 	return nil

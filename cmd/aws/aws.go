@@ -66,7 +66,7 @@ type AwsCmd struct {
 func (s AwsCmd) GetName() string      { return "aws" }
 func (s AwsCmd) getName(i int) string { return fmt.Sprintf("aws-%d", i) }
 
-func (s AwsCmd) Compile(stack constructs.Construct, i int) error {
+func (s *AwsCmd) Compile(stack constructs.Construct, i int) error {
 	s.Function = awslambda.NewFunction(stack, jsii.String(s.getName(i)), &awslambda.FunctionProps{
 		Runtime:     awslambda.Runtime_PYTHON_3_11(),
 		Handler:     jsii.String("index.lambda_handler"),

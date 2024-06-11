@@ -3,7 +3,6 @@ package lambda
 import (
 	"bytes"
 	_ "embed"
-	"flag"
 	"fmt"
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
@@ -24,10 +23,13 @@ type LambdaOpts struct {
 
 func New(app app.App) (*Lambda, error) {
 	path := app.Arg(1)
+	if path == "" {
+		return nil, fmt.Errorf("lambda: must provide a path to a python script, got: %s", app.Args())
+	}
 
 	env := map[string]*string{}
-	for i, arg := range flag.Args()[2:] {
-		env[fmt.Sprintf("ARG%d", i+1)] = &arg
+	for i, arg := range app.Args()[1:] {
+		env[fmt.Sprintf("ARG%d", i)] = jsii.String(arg)
 
 	}
 
@@ -49,9 +51,9 @@ func New(app app.App) (*Lambda, error) {
 }
 
 type Lambda struct {
-	*LambdaOpts
 	types.IChain
-	awslambda.Function
+	Function       awslambda.Function
+	LambdaOpts     *LambdaOpts
 	Script         string
 	Args           []string
 	Environment    map[string]*string
@@ -71,10 +73,10 @@ func (s *Lambda) Compile(stack constructs.Construct, i int) error {
 
 	s.IChain = tasks.NewLambdaInvoke(stack, jsii.String(fmt.Sprintf("%s-invoke", s.GetName())), &tasks.LambdaInvokeProps{
 		LambdaFunction: s.Function,
-		InputPath:      s.InputPath,
-		ResultSelector: s.ResultSelector,
-		OutputPath:     s.OutputPath,
-		ResultPath:     s.ResultPath,
+		InputPath:      s.LambdaOpts.InputPath,
+		ResultSelector: s.LambdaOpts.ResultSelector,
+		OutputPath:     s.LambdaOpts.OutputPath,
+		ResultPath:     s.LambdaOpts.ResultPath,
 	})
 
 	return nil

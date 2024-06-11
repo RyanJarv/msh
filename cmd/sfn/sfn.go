@@ -2,12 +2,10 @@ package sfn
 
 import (
 	_ "embed"
-	"fmt"
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsevents"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awseventstargets"
 	sfn "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
-	tasks "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctionstasks"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 	"github.com/ryanjarv/msh/pkg/app"
@@ -25,38 +23,32 @@ func New(app app.App) (*Sfn, error) {
 }
 
 type Sfn struct {
-	awsevents.IRuleTarget
-	sfn.INextable
 	Name    string
-	Chain   sfn.IChainable
+	stack   constructs.Construct
 	machine sfn.StateMachine
 }
 
 func (s Sfn) GetName() string { return "sfn" }
 
 func (s *Sfn) Compile(stack constructs.Construct, i int) error {
-	// The app machine must be created after the chain is set up otherwise we won't see all the steps.
-	s.machine = sfn.NewStateMachine(stack, jsii.String(s.Name), &sfn.StateMachineProps{
-		StateMachineName: jsii.String(s.Name),
-		DefinitionBody:   sfn.NewChainDefinitionBody(sfn.NewPass(stack, jsii.String("this-should-be-overridden"), &sfn.PassProps{})),
-		Timeout:          awscdk.Duration_Minutes(jsii.Number(5)),
-		Comment:          jsii.String("a super cool app machine"),
-	})
-
-	s.IRuleTarget = awseventstargets.NewSfnStateMachine(s.machine, &awseventstargets.SfnStateMachineProps{})
-
+	s.stack = stack
 	return nil
 }
 
 func (s *Sfn) Next(chain sfn.IChainable) sfn.Chain {
-	sfn.NewStateMachine_Override(s.machine, s.machine.Stack(), jsii.String(s.Name), &sfn.StateMachineProps{
-		DefinitionBody: sfn.DefinitionBody_FromChainable(chain),
+	// The app machine must be created after the chain is set up otherwise we won't see all the steps.
+	s.machine = sfn.NewStateMachine(s.stack, jsii.String(s.Name), &sfn.StateMachineProps{
+		StateMachineName: jsii.String(s.Name),
+		DefinitionBody:   sfn.NewChainDefinitionBody(chain),
+		Timeout:          awscdk.Duration_Minutes(jsii.Number(5)),
+		Comment:          jsii.String("a super cool app machine"),
 	})
 
-	props := tasks.StepFunctionsStartExecutionProps{
-		StateMachine: s.machine,
-	}
+	return nil
+}
 
-	invoke := tasks.NewStepFunctionsStartExecution(s.machine.Stack(), jsii.String(fmt.Sprintf("invoke-%s", s.Name)), &props)
-	return invoke.Next(chain)
+// Bind fulfills the awsevents.IRuleTarget interface.
+// Note: I'm not sure why but cdk doesn't let us just embed this in the Sfn struct.
+func (s *Sfn) Bind(rule awsevents.IRule, id *string) *awsevents.RuleTargetConfig {
+	return awseventstargets.NewSfnStateMachine(s.machine, &awseventstargets.SfnStateMachineProps{}).Bind(rule, id)
 }

@@ -23,7 +23,7 @@ func (a *App) Run(step types.CdkStep) error {
 	a.State.AddStep(step)
 
 	if !utils.IsTTY(a.Stdout) {
-		return a.State.WriteState()
+		return a.State.WriteState(a.Stdout)
 	}
 
 	if utils.IsTTY(a.Stdout) || os.Getenv("MSH_BUILD") == "always" {
@@ -41,13 +41,14 @@ func (a *App) Run(step types.CdkStep) error {
 	return nil
 }
 
-func (s *State) WriteState() error {
+func (s *State) WriteState(f *os.File) error {
 	d, err := json.Marshal(s)
 	if err != nil {
 		return fmt.Errorf("writeState: failed to marshal app: %w", err)
 	}
 
-	_, err = io.WriteString(os.Stdout, string(d)+"\n")
+	L.Debug.Printf("State.WriteState: writing to %s: %s", f.Name(), string(d))
+	_, err = io.WriteString(f, string(d)+"\n")
 	if err != nil {
 		return fmt.Errorf("writeState: failed to write app: %w", err)
 	}
@@ -56,6 +57,7 @@ func (s *State) WriteState() error {
 }
 
 func (a *App) Compile(scope constructs.Construct, next types.CdkStep, i int) (types.CdkStep, error) {
+	L.Debug.Println("App.Compile")
 	// Reverse the steps so the source receives the next Step instead of the previous one.
 	steps := lo.Reverse(a.State.Steps)
 
@@ -74,10 +76,6 @@ func (a *App) Compile(scope constructs.Construct, next types.CdkStep, i int) (ty
 			return nil, fmt.Errorf("compile: %w", err)
 		}
 
-		if next == nil {
-			continue
-		}
-
 		switch s := cdkstep.(type) {
 		// We don't use Next on iterators currently, so make sure this is higher priority than INextable.
 		case types.IIterator:
@@ -86,11 +84,21 @@ func (a *App) Compile(scope constructs.Construct, next types.CdkStep, i int) (ty
 				return nil, fmt.Errorf("next step must be a statemachine task, got: %T", next)
 			}
 
+			if next == nil {
+				return nil, fmt.Errorf("foreach does not work at the end of a chain")
+			}
+
 			s.Iterator(chain)
 		case awsstepfunctions.INextable:
-			chain, ok := next.(awsstepfunctions.IChainable)
-			if !ok {
-				return nil, fmt.Errorf("next step must be a statemachine task, got: %T", next)
+			var chain awsstepfunctions.IChainable
+			if next == nil {
+				chain = awsstepfunctions.NewSucceed(scope, jsii.String("succeed"), &awsstepfunctions.SucceedProps{})
+			} else {
+				var ok bool
+				chain, ok = next.(awsstepfunctions.IChainable)
+				if !ok {
+					return nil, fmt.Errorf("next step must be a statemachine task, got: %T", next)
+				}
 			}
 
 			s.Next(chain)
@@ -100,6 +108,10 @@ func (a *App) Compile(scope constructs.Construct, next types.CdkStep, i int) (ty
 				return nil, fmt.Errorf("next step must be a event rule target, got: %T", next)
 			}
 
+			if next == nil {
+				return nil, fmt.Errorf("events rule does not work at the end of a chain")
+			}
+
 			s.AddTarget(n)
 		case awssns.ITopic:
 			n, ok := next.(awssns.ITopicSubscription)
@@ -107,7 +119,11 @@ func (a *App) Compile(scope constructs.Construct, next types.CdkStep, i int) (ty
 				return nil, fmt.Errorf("next step must be a topic subscription, got: %T", next)
 			}
 
-			s.AddSubscription(n)
+			if next != nil {
+				s.AddSubscription(n)
+			}
+		default:
+			return nil, fmt.Errorf("unknown type for step, got: %T", cdkstep)
 		}
 
 		next = cdkstep
@@ -117,6 +133,7 @@ func (a *App) Compile(scope constructs.Construct, next types.CdkStep, i int) (ty
 }
 
 func (a *App) Build(app awscdk.App) error {
+	L.Debug.Println("App.Build")
 	synth := app.Synth(nil)
 	if synth == nil || synth.Stacks() == nil || len(*synth.Stacks()) != 1 {
 		return fmt.Errorf("build: failed to synthesize app: %v", synth)
