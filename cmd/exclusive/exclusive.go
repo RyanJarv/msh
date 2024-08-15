@@ -12,13 +12,10 @@ import (
 )
 
 func New(app app.App) (*Call, error) {
-	return &Call{
-		Name: app.Arg(1),
-	}, nil
+	return &Call{}, nil
 }
 
 type Call struct {
-	Name string
 	tasks.CallAwsService
 	types.IChain
 }
@@ -26,39 +23,39 @@ type Call struct {
 func (s Call) GetName() string { return "sfn" }
 
 func (s *Call) Compile(stack constructs.Construct, i int) error {
-	name := fmt.Sprintf("%s-%s-%d", s.GetName(), s.Name, i)
+	name := fmt.Sprintf("%s-%d-%d", s.GetName(), i)
 
 	s.IChain = ListStateMachines(stack, name, false).
 		Next(
-			sfn.NewMap(stack, jsii.String("map-sfn"),
+			sfn.NewMap(stack, jsii.String(name+"-map"),
 				&sfn.MapProps{
 					ItemsPath: sfn.JsonPath_StringAt(jsii.String("$.Executions")),
 				},
 			).Iterator(
 				sfn.NewChoice(
-					stack, jsii.String("choice-sfn"),
+					stack, jsii.String(name+"-choice"),
 					&sfn.ChoiceProps{
 						Comment: jsii.String("Check if the execution is the current one"),
 					},
 				).When(
 					sfn.Condition_StringEqualsJsonPath(jsii.String("$.ExecutionArn"), jsii.String("$$.Execution.Id")),
-					sfn.NewPass(stack, jsii.String("pass-sfn"), &sfn.PassProps{}),
+					sfn.NewPass(stack, jsii.String(name+"-pass"), &sfn.PassProps{}),
 					&sfn.ChoiceTransitionOptions{},
 				),
 			),
 		).
 		Next(
 			sfn.NewChoice(
-				stack, jsii.String("choice-sfn-paginator"),
+				stack, jsii.String(name+"-choice-paginator"),
 				&sfn.ChoiceProps{
 					Comment: jsii.String("Check if there are more pages to fetch"),
 				},
 			).When(
 				sfn.Condition_IsPresent(jsii.String("$.NextToken")),
-				ListStateMachines(stack, "sfn-paginator", true),
+				ListStateMachines(stack, name+"-paginator", true),
 				&sfn.ChoiceTransitionOptions{},
 			).Otherwise(
-				sfn.NewPass(stack, jsii.String("sfn-done"), &sfn.PassProps{}),
+				sfn.NewPass(stack, jsii.String(name+"-done"), &sfn.PassProps{}),
 			),
 		)
 

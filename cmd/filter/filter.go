@@ -37,24 +37,25 @@ type Filter struct {
 func (s Filter) GetName() string { return "filter" }
 
 func (s *Filter) Compile(stack constructs.Construct, i int) error {
+	name := fmt.Sprintf("%s-%d", s.GetName(), i)
 	err := s.Lambda.Compile(stack, 0)
 	if err != nil {
 		return fmt.Errorf("filter: %w", err)
 	}
 
-	s.choice = sfn.NewChoice(stack, jsii.String("choice"), &sfn.ChoiceProps{
+	s.choice = sfn.NewChoice(stack, jsii.String(name+"-choice"), &sfn.ChoiceProps{
 		Comment:    jsii.String("choice"),
 		OutputPath: jsii.String("$.__input"),
 	})
 
-	s.Start = sfn.NewPass(stack, jsii.String("pass"), &sfn.PassProps{
+	s.Start = sfn.NewPass(stack, jsii.String(name+"-pass"), &sfn.PassProps{
 		Parameters: &map[string]interface{}{
 			"__input.$": "$",
 		},
 		Comment: jsii.String("save input to $.__input"),
 	})
 
-	s.filtered = sfn.NewSucceed(stack, jsii.String("filtered"), &sfn.SucceedProps{})
+	s.filtered = sfn.NewSucceed(stack, jsii.String(name+"-filtered"), &sfn.SucceedProps{})
 	return nil
 }
 

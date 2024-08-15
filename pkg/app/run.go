@@ -6,7 +6,7 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsevents"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awssns"
-	"github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
+	sfn "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
 	"github.com/aws/aws-cdk-go/awscdk/v2/cxapi"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
@@ -58,7 +58,7 @@ func (s *State) WriteState(f *os.File) error {
 
 func (a *App) Compile(scope constructs.Construct, next types.CdkStep, i int) (types.CdkStep, error) {
 	L.Debug.Println("App.Compile")
-	// Reverse the steps so the source receives the next Step instead of the previous one.
+	// Reverse and build backwards so that Iterator, Next, AddTarget calls receive the proceeding target CdkStep.
 	steps := lo.Reverse(a.State.Steps)
 
 	//var next types.CdkStep
@@ -79,7 +79,7 @@ func (a *App) Compile(scope constructs.Construct, next types.CdkStep, i int) (ty
 		switch s := cdkstep.(type) {
 		// We don't use Next on iterators currently, so make sure this is higher priority than INextable.
 		case types.IIterator:
-			chain, ok := next.(awsstepfunctions.IChainable)
+			chain, ok := next.(sfn.IChainable)
 			if !ok {
 				return nil, fmt.Errorf("next step must be a statemachine task, got: %T", next)
 			}
@@ -88,20 +88,21 @@ func (a *App) Compile(scope constructs.Construct, next types.CdkStep, i int) (ty
 				return nil, fmt.Errorf("foreach does not work at the end of a chain")
 			}
 
-			s.Iterator(chain)
-		case awsstepfunctions.INextable:
-			var chain awsstepfunctions.IChainable
+			s.Iterator(chain.StartState())
+		case sfn.INextable:
+			var chain sfn.IChainable
 			if next == nil {
-				chain = awsstepfunctions.NewSucceed(scope, jsii.String("succeed"), &awsstepfunctions.SucceedProps{})
+				chain = sfn.NewSucceed(scope, jsii.String("succeed"), &sfn.SucceedProps{})
 			} else {
 				var ok bool
-				chain, ok = next.(awsstepfunctions.IChainable)
+				chain, ok = next.(sfn.IChainable)
 				if !ok {
 					return nil, fmt.Errorf("next step must be a statemachine task, got: %T", next)
 				}
 			}
 
-			s.Next(chain)
+			// Call StartState() to ensure we are not passing the whole CdkStep object which confuses CDK.
+			s.Next(chain.StartState())
 		case awsevents.Rule:
 			n, ok := next.(awsevents.IRuleTarget)
 			if !ok {

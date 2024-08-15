@@ -63,11 +63,11 @@ type AwsCmd struct {
 	Environment       map[string]*string
 }
 
-func (s AwsCmd) GetName() string      { return "aws" }
-func (s AwsCmd) getName(i int) string { return fmt.Sprintf("aws-%d", i) }
+func (s AwsCmd) GetName() string { return "aws" }
 
 func (s *AwsCmd) Compile(stack constructs.Construct, i int) error {
-	s.Function = awslambda.NewFunction(stack, jsii.String(s.getName(i)), &awslambda.FunctionProps{
+	name := fmt.Sprintf("%s-%d", s.GetName(), i)
+	s.Function = awslambda.NewFunction(stack, jsii.String(name+"-function"), &awslambda.FunctionProps{
 		Runtime:     awslambda.Runtime_PYTHON_3_11(),
 		Handler:     jsii.String("index.lambda_handler"),
 		Code:        awslambda.Code_FromInline(jsii.String(s.Script)),
@@ -92,7 +92,7 @@ func (s *AwsCmd) Compile(stack constructs.Construct, i int) error {
 		}
 	})
 
-	s.LambdaInvoke = tasks.NewLambdaInvoke(stack, jsii.String(fmt.Sprintf("%s-invoke", s.getName(i))), &tasks.LambdaInvokeProps{
+	s.LambdaInvoke = tasks.NewLambdaInvoke(stack, jsii.String(name+"-invoke"), &tasks.LambdaInvokeProps{
 		LambdaFunction: s.Function,
 		Payload: awsstepfunctions.TaskInput_FromObject(&map[string]interface{}{
 			"command": awsstepfunctions.JsonPath_Array(args...),

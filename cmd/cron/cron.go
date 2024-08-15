@@ -4,7 +4,6 @@ import (
 	_ "embed"
 	"fmt"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsevents"
-	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 	"github.com/ryanjarv/msh/pkg/app"
@@ -49,7 +48,8 @@ type Cron struct {
 func (s Cron) GetName() string { return "schedule" }
 
 func (s *Cron) Compile(stack constructs.Construct, i int) error {
-	s.Rule = awsevents.NewRule(stack, aws.String(s.GetName()), &awsevents.RuleProps{
+	name := fmt.Sprintf("%s-%d", s.GetName(), i)
+	s.Rule = awsevents.NewRule(stack, jsii.String(name), &awsevents.RuleProps{
 		Schedule: awsevents.Schedule_Cron(&s.CronOptions),
 	})
 

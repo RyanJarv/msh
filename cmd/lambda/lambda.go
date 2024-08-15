@@ -63,7 +63,8 @@ type Lambda struct {
 func (s Lambda) GetName() string { return "lambda" }
 
 func (s *Lambda) Compile(stack constructs.Construct, i int) error {
-	s.Function = awslambda.NewFunction(stack, jsii.String(s.GetName()), &awslambda.FunctionProps{
+	name := fmt.Sprintf("%s-%d", s.GetName(), i)
+	s.Function = awslambda.NewFunction(stack, jsii.String(name), &awslambda.FunctionProps{
 		Runtime:     awslambda.Runtime_PYTHON_3_11(),
 		Handler:     jsii.String("index.lambda_handler"),
 		Code:        awslambda.Code_FromInline(jsii.String(s.Script)),

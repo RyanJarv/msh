@@ -2,6 +2,7 @@ package foreach
 
 import (
 	_ "embed"
+	"fmt"
 	sfn "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
@@ -20,8 +21,9 @@ type Foreach struct {
 func (s Foreach) GetName() string { return "map" }
 
 func (s *Foreach) Compile(stack constructs.Construct, i int) error {
-	s.IChain = sfn.NewMap(stack, jsii.String("map"), &sfn.MapProps{
-		Comment: jsii.String("map"),
+	name := fmt.Sprintf("%s-%d", s.GetName(), i)
+	s.IChain = sfn.NewMap(stack, jsii.String(name), &sfn.MapProps{
+		Comment: jsii.String(name),
 	})
 
 	return nil

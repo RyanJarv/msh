@@ -2,6 +2,9 @@ export MSH_SKIPDEPLOY=1
 
 .PHONY: build clean
 
+pull:
+	git submodule update --init
+
 build: clean
 	go generate ./...
 	mkdir -p out
@@ -38,10 +41,10 @@ test: test-each test-sleep test-lambda
 	@echo "\nRunning Tests\n"
 
 test-each:
-	@./scripts/test.sh './out/msh.each ./test/mail.json'
+	@./scripts/test.sh './out/.foreach ./test/mail.json'
 
 test-sleep:
 	@./scripts/test.sh 'cat ./test/sfn.json | ./out/.sleep 3'
 
 test-lambda:
-	@./scripts/test.sh './out/.lambda.python ./test/test.py | ./out/.sleep 34'
+	@./scripts/test.sh 'sfn{ ./out/.sleep 34 }'

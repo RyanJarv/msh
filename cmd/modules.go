@@ -10,6 +10,7 @@ import (
 	"github.com/ryanjarv/msh/cmd/aws"
 	"github.com/ryanjarv/msh/cmd/cron"
 	"github.com/ryanjarv/msh/cmd/event"
+	"github.com/ryanjarv/msh/cmd/exclusive"
 	"github.com/ryanjarv/msh/cmd/filter"
 	"github.com/ryanjarv/msh/cmd/foreach"
 	"github.com/ryanjarv/msh/cmd/lambda"
@@ -27,6 +28,7 @@ var Registry = types.NewRegistry(
 	aws.New,
 	cron.New,
 	event.New,
+	exclusive.New,
 	filter.New,
 	foreach.New,
 	lambda.New,
@@ -43,34 +45,36 @@ var Registry = types.NewRegistry(
 func NewModule(app app.App, name string) (step types.CdkStep, err error) {
     flag.Parse()
 
-	switch name {
-	case ".aws":
+	switch name[1:] {
+	case "aws":
 		 step, err = aws.New(app)
-	case ".cron":
+	case "cron":
 		 step, err = cron.New(app)
-	case ".event":
+	case "event":
 		 step, err = event.New(app)
-	case ".filter":
+	case "exclusive":
+		 step, err = exclusive.New(app)
+	case "filter":
 		 step, err = filter.New(app)
-	case ".foreach":
+	case "foreach":
 		 step, err = foreach.New(app)
-	case ".lambda":
+	case "lambda":
 		 step, err = lambda.New(app)
-	case ".sfn":
+	case "sfn":
 		 step, err = sfn.New(app)
-	case ".sleep":
+	case "sleep":
 		 step, err = sleep.New(app)
-	case ".api":
+	case "api":
 		 step, err = api.New(app)
-	case ".build":
+	case "build":
 		 step, err = build.New(app)
-	case ".call":
+	case "call":
 		 step, err = call.New(app)
-	case ".each":
+	case "each":
 		 step, err = each.New(app)
-	case ".mail":
+	case "mail":
 		 step, err = mail.New(app)
-	case ".sns":
+	case "sns":
 		 step, err = sns.New(app)
 	default:
 		err = fmt.Errorf("unknown module: %s", name)

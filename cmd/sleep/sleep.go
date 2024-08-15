@@ -10,6 +10,7 @@ import (
 	"github.com/ryanjarv/msh/pkg/types"
 	"os"
 	"strconv"
+	"syscall"
 )
 
 func New(app app.App) (*SleepCmd, error) {
@@ -35,7 +36,9 @@ type SleepCmd struct {
 func (s SleepCmd) GetName() string { return "sleep" }
 
 func (s *SleepCmd) Compile(stack constructs.Construct, i int) error {
-	s.IChain = sfn.NewWait(stack, jsii.String(s.GetName()), &sfn.WaitProps{
+	name := fmt.Sprintf("%s-%d", s.GetName(), syscall.Getpid())
+
+	s.IChain = sfn.NewWait(stack, jsii.String(name), &sfn.WaitProps{
 		Time: sfn.WaitTime_Duration(awscdk.Duration_Seconds(jsii.Number(s.Seconds))),
 	})
 
