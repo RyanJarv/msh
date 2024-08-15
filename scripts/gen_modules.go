@@ -40,9 +40,9 @@ var Registry = types.NewRegistry(
 func NewModule(app app.App, name string) (step types.CdkStep, err error) {
     flag.Parse()
 
-	switch name {
+	switch name[1:] {
 	{{- range .Modules}}
-	case ".{{.Name}}":
+	case "{{.Name}}":
 		 step, err = {{.Name}}.New(app)
 	{{- end}}
 	default:
