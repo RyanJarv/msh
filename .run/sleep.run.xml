@@ -1,0 +1,17 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="sleep" type="GoApplicationRunConfiguration" factoryName="Go Application">
+    <module name="msh" />
+    <working_directory value="$PROJECT_DIR$" />
+    <parameters value="3" />
+    <envs>
+      <env name="MSH_STDIN" value="$PROJECT_DIR$/test/sfn.json" />
+      <env name="MSH_CMD" value="sleep" />
+      <env name="AWS_PROFILE" value="test-a" />
+    </envs>
+    <kind value="DIRECTORY" />
+    <package value="github.com/ryanjarv/msh" />
+    <directory value="$PROJECT_DIR$/cmd" />
+    <filePath value="$PROJECT_DIR$/cmd/msh.go" />
+    <method v="2" />
+  </configuration>
+</component>
