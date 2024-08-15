@@ -11,35 +11,40 @@ import (
 )
 
 func New(app app.App) (*Filter, error) {
-	l, err := lambda.New(app)
-	if err != nil {
-		return nil, fmt.Errorf("lambda: %w", err)
-	}
-
-	l.SetOpts(&lambda.LambdaOpts{
-		InputPath:      jsii.String("$.__input"),
-		ResultSelector: &map[string]interface{}{"result.$": "$.Payload"},
-		ResultPath:     jsii.String("$.__choice"),
-	})
 	return &Filter{
-		Lambda: l,
+		Args: app.Args(),
+		Opts: &lambda.LambdaOpts{
+			InputPath:      jsii.String("$.__input"),
+			ResultSelector: &map[string]interface{}{"result.$": "$.Payload"},
+			ResultPath:     jsii.String("$.__choice"),
+		},
 	}, nil
 }
 
 type Filter struct {
-	sfn.INextable
-	Start    sfn.Pass
-	Lambda   *lambda.Lambda
-	choice   sfn.Choice
-	filtered sfn.IChainable
+	sfn.INextable `json:"-"`
+	start         sfn.Pass
+	choice        sfn.Choice
+	filtered      sfn.IChainable
+	lambda        *lambda.Lambda
+	Args          []string
+	Opts          *lambda.LambdaOpts
 }
 
 func (s Filter) GetName() string { return "filter" }
 
 func (s *Filter) Compile(stack constructs.Construct, i int) error {
 	name := fmt.Sprintf("%s-%d", s.GetName(), i)
-	err := s.Lambda.Compile(stack, 0)
+
+	var err error
+	s.lambda, err = lambda.New(s.Args)
 	if err != nil {
+		return fmt.Errorf("%s: compile: %w", name, err)
+	}
+
+	s.lambda.SetOpts(s.Opts)
+
+	if err = s.lambda.Compile(stack, 0); err != nil {
 		return fmt.Errorf("filter: %w", err)
 	}
 
@@ -48,7 +53,7 @@ func (s *Filter) Compile(stack constructs.Construct, i int) error {
 		OutputPath: jsii.String("$.__input"),
 	})
 
-	s.Start = sfn.NewPass(stack, jsii.String(name+"-pass"), &sfn.PassProps{
+	s.start = sfn.NewPass(stack, jsii.String(name+"-pass"), &sfn.PassProps{
 		Parameters: &map[string]interface{}{
 			"__input.$": "$",
 		},
@@ -60,8 +65,8 @@ func (s *Filter) Compile(stack constructs.Construct, i int) error {
 }
 
 func (s *Filter) Next(next sfn.IChainable) sfn.Chain {
-	return s.Start.
-		Next(s.Lambda).
+	return s.start.
+		Next(s.lambda).
 		Next(
 			s.choice.When(sfn.Condition_BooleanEquals(jsii.String("$.__choice.result"), jsii.Bool(true)),
 				next, &sfn.ChoiceTransitionOptions{},

@@ -21,14 +21,14 @@ type LambdaOpts struct {
 	ResultPath     *string
 }
 
-func New(app app.App) (*Lambda, error) {
-	path := app.Arg(1)
-	if path == "" {
+func New(args []string) (*Lambda, error) {
+	if len(args) == 0 {
 		return nil, fmt.Errorf("lambda: must provide a path to a python script, got: %s", app.Args())
 	}
+	path := args[0]
 
 	env := map[string]*string{}
-	for i, arg := range app.Args()[1:] {
+	for i, arg := range args[1:] {
 		env[fmt.Sprintf("ARG%d", i)] = jsii.String(arg)
 
 	}
@@ -44,15 +44,15 @@ func New(app app.App) (*Lambda, error) {
 
 	return &Lambda{
 		Script:         string(script),
-		Args:           app.Args(),
+		Args:           args,
 		Environment:    env,
 		TimeoutSeconds: 300,
 	}, nil
 }
 
 type Lambda struct {
-	types.IChain
-	Function       awslambda.Function
+	types.IChain   `json:"-"`
+	function       awslambda.Function
 	LambdaOpts     *LambdaOpts
 	Script         string
 	Args           []string
@@ -64,7 +64,7 @@ func (s Lambda) GetName() string { return "lambda" }
 
 func (s *Lambda) Compile(stack constructs.Construct, i int) error {
 	name := fmt.Sprintf("%s-%d", s.GetName(), i)
-	s.Function = awslambda.NewFunction(stack, jsii.String(name), &awslambda.FunctionProps{
+	s.function = awslambda.NewFunction(stack, jsii.String(name), &awslambda.FunctionProps{
 		Runtime:     awslambda.Runtime_PYTHON_3_11(),
 		Handler:     jsii.String("index.lambda_handler"),
 		Code:        awslambda.Code_FromInline(jsii.String(s.Script)),
@@ -73,7 +73,7 @@ func (s *Lambda) Compile(stack constructs.Construct, i int) error {
 	})
 
 	s.IChain = tasks.NewLambdaInvoke(stack, jsii.String(fmt.Sprintf("%s-invoke", s.GetName())), &tasks.LambdaInvokeProps{
-		LambdaFunction: s.Function,
+		LambdaFunction: s.function,
 		InputPath:      s.LambdaOpts.InputPath,
 		ResultSelector: s.LambdaOpts.ResultSelector,
 		OutputPath:     s.LambdaOpts.OutputPath,

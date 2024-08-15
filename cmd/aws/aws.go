@@ -56,11 +56,11 @@ func Help(args []string) {
 
 type AwsCmd struct {
 	awslambda.Function `json:"-"`
-	tasks.LambdaInvoke
-	Script            string
-	Args              []string
-	IamStatementProps []awsiam.PolicyStatementProps
-	Environment       map[string]*string
+	tasks.LambdaInvoke `json:"-"`
+	Script             string
+	Args               []string
+	IamStatementProps  []awsiam.PolicyStatementProps
+	Environment        map[string]*string
 }
 
 func (s AwsCmd) GetName() string { return "aws" }

@@ -41,8 +41,8 @@ func New(app app.App) (*Cron, error) {
 }
 
 type Cron struct {
-	awsevents.Rule
-	CronOptions awsevents.CronOptions
+	awsevents.Rule `json:"-"`
+	CronOptions    awsevents.CronOptions
 }
 
 func (s Cron) GetName() string { return "schedule" }

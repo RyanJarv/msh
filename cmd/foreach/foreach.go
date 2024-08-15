@@ -15,7 +15,7 @@ func New(app app.App) (*Foreach, error) {
 }
 
 type Foreach struct {
-	types.IChain
+	types.IChain `json:"-"`
 }
 
 func (s Foreach) GetName() string { return "map" }

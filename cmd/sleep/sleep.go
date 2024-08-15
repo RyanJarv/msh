@@ -29,8 +29,8 @@ func New(app app.App) (*SleepCmd, error) {
 }
 
 type SleepCmd struct {
-	Seconds int
-	types.IChain
+	Seconds      int
+	types.IChain `json:-`
 }
 
 func (s SleepCmd) GetName() string { return "sleep" }
