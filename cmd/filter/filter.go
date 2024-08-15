@@ -37,7 +37,7 @@ func (s *Filter) Compile(stack constructs.Construct, i int) error {
 	name := fmt.Sprintf("%s-%d", s.GetName(), i)
 
 	var err error
-	s.lambda, err = lambda.New(s.Args)
+	s.lambda, err = lambda.NewInternal(s.Args)
 	if err != nil {
 		return fmt.Errorf("%s: compile: %w", name, err)
 	}

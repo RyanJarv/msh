@@ -7,6 +7,7 @@ import (
 	"github.com/ryanjarv/msh/pkg/types"
 	"github.com/ryanjarv/msh/pkg/app"
 	"github.com/ryanjarv/msh/pkg/utils"
+	"strings"
 	"github.com/ryanjarv/msh/cmd/aws"
 	"github.com/ryanjarv/msh/cmd/cron"
 	"github.com/ryanjarv/msh/cmd/event"
@@ -45,7 +46,9 @@ var Registry = types.NewRegistry(
 func NewModule(app app.App, name string) (step types.CdkStep, err error) {
     flag.Parse()
 
-	switch name[1:] {
+	name = strings.Trim(name, "@.")
+
+	switch name {
 	case "aws":
 		 step, err = aws.New(app)
 	case "cron":

@@ -25,6 +25,7 @@ import (
 	"github.com/ryanjarv/msh/pkg/types"
 	"github.com/ryanjarv/msh/pkg/app"
 	"github.com/ryanjarv/msh/pkg/utils"
+	"strings"
 
 	{{- range .Modules}}
 	"github.com/ryanjarv/msh/{{.Path}}"
@@ -40,7 +41,9 @@ var Registry = types.NewRegistry(
 func NewModule(app app.App, name string) (step types.CdkStep, err error) {
     flag.Parse()
 
-	switch name[1:] {
+	name = strings.Trim(name, "@.")
+
+	switch name {
 	{{- range .Modules}}
 	case "{{.Name}}":
 		 step, err = {{.Name}}.New(app)

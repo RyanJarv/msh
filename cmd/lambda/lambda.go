@@ -21,9 +21,14 @@ type LambdaOpts struct {
 	ResultPath     *string
 }
 
-func New(args []string) (*Lambda, error) {
+func New(args app.App) (*Lambda, error) {
+	return NewInternal(args.Args())
+}
+
+// NewInternal can be called directly from other commands that use a lambda without needing to parse the app.
+func NewInternal(args []string) (*Lambda, error) {
 	if len(args) == 0 {
-		return nil, fmt.Errorf("lambda: must provide a path to a python script, got: %s", app.Args())
+		return nil, fmt.Errorf("lambda: must provide a path to a python script, got: %s", args)
 	}
 	path := args[0]
 

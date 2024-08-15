@@ -50,5 +50,6 @@ type IChain interface {
 }
 
 type IIterator interface {
+	IChain
 	Iterator(iterator awsstepfunctions.IChainable) awsstepfunctions.Map
 }

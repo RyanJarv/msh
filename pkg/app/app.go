@@ -48,7 +48,7 @@ func GetPipeline(reg types.Registry, stdin *os.File, stdout *os.File, args []str
 
 type App struct {
 	*flag.FlagSet `json:"-"`
-	State         State
+	State         State          `json:"-"`
 	Registry      types.Registry `json:"-"`
 	OsArgs        []string       `json:"-"`
 	Stdin         *os.File       `json:"-"`

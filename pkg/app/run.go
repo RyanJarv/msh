@@ -79,26 +79,16 @@ func (a *App) Compile(scope constructs.Construct, next types.CdkStep, i int) (ty
 		switch s := cdkstep.(type) {
 		// We don't use Next on iterators currently, so make sure this is higher priority than INextable.
 		case types.IIterator:
-			chain, ok := next.(sfn.IChainable)
-			if !ok {
-				return nil, fmt.Errorf("next step must be a statemachine task, got: %T", next)
-			}
-
-			if next == nil {
-				return nil, fmt.Errorf("foreach does not work at the end of a chain")
+			chain, err := EnsureNext(scope, next)
+			if err != nil {
+				return nil, err
 			}
 
 			s.Iterator(chain.StartState())
 		case sfn.INextable:
-			var chain sfn.IChainable
-			if next == nil {
-				chain = sfn.NewSucceed(scope, jsii.String("succeed"), &sfn.SucceedProps{})
-			} else {
-				var ok bool
-				chain, ok = next.(sfn.IChainable)
-				if !ok {
-					return nil, fmt.Errorf("next step must be a statemachine task, got: %T", next)
-				}
+			chain, err := EnsureNext(scope, next)
+			if err != nil {
+				return nil, err
 			}
 
 			// Call StartState() to ensure we are not passing the whole CdkStep object which confuses CDK.
@@ -131,6 +121,19 @@ func (a *App) Compile(scope constructs.Construct, next types.CdkStep, i int) (ty
 	}
 
 	return next, nil
+}
+
+func EnsureNext(scope constructs.Construct, next types.CdkStep) (chain sfn.IChainable, err error) {
+	if next == nil {
+		chain = sfn.NewSucceed(scope, jsii.String("succeed"), &sfn.SucceedProps{})
+	} else {
+		var ok bool
+		chain, ok = next.(sfn.IChainable)
+		if !ok {
+			return nil, fmt.Errorf("next step must be a statemachine task, got: %T", next)
+		}
+	}
+	return chain, nil
 }
 
 func (a *App) Build(app awscdk.App) error {
