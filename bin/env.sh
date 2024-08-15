@@ -1,7 +1,7 @@
 export PS1="(msh) $PS1"
 export PATH="$PWD/out:$PATH"
 
-rehash || :
+hash 2>/dev/null || rehash
 
 # TODO: Support the following:
 #
