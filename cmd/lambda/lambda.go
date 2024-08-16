@@ -22,7 +22,7 @@ type LambdaOpts struct {
 }
 
 func New(args app.App) (*Lambda, error) {
-	return NewInternal(args.Args())
+	return NewInternal(args.Args()[min(args.NArg(), 1):])
 }
 
 // NewInternal can be called directly from other commands that use a lambda without needing to parse the app.
@@ -52,6 +52,7 @@ func NewInternal(args []string) (*Lambda, error) {
 		Args:           args,
 		Environment:    env,
 		TimeoutSeconds: 300,
+		LambdaOpts:     &LambdaOpts{},
 	}, nil
 }
 
