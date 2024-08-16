@@ -5,7 +5,7 @@
 The Multivac Shell allows you to deploy simple pipelines using CloudFormation (via CDK) expressed through functional programming 
 (shell pipes, map, filter, etc...) in the same shell you know and love.
 
-![F94zTUBbwAA51JW](https://github.com/RyanJarv/msh/assets/4079939/8c120edf-35b9-48da-ad1c-fcef7f62fb87)
+![Screenshot 2024-08-15 at 6 56 37 PM](https://github.com/user-attachments/assets/0d730d27-cc99-4bf3-8ad4-d0c68787e8f5)
 
 Above we can see the Multivac Shell used to deploy a cron job that runs every 5 minutes, which then triggers a state 
 machine which:
