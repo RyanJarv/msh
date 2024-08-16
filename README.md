@@ -123,11 +123,11 @@ func New(app app.App) (*Cmd, error) {
 //        Implements a sfn step which can have steps after it, the next step is passed to 
 //        our Next method.
 //   **types.IIterator**
-//        Implements a sfn step which iterates over set of steps, the next step will be passed 
-//        to our Iterator method.
+//        Implements a sfn step which iterates over set of steps, the next step will be
+//        passed to our Iterator method.
 //   **awsevents.Rule**
-//        Implements an awsevents Rule, the next step will be passed to our AddTarget method.
-//
+//        Implements an awsevents Rule, the next step will be passed to our AddTarget 
+//        method.
 type Cmd struct {}
 
 // GetName needs to be a unique name for the step, this is used to identify the step in the internal configuration.
