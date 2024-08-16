@@ -98,25 +98,33 @@ func New(app app.App) (*Cmd, error) {
 
 // Cmd is a struct that implements types.CdkStep
 //
-// This represents the internal configuration of the step, and is passed between the steps using JSON. You don't need
-// to worry about this however, the struct will be restored for you before Compile is called.
+// This represents the internal configuration of the step, and is passed between the 
+// steps using JSON. You don't need to worry about this however, the struct will be 
+// restored for you before Compile is called.
 //
-// Cmd is passed to the preceding step in the pipeline, so you may need to ensure the correct interfaces are 
-// implemented depending on your use case.
+// Cmd is passed to the preceding step in the pipeline, so you may need to ensure the 
+// correct interfaces are implemented depending on your use case.
 //
-// Interfaces representing how Cmd can extend the chain, if none are implemented no step can precede this command:
+// Interfaces representing how Cmd can extend the chain, if none are implemented no 
+// step can precede this command:
 //   **awsevents.IRuleTarget**
-//        Implements an awsevents RuleTarget, Cmd may be passed to the previous step's AddTarget method.
+//        Implements an awsevents RuleTarget, Cmd may be passed to the previous step's 
+//        AddTarget method.
 //   **types.IChainable**
-//        Implements a sfn step which can have preceding steps, Cmd may be passed to the previous step's Next method.
+//        Implements a sfn step which can have preceding steps, Cmd may be passed to the 
+//        previous step's Next method.
 //   **awssns.ITopicSubscription**
-//        Implements an SNS topic subscription, Cmd may be passed to the previous step's AddSubscription method.
+//        Implements an SNS topic subscription, Cmd may be passed to the previous step's 
+//        AddSubscription method.
 //
-// Interfaces representing how the chain can be extended, if none are impelmented no step can follow this command:
+// Interfaces representing how the chain can be extended, if none are impelmented no step 
+// can follow this command:
 //   **awsstepfunctions.INextable**
-//        Implements a sfn step which can have steps after it, the next step is passed to our Next method.
+//        Implements a sfn step which can have steps after it, the next step is passed to 
+//        our Next method.
 //   **types.IIterator**
-//        Implements a sfn step which iterates over set of steps, the next step will be passed to our Iterator method.
+//        Implements a sfn step which iterates over set of steps, the next step will be passed 
+//        to our Iterator method.
 //   **awsevents.Rule**
 //        Implements an awsevents Rule, the next step will be passed to our AddTarget method.
 //
