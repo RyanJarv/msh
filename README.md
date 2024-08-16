@@ -55,9 +55,9 @@ So... good question, this is actually running in a real shell, and we aren't doi
 syntax](./bin/env.sh).
 
 We're using CDK in generally how it's intended to, however we're expressing the configuration through piped commands.
-To do this we build a simple internal configuration consisting of the arguments passed to each function. This 
-configuration is [read in through the first line of stdin](https://github.com/RyanJarv/msh/blob/e897079a8af68f4ec99d9ca99545b9c470a0ea5f/pkg/app/app.go#L29)
-on startup, extended, then [printed as the first line to stdout](https://github.com/RyanJarv/msh/blob/e897079a8af68f4ec99d9ca99545b9c470a0ea5f/pkg/app/run.go#L25), 
+To do this we build a [simple internal configuration](https://github.com/RyanJarv/msh/blob/9ad244708619a73d14ef61bdfbd86edf0f70db4e/pkg/app/app.go#L49)
+consisting of the arguments passed to each function. This configuration is [read in through the first line of stdin](https://github.com/RyanJarv/msh/blob/e897079a8af68f4ec99d9ca99545b9c470a0ea5f/pkg/app/app.go#L29)on startup, extended,
+then [printed as the first line to stdout](https://github.com/RyanJarv/msh/blob/e897079a8af68f4ec99d9ca99545b9c470a0ea5f/pkg/app/run.go#L25), 
 but only if stdin/stdout is not a TTY.
 
 You can see this internal configuration by appending cat or jq to the end of the command above:
