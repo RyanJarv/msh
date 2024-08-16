@@ -19,6 +19,8 @@ deactivate it.
 
 ## Getting Started
 
+Ensure golang is installed, then run the following commands:
+
 ```bash
 git clone git@github.com:RyanJarv/msh.git
 cd msh
