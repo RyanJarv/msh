@@ -39,6 +39,8 @@ You should now be able to deploy the following pipeline:
 
 ## Interesting Features
 
+* Easy deploy lambda's by running the code file directly.
+  * Running [./scripts/hello_world.py](./scripts/hello_world.py), will deploy a lambda function that returns "Hello World!".
 * Automatic IAM policy generation using a fork of Ian's iam-dataset [built for the awscli](cmd/aws/cli_iam_map.json).
 * [Experimental support](https://github.com/RyanJarv/msh/tree/main/cmd.experimental/api) for compiling botocore paginator 
 definitions to CDK step function definitions.
