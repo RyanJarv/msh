@@ -1,6 +1,6 @@
 ## The Multivac Shell
 
-***Important: This project is not ready for production.***
+***Important: This project is not ready for production and only supports a single stack currently.***
 
 The Multivac Shell allows you to deploy simple pipelines using CloudFormation (via CDK) expressed through functional programming 
 (shell pipes, map, filter, etc...) in the same shell you know and love.
