@@ -83,11 +83,10 @@ You can see this internal configuration by appending cat or jq to the end of the
 Each step value represents a marshalled [CdkStep](https://github.com/RyanJarv/msh/blob/d0675cb3195d18bbca4e20cbecd080e4c0c5e033/cmd/filter/filter.go#L29)
 after the [New](https://github.com/RyanJarv/msh/blob/d0675cb3195d18bbca4e20cbecd080e4c0c5e033/cmd/filter/filter.go#L13C6-L13C9) function is called.
 
-If the current executing [command is a TTY](https://github.com/RyanJarv/msh/blob/d0675cb3195d18bbca4e20cbecd080e4c0c5e033/pkg/app/run.go#L29) we 
-finish building the CDK state by calling Compile on each CdkStep in the configuration, [iterate through the reversed steps](https://github.com/RyanJarv/msh/blob/d0675cb3195d18bbca4e20cbecd080e4c0c5e033/pkg/app/run.go#L66)
-to build the chain from the end to the beginning. The beginning of the chain is extended in different ways 
-depending on the underlying type, whether it is an awsstepfunctions.INextable, awsevents.Rule, awssns.ITopic, or 
-types.IIterator.
+If the current executing [command is a TTY](https://github.com/RyanJarv/msh/blob/d0675cb3195d18bbca4e20cbecd080e4c0c5e033/pkg/app/run.go#L29) we
+finish building the CDK app by [iterating through the reversed steps](https://github.com/RyanJarv/msh/blob/d0675cb3195d18bbca4e20cbecd080e4c0c5e033/pkg/app/run.go#L66)
+which builds the chain from the end to the beginning by calling Compile on each. The beginning of the chain is extended in different ways depending on the 
+underlying type, whether it is an awsstepfunctions.INextable, awsevents.Rule, or types.IIterator.
 
 # Develop Your Own Steps
 
