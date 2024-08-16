@@ -2,7 +2,7 @@
   <configuration default="false" name="filter" type="GoApplicationRunConfiguration" factoryName="Go Application">
     <module name="msh" />
     <working_directory value="$PROJECT_DIR$" />
-    <parameters value="./bin/hours_running.py 72" />
+    <parameters value="./bin/hours_running 72" />
     <envs>
       <env name="MSH_STDIN" value="$PROJECT_DIR$/test/sfn.json" />
       <env name="MSH_CMD" value="filter" />

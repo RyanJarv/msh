@@ -10,7 +10,6 @@ import (
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 	"github.com/ryanjarv/msh/pkg/app"
-	"syscall"
 )
 
 func New(_ app.App) (*Sfn, error) {
@@ -27,7 +26,7 @@ func (s *Sfn) GetName() string { return "sfn" }
 
 func (s *Sfn) Compile(stack constructs.Construct, i int) error {
 	s.stack = stack
-	s.name = fmt.Sprintf("%s-%d", s.GetName(), syscall.Getpid())
+	s.name = fmt.Sprintf("%s-%d", s.GetName(), i)
 	return nil
 }
 

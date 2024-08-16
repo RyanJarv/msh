@@ -8,7 +8,6 @@ import (
 	"github.com/aws/jsii-runtime-go"
 	"github.com/ryanjarv/msh/cmd/lambda"
 	"github.com/ryanjarv/msh/pkg/app"
-	"github.com/ryanjarv/msh/pkg/types"
 )
 
 func New(app app.App) (*Cmd, error) {
@@ -23,11 +22,12 @@ func New(app app.App) (*Cmd, error) {
 }
 
 type Cmd struct {
-	types.IChain `json:"-"`
-	Args         []string
-	Opts         *lambda.LambdaOpts
-	stack        constructs.Construct
-	name         string
+	sfn.INextable  `json:"-"`
+	sfn.IChainable `json:"-"`
+	Args           []string
+	Opts           *lambda.LambdaOpts
+	stack          constructs.Construct
+	name           string
 }
 
 func (s Cmd) GetName() string { return "filter" }
@@ -36,36 +36,35 @@ func (s *Cmd) Compile(stack constructs.Construct, i int) error {
 	s.name = fmt.Sprintf("%s-%d", s.GetName(), i)
 	s.stack = stack
 
-	lambda, err := lambda.NewInternal(s.Args)
+	l, err := lambda.NewInternal(s.Args)
 	if err != nil {
 		return fmt.Errorf("%s: %w", s.name, err)
 	}
 
-	lambda.SetOpts(s.Opts)
+	l.SetOpts(s.Opts)
 
-	if err = lambda.Compile(stack, 0); err != nil {
+	if err = l.Compile(stack, 0); err != nil {
 		return fmt.Errorf("filter: %w", err)
 	}
 
-	s.IChain = lambda
+	pass := sfn.NewPass(s.stack, jsii.String(s.name+"-end"), &sfn.PassProps{})
+	s.INextable = pass
 
-	return nil
-}
-
-func (s *Cmd) Next(next sfn.IChainable) sfn.Chain {
-	return sfn.NewPass(s.stack, jsii.String(s.name+"-pass"), &sfn.PassProps{
+	s.IChainable = sfn.NewPass(s.stack, jsii.String(s.name+"-pass"), &sfn.PassProps{
 		Parameters: &map[string]interface{}{
 			"__input.$": "$",
 		},
 		Comment: jsii.String("save input to $.__input"),
 	}).
-		Next(s.IChain.StartState()).
+		Next(l.StartState()).
 		Next(
 			sfn.NewChoice(s.stack, jsii.String(s.name+"-choice"), &sfn.ChoiceProps{
 				Comment:    jsii.String("choice"),
 				OutputPath: jsii.String("$.__input"),
 			}).When(sfn.Condition_BooleanEquals(jsii.String("$.__choice.result"), jsii.Bool(true)),
-				next.StartState(), &sfn.ChoiceTransitionOptions{},
+				pass.StartState(), &sfn.ChoiceTransitionOptions{},
 			).Otherwise(sfn.NewSucceed(s.stack, jsii.String(s.name+"-filtered"), &sfn.SucceedProps{}).StartState()),
 		)
+
+	return nil
 }
