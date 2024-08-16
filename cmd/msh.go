@@ -42,7 +42,7 @@ func Run() error {
 
 	err = app.Run(m)
 	if err != nil {
-		return fmt.Errorf("%s: run: %s", name, err)
+		return fmt.Errorf("run: %s", err)
 	}
 
 	return nil

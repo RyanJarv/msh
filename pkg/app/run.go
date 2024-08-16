@@ -30,9 +30,8 @@ func (a *App) Run(step types.CdkStep) error {
 		app := awscdk.NewApp(&awscdk.AppProps{})
 		stack := awscdk.NewStack(app, jsii.String("msh"), &awscdk.StackProps{})
 
-		_, err := a.Compile(stack, nil, 0)
-		if err != nil {
-			return fmt.Errorf("compile: %w", err)
+		if _, err := a.Compile(stack, nil, 0); err != nil {
+			return err
 		}
 
 		return a.Build(app)
@@ -71,7 +70,10 @@ func (a *App) Compile(scope constructs.Construct, next types.CdkStep, i int) (ty
 			return nil, fmt.Errorf("step must implement CdkStep, got: %T", step.Value)
 		}
 
-		err := cdkstep.Compile(scope, i)
+		// Pass the index of the command from the start of the pipeline starting from 1. This
+		// is used to ensure unique naming of resources in the CDK.
+		cmdNum := len(steps) - i + 1
+		err := cdkstep.Compile(scope, cmdNum)
 		if err != nil {
 			return nil, fmt.Errorf("compile: %w", err)
 		}
@@ -130,7 +132,7 @@ func EnsureNext(scope constructs.Construct, next types.CdkStep) (chain sfn.IChai
 		var ok bool
 		chain, ok = next.(sfn.IChainable)
 		if !ok {
-			return nil, fmt.Errorf("next step must be a statemachine task, got: %T", next)
+			return nil, fmt.Errorf("next step must be IChainable, got: %T", next)
 		}
 	}
 	return chain, nil

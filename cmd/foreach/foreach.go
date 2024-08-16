@@ -15,10 +15,10 @@ func New(_ app.App) (*Foreach, error) {
 }
 
 type Foreach struct {
-	types.IIterator
+	types.IIterator `json:"-"`
 }
 
-func (s Foreach) GetName() string { return "map" }
+func (s Foreach) GetName() string { return "foreach" }
 
 func (s *Foreach) Compile(stack constructs.Construct, i int) error {
 	name := fmt.Sprintf("%s-%d", s.GetName(), i)

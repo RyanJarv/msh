@@ -59,7 +59,7 @@ type AwsCmd struct {
 	tasks.LambdaInvoke `json:"-"`
 	Script             string
 	Args               []string
-	IamStatementProps  []awsiam.PolicyStatementProps `json:"omitempty"`
+	IamStatementProps  []awsiam.PolicyStatementProps
 	Environment        map[string]*string
 }
 

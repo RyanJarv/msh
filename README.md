@@ -17,79 +17,123 @@ machine which:
 Once deployed this pipeline is persistent in the account and must be manually deleted in the CloudFormation console to
 deactivate it.
 
-# What Is Happening Here?
+## Getting Started
+
+```bash
+git clone git@github.com:RyanJarv/msh.git
+cd msh
+make pull
+make build
+. ./bin/env.sh
+```
+
+You should now be able to deploy the following pipeline:
+```bash
+@cron '0 0 * * * *' | sfn{ 
+        .aws ec2 describe-instances --query 'Reservations[]. Instances[]' \
+        | .foreach \
+        | .filter ./bin/hours_running 72 \
+        | .aws ec2 stop-instances --instance-ids '$.Instanceld'
+}
+```
+
+## Interesting Features
+
+* Automatic IAM policy generation using a fork of Ian's iam-dataset [built for the awscli](cmd/aws/cli_iam_map.json).
+* [Experimental support](https://github.com/RyanJarv/msh/tree/main/cmd.experimental/api) for compiling botocore paginator 
+definitions to CDK step function definitions.
+* Easily add custom lambda commands by taking advantage of [shebang lines](https://github.com/RyanJarv/msh/blob/d0675cb3195d18bbca4e20cbecd080e4c0c5e033/bin/hours_running.py#L1).
+  * `.filter ./bin/hours_running 72` can also be run as `hours_running 72`.
+
+## What Is Happening Here?
 
 So... good question, this is actually running in a real shell, and we aren't doing anything too tricky with [overriding shell 
 syntax](./bin/env.sh).
 
 We're using CDK in generally how it's intended to, however we're expressing the configuration through piped commands.
 To do this we build a simple internal configuration consisting of the arguments passed to each function. This 
-configuration is read in through the first line of stdin on startup, and printed as the first line to stdout, but only 
+configuration is read in through the first line of stdin on startup, extended, then printed as the first line to stdout, but only 
 if stdin/stdout is not a TTY.
 
 You can see this internal configuration by appending cat or jq to the end of the command above:
 
 ```
 (msh) me@Ryans-MacBook-Pro msh % @cron '0 0 * * * *' | sfn{ 
-        .aws ec2 describe-instances --query 'Reservations[]. Instances[]' \
+        .aws ec2 describe-instances --query 'Reservations[].Instances[]' \
         | .foreach \
-        | .filter ./bin/hours_running.py 72
+        | .filter ./bin/hours_running 72
 }  | jq
 {
   "Steps": [
-    {
-      "Name": "schedule",
-      "Value": { "Rule": null, "CronOptions": { "day": null, "hour": "0", "minute": "0", "month": "*", "weekDay": null, "year": "*" } }
-    },
-    {
-      "Name": "sfn",
-      "Value": { "Name": "sfn" }
-    },
-    {
-      "Name": "aws",
-      "Value": {
-        "LambdaInvoke": null,
-        "Script": "#!/usr/bin/env python3\n# Borrowed from https://gist.github.com/dagrz/9b006d116302ba9dc4a1234b867c30c7, thanks dagrz!\n\nimport json\nimport sys\nimport awscli.clidriver\nfrom io import StringIO\n\ndriver = awscli.clidriver.create_clidriver()\n\n\ndef lambda_handler(event, context):\n    old_stdout = sys.stdout\n    sys.stdout = mystdout = StringIO()\n\n    driver.main(args=event['command'])\n\n    sys.stdout = old_stdout\n\n    mystdout.seek(0)\n\n    return json.loads(mystdout.read())\n\n\nif __name__ == '__main__':\n    lambda_handler({'command': sys.argv[1:]}, {})\n    sys.exit(0)\n",
-        "Args": [ ".aws", "ec2", "describe-instances", "--query", "Reservations[]. Instances[]" ],
-        "IamStatementProps": [ { "actions": [ "ec2:DescribeInstances" ], "conditions": null, "effect": "", "notActions": null, "notPrincipals": null, "notResources": null, "principals": null, "resources": [ "*" ], "sid": null } ],
-        "Environment": { "PYTHONPATH": "/opt/awscli" }
-      }
-    },
-    {
-      "Name": "map",
-      "Value": { "IChain": null }
-    },
-    {
-      "Name": "filter",
-      "Value": {
-        "INextable": null,
-        "Start": null,
-        "Lambda": { "IChain": null, "Function": null, "LambdaOpts": { "InputPath": "$.__input", "ResultSelector": { "result.$": "$.Payload" }, "OutputPath": null, "ResultPath": "$.__choice" },
-          "Script": "#!/usr/bin/env .filter\n\nfrom datetime import datetime, timezone\nimport os\n\n\ndef lambda_handler(event, context):\n    if event['State']['Name'] != 'running':\n        return False\n\n    input_date_str = event['UsageOperationUpdateTime']\n    print(input_date_str)\n    input_date = datetime.fromisoformat(input_date_str)\n\n    current_date = datetime.now(timezone.utc)\n    delta = current_date - input_date\n\n    return (delta.total_seconds() / 60 / 60) > int(os.environ['ARG1'])",
-          "Args": [ ".filter", "./bin/hours_running.py", "72" ],
-          "Environment": { "ARG0": "./bin/hours_running.py", "ARG1": "72" },
-          "TimeoutSeconds": 300
-        }
-      }
-    }
+    { "Name": "schedule", "Value": { "CronOptions": { "day": null, "hour": "0", "minute": "0", "month": "*", "weekDay": null, "year": "*" } } },
+    { "Name": "sfn",      "Value": {} },
+    { "Name": "aws",      "Value": { "Script": "...", "Args": [".aws", "ec2", "describe-instances", ...], "IamStatementProps": [...], "Environment": {...} } },
+    { "Name": "map",      "Value": {}},
+    { "Name": "filter",   "Value": { "Args": [...], "Opts": {...} } },
+    { "Name": "aws",      "Value": { "Script": "...", "Args": [".aws", "ec2", "stop-instances", ...], "IamStatementProps": [...], "Environment": {...} } }
   ]
 }
+```
 
+Each step value represents a marshalled [CdkStep](https://github.com/RyanJarv/msh/blob/d0675cb3195d18bbca4e20cbecd080e4c0c5e033/cmd/filter/filter.go#L29)
+after the [New](https://github.com/RyanJarv/msh/blob/d0675cb3195d18bbca4e20cbecd080e4c0c5e033/cmd/filter/filter.go#L13C6-L13C9) function is called.
+
+If the current executing [command is a TTY](https://github.com/RyanJarv/msh/blob/d0675cb3195d18bbca4e20cbecd080e4c0c5e033/pkg/app/run.go#L29) we 
+finish building the CDK state by calling Compile on each CdkStep in the configuration, [iterate through the reversed steps](https://github.com/RyanJarv/msh/blob/d0675cb3195d18bbca4e20cbecd080e4c0c5e033/pkg/app/run.go#L66)
+to build the chain from the end to the beginning. The beginning of the chain is extended in different ways 
+depending on the underlying type, whether it is an awsstepfunctions.INextable, awsevents.Rule, awssns.ITopic, or 
+types.IIterator.
+
+# Develop Your Own Steps
+
+Developing a step is fairly simple, just add a new directory under [./cmd](./cmd) which contains the following code:
+
+```golang
+// New returns the CdkStep with any configuration needed to build the required CDK resources.
+func New(app app.App) (*Cmd, error) {
+	return &Cmd{}, nil
+}
+
+// Cmd is a struct that implements types.CdkStep
+//
+// This represents the internal configuration of the step, and is passed between the steps using JSON. You don't need
+// to worry about this however, the struct will be restored for you before Compile is called.
+//
+// Cmd is passed to the preceding step in the pipeline, so you may need to ensure the correct interfaces are 
+// implemented depending on your use case.
+//
+// Interfaces representing how Cmd can extend the chain, if none are implemented no step can precede this command:
+//   **awsevents.IRuleTarget**
+//        Implements an awsevents RuleTarget, Cmd may be passed to the previous step's AddTarget method.
+//   **types.IChainable**
+//        Implements a sfn step which can have preceding steps, Cmd may be passed to the previous step's Next method.
+//   **awssns.ITopicSubscription**
+//        Implements an SNS topic subscription, Cmd may be passed to the previous step's AddSubscription method.
+//
+// Interfaces representing how the chain can be extended, if none are impelmented no step can follow this command:
+//   **awsstepfunctions.INextable**
+//        Implements a sfn step which can have steps after it, the next step is passed to our Next method.
+//   **types.IIterator**
+//        Implements a sfn step which iterates over set of steps, the next step will be passed to our Iterator method.
+//   **awsevents.Rule**
+//        Implements an awsevents Rule, the next step will be passed to our AddTarget method.
+//
+type Cmd struct {}
+
+// GetName needs to be a unique name for the step, this is used to identify the step in the internal configuration.
+func (s Cmd) GetName() string { return "cmd-name" }
+
+// Compile is called when we are building the CDK stack. All CDK resources need to be created here.
+func (s *Cmd) Compile(stack constructs.Construct, i int) error {
+	return nil
+}
 ```
 
 
 
-JSON, and
-
-
-Multivac Shell Commands do not behave like most other commands. 
-
-your used to. 
-
-
-
-
 ## Challange 1: Write a fork bomb for AWS in the Multivac Shell
+
+***Note:*** This is not using the current fork, I had to hack with things a bit to get this to work.
 
 Request: https://x.com/eigenseries/status/1719883102187876768
 
