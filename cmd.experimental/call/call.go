@@ -10,9 +10,9 @@ import (
 	"github.com/ryanjarv/msh/pkg/app"
 )
 
-func New(app app.App) (*Call, error) {
+func New(app *app.App) (*Call, error) {
 	return &Call{
-		Name: app.Arg(1),
+		Name: app.Flag.Arg(1),
 	}, nil
 }
 
@@ -23,14 +23,14 @@ type Call struct {
 
 func (s Call) GetName() string { return "ref" }
 
-func (s *Call) Compile(stack constructs.Construct, i int) error {
+func (s *Call) Init(scope constructs.Construct, i int) error {
 	name := fmt.Sprintf("%s-%s-%d", s.GetName(), s.Name, i)
 
 	props := tasks.StepFunctionsStartExecutionProps{
-		StateMachine: sfn.StateMachine_FromStateMachineName(stack, jsii.String(name), jsii.String(s.Name)),
+		StateMachine: sfn.StateMachine_FromStateMachineName(scope, jsii.String(name), jsii.String(s.Name)),
 	}
 
-	s.StepFunctionsStartExecution = tasks.NewStepFunctionsStartExecution(stack, jsii.String(fmt.Sprintf("invoke-%s", name)), &props)
+	s.StepFunctionsStartExecution = tasks.NewStepFunctionsStartExecution(scope, jsii.String(fmt.Sprintf("invoke-%s", name)), &props)
 
 	return nil
 }

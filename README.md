@@ -88,13 +88,35 @@ finish building the CDK app by [iterating through the reversed steps](https://gi
 which builds the chain from the end to the beginning by calling Compile on each. The beginning of the chain is extended in different ways depending on the 
 underlying type, whether it is an awsstepfunctions.INextable, awsevents.Rule, or types.IIterator.
 
+## Steps
+
+### Subfinder
+
+```bash
+@table tld | sfn.foreach | sfn.lambda subfinder
+```
+
+### Dns and Port Scanners
+
+```bash
+@table domain --program |.lambda dns_scanner } # -> port
+@table domain |.lambda dns_scanner } # -> port
+@table domain |.lambda port_scanner } # -> port
+```
+
+### Http Scanner
+
+```bash
+@table port | batch | .fargate witness } # -> url
+```
+
 # Develop Your Own Steps
 
 Developing a step is fairly simple, just add a new directory under [./cmd](./cmd) which contains the following code:
 
 ```golang
 // New returns the CdkStep with any configuration needed to build the required CDK resources.
-func New(app app.App) (*Cmd, error) {
+func New(app *app.App) (*Cmd, error) {
 	return &Cmd{}, nil
 }
 

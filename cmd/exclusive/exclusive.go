@@ -11,7 +11,7 @@ import (
 	"github.com/ryanjarv/msh/pkg/types"
 )
 
-func New(app app.App) (*Call, error) {
+func New(app *app.App) (*Call, error) {
 	return &Call{}, nil
 }
 
@@ -20,42 +20,39 @@ type Call struct {
 	types.IChain
 }
 
-func (s Call) GetName() string { return "sfn" }
+func (s *Call) GetName() string { return "sfn" }
 
-func (s *Call) Compile(stack constructs.Construct, i int) error {
-	name := fmt.Sprintf("%s-%d-%d", s.GetName(), i)
-
-	s.IChain = ListStateMachines(stack, name, false).
+func (s *Call) BeforeRun(step *types.StepRunInfo) (err error) {
+	s.IChain = ListStateMachines(step.Scope, *step.Id("list-swf"), false).
 		Next(
-			sfn.NewMap(stack, jsii.String(name+"-map"),
-				&sfn.MapProps{
-					ItemsPath: sfn.JsonPath_StringAt(jsii.String("$.Executions")),
-				},
+			sfn.NewMap(step.Scope, step.Id("map-swf"), &sfn.MapProps{
+				ItemsPath: sfn.JsonPath_StringAt(jsii.String("$.Executions")),
+			},
 			).Iterator(
 				sfn.NewChoice(
-					stack, jsii.String(name+"-choice"),
+					step.Scope, step.Id("choice"),
 					&sfn.ChoiceProps{
 						Comment: jsii.String("Check if the execution is the current one"),
 					},
 				).When(
 					sfn.Condition_StringEqualsJsonPath(jsii.String("$.ExecutionArn"), jsii.String("$$.Execution.Id")),
-					sfn.NewPass(stack, jsii.String(name+"-pass"), &sfn.PassProps{}),
+					sfn.NewPass(step.Scope, step.Id("pass"), &sfn.PassProps{}),
 					&sfn.ChoiceTransitionOptions{},
 				),
 			),
 		).
 		Next(
 			sfn.NewChoice(
-				stack, jsii.String(name+"-choice-paginator"),
+				step.Scope, step.Id("-choice-paginator"),
 				&sfn.ChoiceProps{
 					Comment: jsii.String("Check if there are more pages to fetch"),
 				},
 			).When(
 				sfn.Condition_IsPresent(jsii.String("$.NextToken")),
-				ListStateMachines(stack, name+"-paginator", true),
+				ListStateMachines(step.Scope, *step.Id("paginator"), true),
 				&sfn.ChoiceTransitionOptions{},
 			).Otherwise(
-				sfn.NewPass(stack, jsii.String(name+"-done"), &sfn.PassProps{}),
+				sfn.NewPass(step.Scope, step.Id("-done"), &sfn.PassProps{}),
 			),
 		)
 

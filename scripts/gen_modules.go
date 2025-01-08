@@ -38,21 +38,21 @@ var Registry = types.NewRegistry(
 	{{- end}}
 )
 
-func NewModule(app app.App, name string) (step types.CdkStep, err error) {
+func NewModule(app *app.App, cmdName string) (step types.CdkStep, err error) {
     flag.Parse()
 
-	name = strings.Trim(name, "@.")
+	cmdName = strings.Trim(cmdName, "@.")
 
-	switch name {
+	switch cmdName {
 	{{- range .Modules}}
 	case "{{.Name}}":
 		 step, err = {{.Name}}.New(app)
 	{{- end}}
 	default:
-		err = fmt.Errorf("unknown module: %s", name)
+		err = fmt.Errorf("unknown module: %s", cmdName)
 	}
 
-	return step, utils.Wrap(err, name)
+	return step, utils.Wrap(err, cmdName)
 }
 `
 

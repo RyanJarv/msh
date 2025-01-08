@@ -8,7 +8,7 @@ import (
 	"github.com/ryanjarv/msh/pkg/app"
 )
 
-func New(_ app.App) (*Build, error) {
+func New(_ *app.App) (*Build, error) {
 	return &Build{}, nil
 }
 
@@ -18,7 +18,7 @@ type Build struct {
 
 func (s Build) GetName() string { return "build" }
 
-func (s *Build) Compile(scope constructs.Construct, i int) error {
+func (s *Build) Init(scope constructs.Construct, i int) error {
 	s.IChainable = awsstepfunctions.NewSucceed(scope, jsii.String("build-succeed"), nil)
 
 	return nil

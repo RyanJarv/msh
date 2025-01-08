@@ -21,12 +21,12 @@ import (
 	"time"
 )
 
-func New(app app.App) (*Api, error) {
-	if len(app.Args()) != 2 {
-		return nil, fmt.Errorf("usage: %s <service> <action>", app.Args)
+func New(app *app.App) (*Api, error) {
+	if len(app.Flag.Args()) != 2 {
+		return nil, fmt.Errorf("usage: %s <service> <action>", app.Flag.Args)
 	}
 
-	opts, err := GetActionOpts(app.Arg(0), flag.Arg(1))
+	opts, err := GetActionOpts(app.Flag.Arg(0), flag.Arg(1))
 	if err != nil {
 		return nil, fmt.Errorf("getActionOpts: %w", err)
 	}
@@ -44,11 +44,11 @@ type Api struct {
 
 func (s Api) GetName() string { return "api" }
 
-func (s Api) Compile(stack constructs.Construct, i int) error {
-	iteratorBlock := sfn.NewPass(stack, jsii.String("api-pass"), &sfn.PassProps{})
-	done := sfn.NewSucceed(stack, jsii.String("api-succeed"), &sfn.SucceedProps{})
+func (s Api) Init(scope constructs.Construct, i int) error {
+	iteratorBlock := sfn.NewPass(scope, jsii.String("api-pass"), &sfn.PassProps{})
+	done := sfn.NewSucceed(scope, jsii.String("api-succeed"), &sfn.SucceedProps{})
 
-	s.Chain = Paginate(stack, iteratorBlock, done, s.ActionOpts)
+	s.Chain = Paginate(scope, iteratorBlock, done, s.ActionOpts)
 
 	return nil
 }

@@ -18,11 +18,13 @@ if [[ "$#" -lt "1" ]] || [[ "$#" -gt "3" ]]; then
 fi
 
 echo "  * $CMD"
-
-output="$(mktemp -d)/out"
+tmp="$(mktemp -d)"
+stdout="${tmp}/stdout"
+stderr="${tmp}/stderr"
 
 set +euo pipefail
-script -q $output bash -c "$CMD" 1>/dev/null
+bash -c "$CMD" 2> $stderr 1> $stdout
+
 status_code=$?
 set -euo pipefail
 
@@ -36,31 +38,36 @@ if [[ $status_code -ne 0 ]]; then
   printf "${RED}[FAILED]${NC} %s
         StatusCode:     '%s'
         Got:     '%s'
-  " "${CMD}" "$status_code" "$(cat $output)"
+  " "${CMD}" "$status_code" "$(cat $stdout)"
 fi
 
 if [[ "$#" -eq "1" ]]; then
   exit 0
 fi
 
-if cat $output | grep -qE "$EXPECTED"; then
+if cat $stdout | grep -qE "$EXPECTED"; then
   printf "      ${GREEN}[PASSED]${NC} %s\n" "$CMD"
 else
+  if [[ -n $(cat "$stderr") ]]; then
+    echo "** stderr **"
+    cat "$stderr"
+  fi
+
   printf "${RED}[FAILED]${NC} %s
         Got:     '%s'
         Expected:   '%s'
-" "${CMD}" "$(cat $output)" "$EXPECTED"
+" "${CMD}" "$(cat $stdout)" "$EXPECTED"
 fi
 
 if [[ -n "$NOT_EXPECTED" ]]; then
-  if cat $output | grep -vqE "$NOT_EXPECTED"; then
+  if cat $stdout | grep -vqE "$NOT_EXPECTED"; then
     printf "      ${GREEN}[PASSED]${NC} %s\n" "$CMD"
   else
     printf "${RED}[FAILED]${NC} %s
           Got:     '%s'
           Not Expected:   '%s'
-  " "${CMD}" "$(cat $output)" "$NOT_EXPECTED"
+  " "${CMD}" "$(cat $stdout)" "$NOT_EXPECTED"
   fi
 fi
 
-rm $output
+rm $stdout

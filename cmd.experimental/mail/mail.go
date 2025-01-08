@@ -18,7 +18,7 @@ var opts = struct {
 	Subject: flag.String("subject", "", "Subject of the notification email."),
 }
 
-func New(app app.App) (*Mail, error) {
+func New(app *app.App) (*Mail, error) {
 	if *opts.To == "" {
 		return nil, fmt.Errorf("missing required argument: to")
 	}
@@ -40,7 +40,7 @@ type Mail struct {
 
 func (s Mail) GetName() string { return "mail" }
 
-func (s *Mail) Compile(stack constructs.Construct, i int) error {
+func (s *Mail) Init(scope constructs.Construct, i int) error {
 	s.ITopicSubscription = awssnssubscriptions.NewEmailSubscription(s.To, &awssnssubscriptions.EmailSubscriptionProps{})
 	return nil
 }

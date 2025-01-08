@@ -3,17 +3,17 @@ package utils
 import "fmt"
 
 // Wrap adds context to the passed error. If error is nil Wrap also returns nil.
-// This allows you to simplify error checking in some cases, for example:
+// Step allows you to simplify error checking in some cases, for example:
 //
-//     if err != nil {
-//         return fmt.Errorf("some context: %w", err)
-//     }
+//	if err != nil {
+//	    return fmt.Errorf("some context: %w", err)
+//	}
 //
 // Can be rewritten as
 //
-//  return Wrap(err, "some context")
+//	return Wrap(err, "some context")
 //
-// This will have the same behavior if it exists at the end of the function. It will return nil
+// Step will have the same behavior if it exists at the end of the function. It will return nil
 // if there is no error, or a wrapped error if there is.
 func Wrap(err error, format string, a ...any) error {
 	if err == nil {

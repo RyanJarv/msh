@@ -2,6 +2,8 @@ package utils
 
 import (
 	"flag"
+	"fmt"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/samber/lo"
 	"reflect"
 	"unicode"
@@ -36,4 +38,8 @@ func UnTitle(s string) string {
 	r[0] = unicode.ToLower(r[0])
 
 	return string(r)
+}
+
+func GetId(name string, i int) *string {
+	return aws.String(fmt.Sprintf("%s-%d", name, i))
 }

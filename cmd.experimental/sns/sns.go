@@ -9,7 +9,7 @@ import (
 	"github.com/ryanjarv/msh/pkg/app"
 )
 
-func New(app app.App) (*Sns, error) {
+func New(app *app.App) (*Sns, error) {
 	return &Sns{}, nil
 }
 
@@ -20,7 +20,7 @@ type Sns struct {
 
 func (s Sns) GetName() string { return "sns" }
 
-func (s Sns) Compile(scope constructs.Construct, i int) error {
+func (s Sns) Init(scope constructs.Construct, i int) error {
 	s.Topic = awssns.NewTopic(scope, aws.String(s.GetName()), &awssns.TopicProps{})
 	s.SnsTopic = awseventstargets.NewSnsTopic(s.Topic, &awseventstargets.SnsTopicProps{})
 	return nil

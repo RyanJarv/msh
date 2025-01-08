@@ -4,20 +4,20 @@ import (
 	"fmt"
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	sfn "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
-	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 	"github.com/ryanjarv/msh/pkg/app"
 	"github.com/ryanjarv/msh/pkg/types"
+	"github.com/ryanjarv/msh/pkg/utils"
 	"os"
 	"strconv"
 )
 
-func New(app app.App) (*SleepCmd, error) {
-	if app.NArg() != 2 {
+func New(app *app.App) (*SleepCmd, error) {
+	if app.Flag.NArg() != 2 {
 		return nil, fmt.Errorf("usage: %s <seconds>", os.Args[0])
 	}
 
-	seconds, err := strconv.Atoi(app.Arg(1))
+	seconds, err := strconv.Atoi(app.Flag.Arg(1))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse seconds: %w", err)
 	}
@@ -28,18 +28,20 @@ func New(app app.App) (*SleepCmd, error) {
 }
 
 type SleepCmd struct {
-	Seconds      int
-	types.IChain `json:-`
+	Seconds int
 }
 
-func (s SleepCmd) GetName() string { return "sleep" }
+func (s *SleepCmd) GetName() string { return "sleep" }
 
-func (s *SleepCmd) Compile(stack constructs.Construct, i int) error {
-	name := fmt.Sprintf("%s-%d", s.GetName(), i)
-
-	s.IChain = sfn.NewWait(stack, jsii.String(name), &sfn.WaitProps{
+func (s *SleepCmd) GetChain(step *types.StepRunInfo) sfn.IChainable {
+	wait := sfn.NewWait(step.Scope, utils.GetId(s.GetName(), step.Index), &sfn.WaitProps{
 		Time: sfn.WaitTime_Duration(awscdk.Duration_Seconds(jsii.Number(s.Seconds))),
 	})
+	if step.Next == nil {
+		return wait
+	} else if v, ok := step.Next.Step.(types.SfnChainable); ok {
+		return sfn.Chain_Sequence(wait, v.GetChain(step.Next))
+	}
 
 	return nil
 }

@@ -4,16 +4,17 @@ import (
 	_ "embed"
 	"fmt"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsevents"
-	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 	"github.com/ryanjarv/msh/pkg/app"
+	"github.com/ryanjarv/msh/pkg/logs"
+	"github.com/ryanjarv/msh/pkg/types"
 	"strings"
 )
 
-func New(app app.App) (*Cron, error) {
-	opts := strings.Split(strings.Join(app.Args()[1:], " "), " ")
+func New(app *app.App) (*Cron, error) {
+	opts := strings.Split(strings.Join(app.Flag.Args()[1:], " "), " ")
 	if len(opts) != 6 {
-		return nil, fmt.Errorf("cron: must have 6 args, got: %d", app.NArg())
+		return nil, fmt.Errorf("cron: must have 6 args, got: %d", app.Flag.NArg())
 	}
 
 	cronopts := awsevents.CronOptions{
@@ -41,17 +42,24 @@ func New(app app.App) (*Cron, error) {
 }
 
 type Cron struct {
-	awsevents.Rule `json:"-"`
-	CronOptions    awsevents.CronOptions
+	CronOptions awsevents.CronOptions
+	id          string
 }
 
-func (s Cron) GetName() string { return "schedule" }
+func (s *Cron) GetName() string { return "schedule" }
 
-func (s *Cron) Compile(stack constructs.Construct, i int) error {
-	name := fmt.Sprintf("%s-%d", s.GetName(), i)
-	s.Rule = awsevents.NewRule(stack, jsii.String(name), &awsevents.RuleProps{
-		Schedule: awsevents.Schedule_Cron(&s.CronOptions),
-	})
+func (s *Cron) AfterRun(step *types.StepRunInfo) error {
+	id := fmt.Sprintf("%s-%d", s.GetName(), step.Index)
+	logs.Debug("Cron.Run: got scope id %s", *step.Scope.ToString())
+
+	switch v := step.Next.Step.(type) {
+	case awsevents.IRuleTarget:
+		awsevents.NewRule(step.Scope, jsii.String("rule-"+id), &awsevents.RuleProps{
+			Schedule: awsevents.Schedule_Cron(&s.CronOptions),
+		}).AddTarget(v)
+	default:
+		return fmt.Errorf("run: next must be IRuleTarget or IStateMachine, got: %T %+v", step.Next, step.Next)
+	}
 
 	return nil
 }

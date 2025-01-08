@@ -4,143 +4,127 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/aws/aws-cdk-go/awscdk/v2"
-	"github.com/aws/aws-cdk-go/awscdk/v2/awsevents"
-	"github.com/aws/aws-cdk-go/awscdk/v2/awssns"
-	sfn "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsiam"
 	"github.com/aws/aws-cdk-go/awscdk/v2/cxapi"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 	L "github.com/ryanjarv/msh/pkg/logger"
+	"github.com/ryanjarv/msh/pkg/logs"
 	"github.com/ryanjarv/msh/pkg/types"
 	"github.com/ryanjarv/msh/pkg/utils"
 	"github.com/samber/lo"
-	"io"
 	"os"
 	"os/exec"
+	"strings"
 )
 
-func (a *App) Run(step types.CdkStep) error {
-	a.State.AddStep(step)
+func (s *App) Run() error {
+	forceBuild := os.Getenv("MSH_BUILD") == "always"
 
-	if !utils.IsTTY(a.Stdout) {
-		return a.State.WriteState(a.Stdout)
-	}
-
-	if utils.IsTTY(a.Stdout) || os.Getenv("MSH_BUILD") == "always" {
+	if utils.IsTTY(s.Stdout) || forceBuild {
 		app := awscdk.NewApp(&awscdk.AppProps{})
-		stack := awscdk.NewStack(app, jsii.String("msh"), &awscdk.StackProps{})
 
-		if _, err := a.Compile(stack, nil, 0); err != nil {
+		stack := awscdk.NewStack(app, aws.String(s.StackName()), &awscdk.StackProps{})
+
+		if err := s.Compile(stack); err != nil {
 			return err
 		}
 
-		return a.Build(app)
-	}
-
-	return nil
-}
-
-func (s *State) WriteState(f *os.File) error {
-	d, err := json.Marshal(s)
-	if err != nil {
-		return fmt.Errorf("writeState: failed to marshal app: %w", err)
-	}
-
-	L.Debug.Printf("State.WriteState: writing to %s: %s", f.Name(), string(d))
-	_, err = io.WriteString(f, string(d)+"\n")
-	if err != nil {
-		return fmt.Errorf("writeState: failed to write app: %w", err)
-	}
-
-	return nil
-}
-
-func (a *App) Compile(scope constructs.Construct, next types.CdkStep, i int) (types.CdkStep, error) {
-	L.Debug.Println("App.Compile")
-	// Reverse and build backwards so that Iterator, Next, AddTarget calls receive the proceeding target CdkStep.
-	steps := lo.Reverse(a.State.Steps)
-
-	//var next types.CdkStep
-
-	for i, step := range steps {
-		scope := constructs.NewConstruct(scope, jsii.String(fmt.Sprintf("%s%d", step.Name, i)))
-
-		cdkstep, ok := step.Value.(types.CdkStep)
-		if !ok {
-			return nil, fmt.Errorf("step must implement CdkStep, got: %T", step.Value)
-		}
-
-		// Pass the index of the command from the start of the pipeline starting from 1. This
-		// is used to ensure unique naming of resources in the CDK.
-		cmdNum := len(steps) - i + 1
-		err := cdkstep.Compile(scope, cmdNum)
-		if err != nil {
-			return nil, fmt.Errorf("compile: %w", err)
-		}
-
-		switch s := cdkstep.(type) {
-		// We don't use Next on iterators currently, so make sure this is higher priority than INextable.
-		case types.IIterator:
-			chain, err := EnsureNext(scope, next)
-			if err != nil {
-				return nil, err
-			}
-
-			s.Iterator(chain.StartState())
-		case sfn.INextable:
-			chain, err := EnsureNext(scope, next)
-			if err != nil {
-				return nil, err
-			}
-
-			// Call StartState() to ensure we are not passing the whole CdkStep object which confuses CDK.
-			s.Next(chain.StartState())
-		case awsevents.Rule:
-			n, ok := next.(awsevents.IRuleTarget)
-			if !ok {
-				return nil, fmt.Errorf("next step must be a event rule target, got: %T", next)
-			}
-
-			if next == nil {
-				return nil, fmt.Errorf("events rule does not work at the end of a chain")
-			}
-
-			s.AddTarget(n)
-		case awssns.ITopic:
-			n, ok := next.(awssns.ITopicSubscription)
-			if !ok {
-				return nil, fmt.Errorf("next step must be a topic subscription, got: %T", next)
-			}
-
-			if next != nil {
-				s.AddSubscription(n)
-			}
-		default:
-			return nil, fmt.Errorf("unknown type for step, got: %T", cdkstep)
-		}
-
-		next = cdkstep
-	}
-
-	return next, nil
-}
-
-func EnsureNext(scope constructs.Construct, next types.CdkStep) (chain sfn.IChainable, err error) {
-	if next == nil {
-		chain = sfn.NewSucceed(scope, jsii.String("succeed"), &sfn.SucceedProps{})
+		return s.Build(app)
 	} else {
-		var ok bool
-		chain, ok = next.(sfn.IChainable)
-		if !ok {
-			return nil, fmt.Errorf("next step must be IChainable, got: %T", next)
-		}
+		return s.State.WriteState(s.Stdout)
 	}
-	return chain, nil
 }
 
-func (a *App) Build(app awscdk.App) error {
+func (s *App) Compile(scope constructs.Construct) error {
+	L.Debug.Println("App.Compile")
+
+	steps := BuildSteps(scope, s.State.Steps)
+
+	for i, s := range steps {
+		if v, ok := s.Step.(types.CdkStepCanInit); ok {
+			logs.Debug("step %d: calling %s.Init(%s, %s)", i, s.Step, *s.Scope.ToString(), i)
+			if err := v.Init(s.Scope, i); err != nil {
+				return fmt.Errorf("%T.Init(): %w", s.Step, err)
+			}
+		}
+	}
+
+	for i, s := range steps {
+		switch v := s.Step.(type) {
+		case types.BeforeRunCdkStep:
+			if err := v.BeforeRun(s); err != nil {
+				logs.Debug("step %d: calling %T.Finalize(%s, %T, %T, %d)", i, s.Step, *s.Scope.ToString(), s.Last, s.Next, i)
+				return fmt.Errorf("%T.Finalize(...): %w", s.Step, err)
+			}
+		}
+	}
+
+	var lastFoundRole awsiam.IRole
+	for i, s := range steps {
+		switch v := s.Step.(type) {
+		case types.RunnableCdkStep:
+			if err := v.Run(s); err != nil {
+				logs.Debug("step %d: calling %T.Run(%s, %T, %T, %d)", i, s.Step, *s.Scope.ToString(), s.Last, s.Next, i)
+				return fmt.Errorf("%T.Run(...): %w", s.Step, err)
+			}
+		}
+
+		if v, ok := s.Step.(types.AcceptsLastRole); ok {
+			logs.Debug("step %d: calling %s.LastFoundRole(%s)", i, s.Step, lastFoundRole)
+			v.LastFoundRole(scope, lastFoundRole)
+		}
+
+		if v, ok := s.Step.(types.HasRole); ok {
+			logs.Debug("step %d: calling %s.Role()", i, s.Step)
+			lastFoundRole = v.Role()
+		}
+	}
+
+	for i, s := range steps {
+		switch v := s.Step.(type) {
+		case types.AfterRunCdkStep:
+			if err := v.AfterRun(s); err != nil {
+				logs.Debug("step %d: calling %T.Finalize(%s, %T, %T, %d)", i, s.Step, *s.Scope.ToString(), s.Last, s.Next, i)
+				return fmt.Errorf("%T.Finalize(...): %w", s.Step, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func BuildSteps(scope constructs.Construct, input []types.Step) []*types.StepRunInfo {
+	steps := []*types.StepRunInfo{}
+
+	for i, v := range input {
+		this := &types.StepRunInfo{
+			Index: i,
+			Id: func(s ...string) *string {
+				return aws.String(strings.Join(s, "-") + *utils.GetId(v.GetName(), i))
+			},
+			Step:  v.Value.(types.CdkStep),
+			Scope: constructs.NewConstruct(scope, jsii.String(fmt.Sprintf("%T%d", v, i))),
+			Last:  nil,
+			Next:  nil,
+		}
+
+		if i > 0 {
+			steps[i-1].Next = this
+		}
+		if i < len(steps) {
+			steps[i+1].Last = this
+
+		}
+		steps = append(steps, this)
+	}
+	return steps
+}
+
+func (s *App) Build(app awscdk.App) error {
 	L.Debug.Println("App.Build")
-	synth := app.Synth(nil)
+	synth := app.Synth(&awscdk.StageSynthesisOptions{})
 	if synth == nil || synth.Stacks() == nil || len(*synth.Stacks()) != 1 {
 		return fmt.Errorf("build: failed to synthesize app: %v", synth)
 	}
@@ -155,9 +139,8 @@ func (a *App) Build(app awscdk.App) error {
 
 	L.Debug.Println("synth directory:", *synth.Directory())
 
-	if os.Getenv("MSH_SKIPDEPLOY") == "" {
-		err := Deploy(synth)
-		if err != nil {
+	if skip := os.Getenv("MSH_SKIPDEPLOY") != ""; !skip {
+		if err := Deploy(synth); err != nil {
 			return fmt.Errorf("build: failed to deploy: %w", err)
 		}
 	}
@@ -166,7 +149,10 @@ func (a *App) Build(app awscdk.App) error {
 }
 
 func Deploy(synth cxapi.CloudAssembly) error {
-	cmd := exec.Command("cdk", "bootstrap", "--app", *synth.Directory())
+	args := []string{"bootstrap", "--app", *synth.Directory()}
+	L.Debug.Println("Running: cdk", strings.Join(args, " "))
+
+	cmd := exec.Command("cdk", args...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 
 	if err := cmd.Run(); err != nil {

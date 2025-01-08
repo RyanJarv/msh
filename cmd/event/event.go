@@ -14,7 +14,7 @@ import (
 	"strings"
 )
 
-func New(_ app.App) (*Event, error) {
+func New(_ *app.App) (*Event, error) {
 	path := flag.Arg(flag.NFlag())
 	config, err := os.ReadFile(path)
 	if err != nil {
@@ -64,8 +64,8 @@ type Event struct {
 
 func (s Event) GetName() string { return "event" }
 
-func (s *Event) Compile(stack constructs.Construct, i int) error {
-	s.Rule = awsevents.NewRule(stack, aws.String("event"), s.RuleProp)
+func (s *Event) Init(scope constructs.Construct, i int) error {
+	s.Rule = awsevents.NewRule(scope, aws.String("event"), s.RuleProp)
 
 	return nil
 }

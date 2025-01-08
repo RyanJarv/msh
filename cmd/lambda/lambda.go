@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
+	sfn "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
 	tasks "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctionstasks"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
@@ -21,8 +22,8 @@ type LambdaOpts struct {
 	ResultPath     *string
 }
 
-func New(args app.App) (*Lambda, error) {
-	return NewInternal(args.Args()[min(args.NArg(), 1):])
+func New(app *app.App) (*Lambda, error) {
+	return NewInternal(app.Flag.Args()[min(app.Flag.NArg(), 1):])
 }
 
 // NewInternal can be called directly from other commands that use a lambda without needing to parse the app.
@@ -57,7 +58,7 @@ func NewInternal(args []string) (*Lambda, error) {
 }
 
 type Lambda struct {
-	types.IChain   `json:"-"`
+	sfn.IChainable `json:"-"`
 	function       awslambda.Function
 	LambdaOpts     *LambdaOpts
 	Script         string
@@ -68,9 +69,9 @@ type Lambda struct {
 
 func (s Lambda) GetName() string { return "lambda" }
 
-func (s *Lambda) Compile(stack constructs.Construct, i int) error {
+func (s *Lambda) Init(scope constructs.Construct, i int) error {
 	name := fmt.Sprintf("%s-%d", s.GetName(), i)
-	s.function = awslambda.NewFunction(stack, jsii.String(name), &awslambda.FunctionProps{
+	s.function = awslambda.NewFunction(scope, jsii.String(name), &awslambda.FunctionProps{
 		Runtime:     awslambda.Runtime_PYTHON_3_11(),
 		Handler:     jsii.String("index.lambda_handler"),
 		Code:        awslambda.Code_FromInline(jsii.String(s.Script)),
@@ -78,7 +79,7 @@ func (s *Lambda) Compile(stack constructs.Construct, i int) error {
 		Timeout:     awscdk.Duration_Seconds(jsii.Number(s.TimeoutSeconds)),
 	})
 
-	s.IChain = tasks.NewLambdaInvoke(stack, jsii.String(fmt.Sprintf("%s-invoke", s.GetName())), &tasks.LambdaInvokeProps{
+	s.IChainable = tasks.NewLambdaInvoke(scope, jsii.String(fmt.Sprintf("%s-invoke", s.GetName())), &tasks.LambdaInvokeProps{
 		LambdaFunction: s.function,
 		InputPath:      s.LambdaOpts.InputPath,
 		ResultSelector: s.LambdaOpts.ResultSelector,
@@ -87,6 +88,17 @@ func (s *Lambda) Compile(stack constructs.Construct, i int) error {
 	})
 
 	return nil
+}
+
+func (s *Lambda) GetChain(step *types.StepRunInfo) (err error) {
+	switch v := step.Next.Step.(type) {
+	case sfn.IChainable:
+		s.IChainable = sfn.Chain_Sequence(v.StartState(), s.IChainable.StartState())
+	default:
+		return fmt.Errorf("sleep.Run: next step is not sfn chainable: got %T", step.Next)
+	}
+
+	return err
 }
 
 func (s *Lambda) SetOpts(opts *LambdaOpts) {

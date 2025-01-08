@@ -11,8 +11,8 @@ import (
 
 func GetPipeline(reg types.Registry, stdin *os.File, stdout *os.File, args []string) (App, error) {
 	L.Debug.Printf("GetPipeline: %s:", args)
-	var state State
 
+	var state *State
 	// We need to read the state before we can do anything else.
 	mshStdin := os.Getenv("MSH_STDIN")
 	if !utils.IsTTY(stdin) || mshStdin != "" {
@@ -31,13 +31,14 @@ func GetPipeline(reg types.Registry, stdin *os.File, stdout *os.File, args []str
 			return App{}, fmt.Errorf("run: failed to read state: %w", err)
 		}
 	} else {
-		state = State{
+		state = &State{
+			Name:  "msh-default",
 			Steps: []types.Step{},
 		}
 	}
 
 	return App{
-		FlagSet:  utils.ParseArgs(args),
+		Flag:     utils.ParseArgs(args),
 		State:    state,
 		Stdin:    stdin,
 		Stdout:   stdout,
@@ -47,10 +48,10 @@ func GetPipeline(reg types.Registry, stdin *os.File, stdout *os.File, args []str
 }
 
 type App struct {
-	*flag.FlagSet `json:"-"`
-	State         State          `json:"-"`
-	Registry      types.Registry `json:"-"`
-	OsArgs        []string       `json:"-"`
-	Stdin         *os.File       `json:"-"`
-	Stdout        *os.File       `json:"-"`
+	*State
+	Flag     *flag.FlagSet  `json:"-"`
+	Registry types.Registry `json:"-"`
+	OsArgs   []string       `json:"-"`
+	Stdin    *os.File       `json:"-"`
+	Stdout   *os.File       `json:"-"`
 }

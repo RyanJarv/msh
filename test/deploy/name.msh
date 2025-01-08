@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+./out/.name 'test-deploy-name-1' | ./out/@cron '0 0 * * * *' | ./out/.sfn | ./out/.sleep 10
+./out/.name 'test-deploy-name-2' | ./out/@cron '0 0 * * * *' | ./out/.sfn | ./out/.sleep 20

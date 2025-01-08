@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-func New(a app.App) (*Each, error) {
+func New(a *app.App) (*Each, error) {
 	apps := []app.App{}
 
 	for _, path := range flag.Args() {
@@ -37,10 +37,9 @@ type Each struct {
 
 func (s Each) GetName() string { return "each" }
 
-func (s Each) Compile(stack constructs.Construct, i int) error {
+func (s Each) Init(scope constructs.Construct, i int) error {
 	for _, subapp := range s.SubApp {
-		_, err := subapp.Compile(stack, s, 0)
-		if err != nil {
+		if err := subapp.Compile(scope); err != nil {
 			return fmt.Errorf("each: %w", err)
 		}
 	}

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+./out/.name 'EC2 Shutdown' | ./out/@cron '0 0 * * * *' | ./out/.sfn \
+  | ./out/.aws ec2 describe-instances --query 'Reservations[]. Instances[]' \
+  | ./out/.foreach | ./out/.filter ./scripts/hours_running.py 72 \
+  | ./out/.aws ec2 stop-instances --instance-ids '$.InstanceId'

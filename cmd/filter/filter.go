@@ -10,9 +10,9 @@ import (
 	"github.com/ryanjarv/msh/pkg/app"
 )
 
-func New(app app.App) (*Cmd, error) {
+func New(app *app.App) (*Cmd, error) {
 	return &Cmd{
-		Args: app.Args()[1:],
+		Args: app.Flag.Args()[1:],
 		Opts: &lambda.LambdaOpts{
 			InputPath:      jsii.String("$.__input"),
 			ResultSelector: &map[string]interface{}{"result.$": "$.Payload"},
@@ -32,9 +32,9 @@ type Cmd struct {
 
 func (s Cmd) GetName() string { return "filter" }
 
-func (s *Cmd) Compile(stack constructs.Construct, i int) error {
+func (s *Cmd) Init(scope constructs.Construct, i int) error {
 	s.name = fmt.Sprintf("%s-%d", s.GetName(), i)
-	s.stack = stack
+	s.stack = scope
 
 	l, err := lambda.NewInternal(s.Args)
 	if err != nil {
@@ -43,7 +43,7 @@ func (s *Cmd) Compile(stack constructs.Construct, i int) error {
 
 	l.SetOpts(s.Opts)
 
-	if err = l.Compile(stack, 0); err != nil {
+	if err = l.Init(scope, 0); err != nil {
 		return fmt.Errorf("filter: %w", err)
 	}
 

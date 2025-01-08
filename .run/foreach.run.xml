@@ -3,9 +3,9 @@
     <module name="msh" />
     <working_directory value="$PROJECT_DIR$" />
     <envs>
-      <env name="MSH_STDIN" value="$PROJECT_DIR$/test/sfn.json" />
-      <env name="MSH_CMD" value="foreach" />
       <env name="AWS_PROFILE" value="test-a" />
+      <env name="MSH_CMD" value="foreach" />
+      <env name="MSH_STDIN" value="$PROJECT_DIR$/test/inputs/sfn.json" />
     </envs>
     <kind value="DIRECTORY" />
     <package value="github.com/ryanjarv/msh" />

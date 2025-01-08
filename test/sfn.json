@@ -1,1 +1,0 @@
-{"Steps":[{"Name":"schedule","Value":{"Rule":null,"CronOptions":{"day":null,"hour":"0","minute":"0","month":"*","weekDay":null,"year":"*"}}},{"Name":"sfn","Value":{"Name":"sfn"}}]}

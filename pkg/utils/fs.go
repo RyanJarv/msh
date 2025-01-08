@@ -3,7 +3,10 @@ package utils
 import (
 	"fmt"
 	L "github.com/ryanjarv/msh/pkg/logger"
+	"github.com/samber/lo"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 var DevNull, _ = os.Open(os.DevNull)
@@ -33,4 +36,11 @@ func IsTTY(file *os.File) bool {
 		L.Debug.Printf("fd %d: tty\n", file.Fd())
 		return true
 	}
+}
+
+func ExpandPath(s string) string {
+	if strings.HasPrefix(s, "~") {
+		return strings.Replace(s, "~", lo.Must(os.UserHomeDir()), -1)
+	}
+	return lo.Must(filepath.Abs(s))
 }
