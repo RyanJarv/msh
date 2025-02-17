@@ -32,7 +32,7 @@ make build
 You should now be able to deploy the following pipeline:
 ```bash
 @cron '0 0 * * * *' | sfn{ 
-        .aws ec2 describe-instances --query 'Reservations[]. Instances[]' \
+        .aws ec2 describe-instances --query 'Reservations[].Instances[]' \
         | .foreach \
         | .filter ./bin/hours_running 72 \
         | .aws ec2 stop-instances --instance-ids '$.Instanceld'
