@@ -1,6 +1,7 @@
 package sleep
 
 import (
+	"flag"
 	"fmt"
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	sfn "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
@@ -12,12 +13,15 @@ import (
 	"strconv"
 )
 
-func New(app *app.App) (*SleepCmd, error) {
-	if app.Flag.NArg() != 2 {
+func New(app *app.App, argv []string) (types.CdkStep, error) {
+	flags := flag.NewFlagSet("sleep", flag.ExitOnError)
+	flags.Parse(argv)
+
+	if flags.NArg() != 2 {
 		return nil, fmt.Errorf("usage: %s <seconds>", os.Args[0])
 	}
 
-	seconds, err := strconv.Atoi(app.Flag.Arg(1))
+	seconds, err := strconv.Atoi(flags.Arg(1))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse seconds: %w", err)
 	}

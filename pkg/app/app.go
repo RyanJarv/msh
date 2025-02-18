@@ -1,57 +1,54 @@
 package app
 
 import (
-	"flag"
-	"fmt"
 	L "github.com/ryanjarv/msh/pkg/logger"
 	"github.com/ryanjarv/msh/pkg/types"
-	"github.com/ryanjarv/msh/pkg/utils"
 	"os"
+	"strings"
 )
 
-func GetPipeline(reg types.Registry, stdin *os.File, stdout *os.File, args []string) (App, error) {
+func GetPipeline(reg Registry, stdin *os.File, stdout *os.File, args []string) (App, error) {
 	L.Debug.Printf("GetPipeline: %s:", args)
 
-	var state *State
-	// We need to read the state before we can do anything else.
-	mshStdin := os.Getenv("MSH_STDIN")
-	if !utils.IsTTY(stdin) || mshStdin != "" {
-		var err error
-
-		// Hack to allow us to read from a test file in a debugger.
-		if mshStdin != "" {
-			stdin, err = os.Open(mshStdin)
-			if err != nil {
-				return App{}, fmt.Errorf("run: failed to open stdin: %w", err)
-			}
-		}
-
-		state, err = ReadState(stdin, reg)
-		if err != nil {
-			return App{}, fmt.Errorf("run: failed to read state: %w", err)
-		}
-	} else {
-		state = &State{
-			Name:  "msh-default",
-			Steps: []types.Step{},
-		}
-	}
-
 	return App{
-		Flag:     utils.ParseArgs(args),
-		State:    state,
 		Stdin:    stdin,
 		Stdout:   stdout,
 		Registry: reg,
-		OsArgs:   args,
 	}, nil
 }
 
 type App struct {
-	*State
-	Flag     *flag.FlagSet  `json:"-"`
-	Registry types.Registry `json:"-"`
-	OsArgs   []string       `json:"-"`
-	Stdin    *os.File       `json:"-"`
-	Stdout   *os.File       `json:"-"`
+	Name     string
+	Steps    []types.Step
+	Registry Registry `json:"-"`
+	Stdin    *os.File `json:"-"`
+	Stdout   *os.File `json:"-"`
+}
+
+func (s *App) StackName() string {
+	name := s.Name
+
+	name = strings.Replace(name, " ", "-", -1)
+	name = strings.Replace(name, "_", "-", -1)
+	name = strings.ToLower(name)
+
+	return name
+}
+
+// AddStep is called by each individual Step that wants to add to the cumulative app.
+func (s *App) AddStep(c types.CdkStep) {
+	L.Debug.Println("State.AddStep: %T", c)
+	s.Steps = append(s.Steps, types.Step{
+		Name:  c.GetName(),
+		Value: c,
+	})
+}
+
+type Registry map[string]func(*App, []string) (types.CdkStep, error)
+
+func (r Registry) Get(name string) func(*App, []string) (types.CdkStep, error) {
+	if v, ok := r[name]; ok {
+		return v
+	}
+	return nil
 }

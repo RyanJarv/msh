@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/samber/lo"
-	"strings"
 )
 
 //go:embed cli_iam_map.json
@@ -23,24 +22,24 @@ type IamInfo struct {
 	} `json:"resourcearn_mappings"`
 }
 
-func IamActionsFromCliArgs(args []string) ([]string, error) {
-	nonFlagArgs := lo.Filter(args, func(item string, index int) bool {
-		return !strings.HasPrefix(item, "--")
-	})
+func IamActionsFromCliArgs(svcName, cmd string) ([]string, error) {
+	//nonFlagArgs := lo.Filter(args, func(item string, index int) bool {
+	//	return !strings.HasPrefix(item, "--")
+	//})
 
 	var cliIamMap map[string]map[string][]IamInfo
 	if err := json.Unmarshal(CliIamMap, &cliIamMap); err != nil {
 		return nil, fmt.Errorf("unmarshalling cli iam map: %w", err)
 	}
 
-	svc, ok := cliIamMap[nonFlagArgs[1]]
+	svc, ok := cliIamMap[svcName]
 	if !ok {
-		return nil, fmt.Errorf("unknown service: %s", nonFlagArgs[0])
+		return nil, fmt.Errorf("unknown service: %s", svc)
 	}
 
-	iam, ok := svc[nonFlagArgs[2]]
+	iam, ok := svc[cmd]
 	if !ok {
-		return nil, fmt.Errorf("unknown action: %s", nonFlagArgs[1])
+		return nil, fmt.Errorf("unknown action: %s", iam)
 	}
 
 	actions := lo.Map(iam, func(item IamInfo, index int) string {

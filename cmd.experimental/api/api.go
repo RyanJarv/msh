@@ -12,6 +12,7 @@ import (
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 	"github.com/ryanjarv/msh/pkg/app"
+	"github.com/ryanjarv/msh/pkg/types"
 	"github.com/ryanjarv/msh/pkg/utils"
 	"github.com/samber/lo"
 	"io/fs"
@@ -21,12 +22,14 @@ import (
 	"time"
 )
 
-func New(app *app.App) (*Api, error) {
-	if len(app.Flag.Args()) != 2 {
-		return nil, fmt.Errorf("usage: %s <service> <action>", app.Flag.Args)
+func New(app *app.App, argv []string) (types.CdkStep, error) {
+	flags := flag.NewFlagSet("api", flag.ExitOnError)
+	flags.Parse(argv)
+	if flags.NFlag() != 2 {
+		return nil, fmt.Errorf("usage: %s <service> <action>", flags.Args)
 	}
 
-	opts, err := GetActionOpts(app.Flag.Arg(0), flag.Arg(1))
+	opts, err := GetActionOpts(flags.Arg(0), flag.Arg(1))
 	if err != nil {
 		return nil, fmt.Errorf("getActionOpts: %w", err)
 	}

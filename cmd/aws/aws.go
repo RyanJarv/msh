@@ -2,6 +2,7 @@ package aws
 
 import (
 	_ "embed"
+	"flag"
 	"fmt"
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsiam"
@@ -9,7 +10,6 @@ import (
 	sfn "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
 	tasks "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctionstasks"
 	"github.com/aws/aws-cdk-go/awscdk/v2/lambdalayerawscli"
-	"github.com/aws/constructs-go/constructs/v10"
 	j "github.com/aws/jsii-runtime-go"
 	"github.com/ryanjarv/msh/pkg/app"
 	"github.com/ryanjarv/msh/pkg/types"
@@ -23,13 +23,18 @@ import (
 //go:embed cli.py
 var code []byte
 
-func New(app *app.App) (*AwsCmd, error) {
-	if lo.Contains(app.OsArgs, "--help") || lo.Contains(app.OsArgs, "help") {
-		Help(app.OsArgs)
+func New(app *app.App, argv []string) (types.CdkStep, error) {
+	opts := flag.NewFlagSet("aws", flag.ExitOnError)
+	opts.Parse(argv)
+
+	if lo.Contains(flag.Args(), "--help") || lo.Contains(argv, "help") {
+		Help(argv)
 		os.Exit(1)
+	} else if opts.NArg() < 3 {
+		return nil, fmt.Errorf("usage: %s <service> <action> <args>", argv)
 	}
 
-	iamActions, err := IamActionsFromCliArgs(app.OsArgs)
+	iamActions, err := IamActionsFromCliArgs(opts.Arg(1), opts.Arg(2))
 	if err != nil {
 		return nil, fmt.Errorf("getting iam actions from cli args: %w", err)
 	}
@@ -42,7 +47,7 @@ func New(app *app.App) (*AwsCmd, error) {
 			},
 		},
 		Script: string(code),
-		Args:   app.OsArgs,
+		Args:   argv,
 		Environment: map[string]*string{
 			"PYTHONPATH": j.String("/opt/awscli"),
 		},
@@ -59,7 +64,7 @@ func Help(args []string) {
 }
 
 type AwsCmd struct {
-	awslambda.Function `json:"-"`
+	Function           awslambda.Function `json:"-"`
 	tasks.LambdaInvoke `json:"-"`
 	Script             string
 	Args               []string
@@ -70,30 +75,29 @@ type AwsCmd struct {
 
 func (s *AwsCmd) GetName() string { return "aws" }
 
-func (s *AwsCmd) Init(scope constructs.Construct, last, next types.CdkStep, i int) error {
-	name := fmt.Sprintf("%s-%d", s.GetName(), i)
-	s.Function = awslambda.NewFunction(scope, j.String(name+"-function"), &awslambda.FunctionProps{
+func (s *AwsCmd) BeforeRun(this *types.StepRunInfo) error {
+	s.Function = awslambda.NewFunction(this.Scope, this.Id("function"), &awslambda.FunctionProps{
 		Runtime:     awslambda.Runtime_PYTHON_3_11(),
 		Handler:     j.String("index.lambda_handler"),
 		Code:        awslambda.Code_FromInline(j.String(s.Script)),
 		Timeout:     awscdk.Duration_Seconds(j.Number(300)),
 		Environment: &s.Environment,
 	})
-	s.Function.AddLayers(lambdalayerawscli.NewAwsCliLayer(scope, j.String("AwsCliLayer")))
+	s.Function.AddLayers(lambdalayerawscli.NewAwsCliLayer(this.Scope, this.Id("AwsCliLayer")))
 
 	stmts := lo.Map(s.IamStatementProps, func(item awsiam.PolicyStatementProps, index int) awsiam.PolicyStatement {
 		return awsiam.NewPolicyStatement(&item)
 	})
 
-	s.Function.Role().AttachInlinePolicy(awsiam.NewPolicy(scope, j.String("AwsCliPolicy"), &awsiam.PolicyProps{
+	s.Function.Role().AttachInlinePolicy(awsiam.NewPolicy(this.Scope, this.Id("AwsCliPolicy"), &awsiam.PolicyProps{
 		Statements: &stmts,
 	}))
 
 	return nil
 }
 
-func (s *AwsCmd) GetChain(step *types.StepRunInfo) sfn.IChainable {
-	invoke := tasks.NewLambdaInvoke(step.Scope, step.Id("invoke"), &tasks.LambdaInvokeProps{
+func (s *AwsCmd) GetChain(i *types.StepRunInfo) sfn.IChainable {
+	return tasks.NewLambdaInvoke(i.Scope, i.Id("invoke"), &tasks.LambdaInvokeProps{
 		LambdaFunction: s.Function,
 		Payload: sfn.TaskInput_FromObject(&map[string]interface{}{
 			"command": sfn.JsonPath_Array(lo.Map(s.Args[1:], func(arg string, index int) *string {
@@ -105,12 +109,5 @@ func (s *AwsCmd) GetChain(step *types.StepRunInfo) sfn.IChainable {
 			})...),
 		}),
 		OutputPath: j.String("$.Payload"),
-	})
-
-	switch v := step.Next.Step.(type) {
-	case types.SfnChainable:
-		return sfn.Chain_Sequence(invoke, v.GetChain(step.Next))
-	default:
-		return invoke
-	}
+	}).Next(i.GetChain())
 }

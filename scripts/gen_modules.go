@@ -21,10 +21,8 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"github.com/ryanjarv/msh/pkg/types"
 	"github.com/ryanjarv/msh/pkg/app"
-	"github.com/ryanjarv/msh/pkg/utils"
 	"strings"
 
 	{{- range .Modules}}
@@ -32,13 +30,13 @@ import (
 	{{- end}}
 )
 
-var Registry = types.NewRegistry(
+var Registry = types.Registry{
 	{{- range .Modules}}
-	{{.Name}}.New,
+	"{{.Name}}": {{.Name}}.New,
 	{{- end}}
-)
+}
 
-func NewModule(app *app.App, cmdName string) (step types.CdkStep, err error) {
+func GetStepFunc(cmdName string) (func (*app.App, []string) (types.CdkStep, error)) {
     flag.Parse()
 
 	cmdName = strings.Trim(cmdName, "@.")
@@ -46,13 +44,11 @@ func NewModule(app *app.App, cmdName string) (step types.CdkStep, err error) {
 	switch cmdName {
 	{{- range .Modules}}
 	case "{{.Name}}":
-		 step, err = {{.Name}}.New(app)
+		 return {{.Name}}.New
 	{{- end}}
 	default:
-		err = fmt.Errorf("unknown module: %s", cmdName)
+		return nil
 	}
-
-	return step, utils.Wrap(err, cmdName)
 }
 `
 

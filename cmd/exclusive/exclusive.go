@@ -11,7 +11,7 @@ import (
 	"github.com/ryanjarv/msh/pkg/types"
 )
 
-func New(app *app.App) (*Call, error) {
+func New(_ *app.App, _ []string) (types.CdkStep, error) {
 	return &Call{}, nil
 }
 

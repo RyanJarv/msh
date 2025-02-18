@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2/awssnssubscriptions"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/ryanjarv/msh/pkg/app"
+	"github.com/ryanjarv/msh/pkg/types"
 )
 
 var opts = struct {
@@ -18,7 +19,7 @@ var opts = struct {
 	Subject: flag.String("subject", "", "Subject of the notification email."),
 }
 
-func New(app *app.App) (*Mail, error) {
+func New(_ *app.App, _ []string) (types.CdkStep, error) {
 	if *opts.To == "" {
 		return nil, fmt.Errorf("missing required argument: to")
 	}

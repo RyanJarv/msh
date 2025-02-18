@@ -20,27 +20,21 @@ import (
 )
 
 func (s *App) Run() error {
-	forceBuild := os.Getenv("MSH_BUILD") == "always"
+	app := awscdk.NewApp(&awscdk.AppProps{})
 
-	if utils.IsTTY(s.Stdout) || forceBuild {
-		app := awscdk.NewApp(&awscdk.AppProps{})
+	stack := awscdk.NewStack(app, aws.String(s.StackName()), &awscdk.StackProps{})
 
-		stack := awscdk.NewStack(app, aws.String(s.StackName()), &awscdk.StackProps{})
-
-		if err := s.Compile(stack); err != nil {
-			return err
-		}
-
-		return s.Build(app)
-	} else {
-		return s.State.WriteState(s.Stdout)
+	if err := s.Compile(stack); err != nil {
+		return err
 	}
+
+	return s.Build(app)
 }
 
 func (s *App) Compile(scope constructs.Construct) error {
 	L.Debug.Println("App.Compile")
 
-	steps := BuildSteps(scope, s.State.Steps)
+	steps := BuildSteps(scope, s.Steps)
 
 	for i, s := range steps {
 		if v, ok := s.Step.(types.CdkStepCanInit); ok {
@@ -110,7 +104,7 @@ func BuildSteps(scope constructs.Construct, input []types.Step) []*types.StepRun
 			Next:  nil,
 		}
 
-		if i > 0 {
+		if i >= 1 {
 			steps[i-1].Next = this
 		}
 		if i < len(steps) {

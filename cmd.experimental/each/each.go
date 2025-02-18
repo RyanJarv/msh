@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/ryanjarv/msh/pkg/app"
+	"github.com/ryanjarv/msh/pkg/types"
 	"os"
 )
 
-func New(a *app.App) (*Each, error) {
+func New(a *app.App, argv []string) (types.CdkStep, error) {
 	apps := []app.App{}
 
 	for _, path := range flag.Args() {

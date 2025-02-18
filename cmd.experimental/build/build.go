@@ -6,9 +6,10 @@ import (
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 	"github.com/ryanjarv/msh/pkg/app"
+	"github.com/ryanjarv/msh/pkg/types"
 )
 
-func New(_ *app.App) (*Build, error) {
+func New(_ *app.App, _ []string) (types.CdkStep, error) {
 	return &Build{}, nil
 }
 

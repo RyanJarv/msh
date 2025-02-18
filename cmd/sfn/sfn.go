@@ -13,9 +13,8 @@ import (
 	"strings"
 )
 
-func New(app *app.App) (*Sfn, error) {
-	name := app.StackName()
-	name = strings.Replace(name, "-", "_", -1)
+func New(app *app.App, _ []string) (types.CdkStep, error) {
+	name := strings.Replace(app.StackName(), "-", "_", -1)
 
 	return &Sfn{
 		Name: fmt.Sprintf("msh_sfn_%s", name),
@@ -29,27 +28,13 @@ type Sfn struct {
 
 func (s *Sfn) GetName() string { return "sfn" }
 
-func (s *Sfn) Run(step *types.StepRunInfo) error {
-	s.StateMachine = sfn.NewStateMachine(step.Scope, step.Id("sfn"), &sfn.StateMachineProps{
+func (s *Sfn) Run(i *types.StepRunInfo) error {
+	s.StateMachine = sfn.NewStateMachine(i.Scope, i.Id("sfn"), &sfn.StateMachineProps{
 		StateMachineName: jsii.String(s.Name),
-		DefinitionBody:   sfn.NewChainDefinitionBody(sfn.Chain_Start(s.GetChain(step))),
+		DefinitionBody:   sfn.NewChainDefinitionBody(sfn.Chain_Start(i.GetChain())),
 		Timeout:          awscdk.Duration_Minutes(jsii.Number(5)),
 		Comment:          jsii.String("a super cool app machine"),
 	})
-
-	return nil
-}
-
-// GetChain returns a chain defining the full sfn definition. The Chain can't be modified after the
-// state machine is created.
-func (s *Sfn) GetChain(step *types.StepRunInfo) sfn.IChainable {
-	if step == nil {
-		panic(fmt.Errorf("step is nil"))
-	} else if step.Next == nil {
-		return sfn.NewSucceed(step.Scope, step.Id("success"), &sfn.SucceedProps{})
-	} else if v, ok := step.Next.Step.(types.SfnChainable); ok {
-		return sfn.Chain_Start(v.GetChain(step.Next))
-	}
 
 	return nil
 }

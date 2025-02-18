@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"github.com/ryanjarv/msh/cmd.experimental/api"
 	"github.com/ryanjarv/msh/cmd.experimental/build"
 	"github.com/ryanjarv/msh/cmd.experimental/call"
@@ -16,78 +15,68 @@ import (
 	"github.com/ryanjarv/msh/cmd/filter"
 	"github.com/ryanjarv/msh/cmd/foreach"
 	"github.com/ryanjarv/msh/cmd/lambda"
-	"github.com/ryanjarv/msh/cmd/name"
 	"github.com/ryanjarv/msh/cmd/sfn"
 	"github.com/ryanjarv/msh/cmd/sleep"
 	"github.com/ryanjarv/msh/pkg/app"
 	"github.com/ryanjarv/msh/pkg/types"
-	"github.com/ryanjarv/msh/pkg/utils"
 	"strings"
 )
 
-var Registry = types.NewRegistry(
-	aws.New,
-	cron.New,
-	event.New,
-	exclusive.New,
-	filter.New,
-	foreach.New,
-	items.New,
-	lambda.New,
-	name.New,
-	sfn.New,
-	sleep.New,
-	api.New,
-	build.New,
-	call.New,
-	each.New,
-	mail.New,
-	sns.New,
-)
+var Registry = app.Registry{
+	"aws":       aws.New,
+	"cron":      cron.New,
+	"event":     event.New,
+	"exclusive": exclusive.New,
+	"filter":    filter.New,
+	"foreach":   foreach.New,
+	"lambda":    lambda.New,
+	"sfn":       sfn.New,
+	"sleep":     sleep.New,
+	"api":       api.New,
+	"build":     build.New,
+	"call":      call.New,
+	"each":      each.New,
+	"mail":      mail.New,
+	"sns":       sns.New,
+}
 
-func NewModule(app *app.App, cmdName string) (step types.CdkStep, err error) {
+func GetStepFunc(cmdName string) func(*app.App, []string) (types.CdkStep, error) {
 	flag.Parse()
 
 	cmdName = strings.Trim(cmdName, "@.")
 
 	switch cmdName {
 	case "aws":
-		step, err = aws.New(app)
+		return aws.New
 	case "cron":
-		step, err = cron.New(app)
+		return cron.New
 	case "event":
-		step, err = event.New(app)
+		return event.New
 	case "exclusive":
-		step, err = exclusive.New(app)
+		return exclusive.New
 	case "filter":
-		step, err = filter.New(app)
+		return filter.New
 	case "foreach":
-		step, err = foreach.New(app)
-	case "items":
-		step, err = items.New(app)
+		return foreach.New
 	case "lambda":
-		step, err = lambda.New(app)
-	case "name":
-		step, err = name.New(app)
+		return lambda.New
 	case "sfn":
-		step, err = sfn.New(app)
+		return sfn.New
 	case "sleep":
-		step, err = sleep.New(app)
+		return sleep.New
 	case "api":
-		step, err = api.New(app)
+		return api.New
 	case "build":
-		step, err = build.New(app)
+		return build.New
 	case "call":
-		step, err = call.New(app)
+		return call.New
 	case "each":
-		step, err = each.New(app)
+		return each.New
 	case "mail":
-		step, err = mail.New(app)
+		return mail.New
 	case "sns":
-		step, err = sns.New(app)
+		return sns.New
 	default:
-		err = fmt.Errorf("unknown module: %s", cmdName)
+		return nil
 	}
-
-	return step, utils.Wrap(err, cmdName)
 }

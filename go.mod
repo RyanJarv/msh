@@ -3,6 +3,7 @@ module github.com/ryanjarv/msh
 go 1.23.1
 
 require (
+	github.com/alecthomas/participle/v2 v2.1.1
 	github.com/aws/aws-cdk-go/awscdk/v2 v2.179.0
 	github.com/aws/aws-sdk-go-v2 v1.32.7
 	github.com/aws/constructs-go/constructs/v10 v10.4.2

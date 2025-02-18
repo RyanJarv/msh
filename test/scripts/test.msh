@@ -1,0 +1,8 @@
+msh "test" {
+  cron "0 0 * * * *"
+  | sfn
+  | aws ec2 "describe-instances" "--query='Reservations[].Instances[]'"
+  | foreach
+  | filter "./scripts/hours_running.py" 72
+  | aws ec2 "stop-instances" "--instance-ids='$.InstanceId'"
+}

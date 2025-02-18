@@ -3,34 +3,9 @@ package types
 import (
 	"fmt"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsiam"
-	"github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
+	sfn "github.com/aws/aws-cdk-go/awscdk/v2/awsstepfunctions"
 	"github.com/aws/constructs-go/constructs/v10"
-	"reflect"
 )
-
-func NewRegistry(steps ...interface{}) Registry {
-	r := Registry{}
-	for _, step := range steps {
-		f := reflect.TypeOf(step)
-		if f.Kind() != reflect.Func {
-			panic("step must be func")
-		}
-
-		v := f.Out(0)
-		out := reflect.New(v.Elem())
-		value := out.Interface()
-
-		if v, ok := value.(CdkStep); !ok {
-			panic(fmt.Sprintf("step must return CdkStep, got: %T %+v", value, value))
-		} else {
-			r[v.GetName()] = v
-		}
-	}
-
-	return r
-}
-
-type Registry map[string]CdkStep
 
 type Step struct {
 	Name  string
@@ -46,15 +21,15 @@ type CdkStep interface {
 }
 
 type BeforeRunCdkStep interface {
-	BeforeRun(last *StepRunInfo) error
+	BeforeRun(*StepRunInfo) error
 }
 
 type RunnableCdkStep interface {
-	Run(last *StepRunInfo) error
+	Run(*StepRunInfo) error
 }
 
 type AfterRunCdkStep interface {
-	AfterRun(last *StepRunInfo) error
+	AfterRun(*StepRunInfo) error
 }
 
 type AcceptsLastRole interface {
@@ -66,17 +41,17 @@ type CdkStepCanInit interface {
 }
 
 type SfnChainable interface {
-	GetChain(*StepRunInfo) awsstepfunctions.IChainable
+	GetChain(*StepRunInfo) sfn.IChainable
 }
 
 type IChain interface {
-	awsstepfunctions.INextable
-	awsstepfunctions.IChainable
+	sfn.INextable
+	sfn.IChainable
 }
 
 type IIterator interface {
 	IChain
-	Iterator(iterator awsstepfunctions.IChainable) awsstepfunctions.Map
+	Iterator(iterator sfn.IChainable) sfn.Map
 }
 
 type HasRole interface {
@@ -94,4 +69,16 @@ type StepRunInfo struct {
 	Next  *StepRunInfo
 	Last  *StepRunInfo
 	Id    func(s ...string) *string
+}
+
+func (i StepRunInfo) GetChain() sfn.IChainable {
+	if i.Next == nil || i.Next.Step == nil {
+		return sfn.NewSucceed(i.Scope, i.Id("success"), &sfn.SucceedProps{})
+	}
+	switch v := i.Next.Step.(type) {
+	case SfnChainable:
+		return v.GetChain(i.Next).StartState()
+	default:
+		panic(fmt.Errorf("%s: next step must be SfnChainable, got: %T", i.Step.GetName(), i.Next.Step))
+	}
 }

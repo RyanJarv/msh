@@ -7,9 +7,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/ryanjarv/msh/pkg/app"
+	"github.com/ryanjarv/msh/pkg/types"
 )
 
-func New(app *app.App) (*Sns, error) {
+func New(app *app.App, _ []string) (types.CdkStep, error) {
 	return &Sns{}, nil
 }
 

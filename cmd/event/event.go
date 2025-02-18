@@ -9,13 +9,17 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/ryanjarv/msh/pkg/app"
+	"github.com/ryanjarv/msh/pkg/types"
 	"github.com/samber/lo"
 	"os"
 	"strings"
 )
 
-func New(_ *app.App) (*Event, error) {
-	path := flag.Arg(flag.NFlag())
+func New(_ *app.App, argv []string) (types.CdkStep, error) {
+	flags := flag.NewFlagSet("event", flag.ExitOnError)
+	flags.Parse(argv)
+
+	path := flags.Arg(flags.NFlag())
 	config, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("reading file: %s: %w", path, err)

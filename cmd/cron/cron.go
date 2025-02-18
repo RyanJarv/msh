@@ -2,28 +2,36 @@ package cron
 
 import (
 	_ "embed"
+	"flag"
 	"fmt"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsevents"
 	"github.com/aws/jsii-runtime-go"
 	"github.com/ryanjarv/msh/pkg/app"
 	"github.com/ryanjarv/msh/pkg/logs"
 	"github.com/ryanjarv/msh/pkg/types"
+	"github.com/samber/lo"
 	"strings"
 )
 
-func New(app *app.App) (*Cron, error) {
-	opts := strings.Split(strings.Join(app.Flag.Args()[1:], " "), " ")
-	if len(opts) != 6 {
-		return nil, fmt.Errorf("cron: must have 6 args, got: %d", app.Flag.NArg())
+func New(app *app.App, argv []string) (types.CdkStep, error) {
+	opts := flag.NewFlagSet("cron", flag.ExitOnError)
+	opts.Parse(argv[1:])
+
+	args := strings.Split(strings.Join(opts.Args(), " "), " ")
+	args = lo.Reject(args, func(item string, _ int) bool {
+		return item == ""
+	})
+	if len(args) != 6 {
+		return nil, fmt.Errorf("cron: must have 6 args, got: %d", len(args))
 	}
 
 	cronopts := awsevents.CronOptions{
-		Minute:  jsii.String(opts[0]),
-		Hour:    jsii.String(opts[1]),
-		Day:     jsii.String(opts[2]),
-		WeekDay: jsii.String(opts[3]),
-		Month:   jsii.String(opts[4]),
-		Year:    jsii.String(opts[5]),
+		Minute:  jsii.String(args[0]),
+		Hour:    jsii.String(args[1]),
+		Day:     jsii.String(args[2]),
+		WeekDay: jsii.String(args[3]),
+		Month:   jsii.String(args[4]),
+		Year:    jsii.String(args[5]),
 	}
 
 	// Cdk doesn't like when both day and weekday are specified.
@@ -58,7 +66,7 @@ func (s *Cron) AfterRun(step *types.StepRunInfo) error {
 			Schedule: awsevents.Schedule_Cron(&s.CronOptions),
 		}).AddTarget(v)
 	default:
-		return fmt.Errorf("run: next must be IRuleTarget or IStateMachine, got: %T %+v", step.Next, step.Next)
+		return fmt.Errorf("run: next must be IRuleTarget, got: %T %+v", step.Next, step.Next)
 	}
 
 	return nil
