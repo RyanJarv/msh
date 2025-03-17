@@ -1,3 +1,4 @@
+export JSII_SILENCE_WARNING_UNTESTED_NODE_VERSION=1
 export PS1="(msh) $PS1"
 export PATH="$PWD/out:$PATH"
 
